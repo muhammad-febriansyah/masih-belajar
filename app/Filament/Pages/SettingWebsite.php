@@ -50,7 +50,7 @@ class SettingWebsite extends Page implements HasForms
                         TextInput::make('ig')->label('URL Instagram')->url(),
                         TextInput::make('fb')->label('URL Facebook')->url(),
                         TextInput::make('yt')->label('URL Youtube')->url(),
-                        TextInput::make('heading')->label('Heading'),
+                        TextInput::make('heading')->label('Heading')->columnSpan(['lg' => 2]),
                         Textarea::make('description')->label('Deskripsi')->columnSpan(['lg' => 2]),
                         FileUpload::make('logo')->label('Logo Website')->disk('public')
                             ->directory('image-upload-server')
@@ -153,14 +153,14 @@ class SettingWebsite extends Page implements HasForms
                 ->title('Data berhasil disimpan')
                 ->send();
 
-            return $this->redirect('/main/setting-website', navigate: true);
+            return $this->redirect('/admin/setting-website', navigate: true);
         } catch (\Exception $exception) {
             Notification::make()
                 ->warning()
                 ->title($exception->getMessage())
                 ->send();
 
-            return $this->redirect('/main/setting-website', navigate: true);
+            return $this->redirect('/admin/setting-website', navigate: true);
         }
     }
 }
