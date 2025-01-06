@@ -15,6 +15,7 @@ class Kelas extends Model
 
     protected $casts = [
         'link_overview' => 'array',
+        'benefit' => 'array',
     ];
 
     public function level(): BelongsTo
