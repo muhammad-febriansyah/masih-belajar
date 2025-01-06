@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Filament\Mentor\Resources;
+namespace App\Filament\Resources;
 
-use App\Filament\Mentor\Resources\KelasResource\Pages;
-use App\Filament\Mentor\Resources\KelasResource\RelationManagers;
+use App\Filament\Resources\KelasResource\Pages;
+use App\Filament\Resources\KelasResource\RelationManagers;
 use App\Models\Benefit;
 use App\Models\Category;
 use App\Models\Kelas;
 use App\Models\Level;
 use App\Models\Type;
+use App\Models\User;
 use Awcodes\Matinee\Matinee;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
@@ -24,11 +25,13 @@ use Filament\Resources\Resource;
 use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -38,9 +41,24 @@ class KelasResource extends Resource
     protected static ?string $model = Kelas::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
-    protected static ?string $navigationGroup = 'Main Menu';
+    protected static ?string $navigationGroup = 'Course';
     protected static ?string $navigationLabel = 'Kelas';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 10;
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
@@ -111,7 +129,7 @@ class KelasResource extends Resource
                                 RichEditor::make('description')->label('Deskripsi')->required()->columns(1),
                             ])->columnSpan(['lg' => 3]),
                         ]),
-                    Wizard\Step::make('Section')
+                    Wizard\Step::make('Content')
                         ->columns(3)
                         ->schema([
                             Repeater::make('section')->label('Section')->collapsed()->cloneable()->relationship('section')
@@ -130,7 +148,6 @@ class KelasResource extends Resource
                                         ])
                                         ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])
                                 ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1]),
-
                         ]),
                 ])
             ])->columns(1);
@@ -143,24 +160,13 @@ class KelasResource extends Resource
                 TextColumn::make('No')->rowIndex(),
                 TextColumn::make('title')->label('Judul')->searchable()->sortable(),
                 TextColumn::make('user.name')->label('Mentor')->sortable(),
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'ditolak' => 'danger',
-                        'disetujui' => 'primary',
-                    })->formatStateUsing(fn($record) => match ($record->status) {
-                        'pending' => 'Pending',    // Display text for 'pending'
-                        'ditolak' => 'Rejected',   // Display text for 'ditolak'
-                        'disetujui' => 'Approved', // Display text for 'disetujui'
-                    })->icon(function ($record) {
-                        return match ($record->status) {
-                            'pending' => 'heroicon-s-clock',
-                            'ditolak' => 'heroicon-s-x-circle',
-                            'disetujui' => 'heroicon-s-check-circle',
-                        };
-                    }),
+                SelectColumn::make('status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'ditolak' => 'Ditolak',
+                        'disetujui' => 'Disetujui',
+                    ]),
+
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -169,13 +175,19 @@ class KelasResource extends Resource
                         'ditolak' => 'Ditolak',
                         'disetujui' => 'Disetujui',
                     ]),
-            ], layout: FiltersLayout::Modal)
+                SelectFilter::make('type_id')->searchable()->label('Tipe Kelas')
+                    ->options(Type::all()->pluck('name', 'id')),
+                SelectFilter::make('category_id')->searchable()->label('Kategori Kelas')
+                    ->options(Category::all()->pluck('name', 'id')),
+                SelectFilter::make('user_id')->searchable()->label('Mentor')
+                    ->options(User::where('role', 'mentor')->pluck('name', 'id')),
+            ], layout: FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\EditAction::make()->label('')->icon('heroicon-s-pencil')->button()->color('success'),
                 Tables\Actions\DeleteAction::make()->after(function ($record) {
                     File::delete(public_path('storage\\' . $record->image));
                 })->icon('heroicon-o-trash')->color('danger')->button()->label(''),
-                Tables\Actions\ViewAction::make()->label('')->icon('heroicon-s-eye')->button()->color('info'),
+                Tables\Actions\ViewAction::make()->label('Detail')->icon('heroicon-s-eye')->button()->color('info'),
             ])
             ->bulkActions([
                 DeleteBulkAction::make()

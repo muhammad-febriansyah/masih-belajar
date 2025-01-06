@@ -42,4 +42,9 @@ class Kelas extends Model
     {
         return $this->hasMany(Section::class);
     }
+
+    public function quiz(): HasMany
+    {
+        return $this->hasMany(Quiz::class);
+    }
 }
