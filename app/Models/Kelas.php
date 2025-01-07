@@ -47,4 +47,14 @@ class Kelas extends Model
     {
         return $this->hasMany(Quiz::class);
     }
+
+    public function testimoni(): HasMany
+    {
+        return $this->hasMany(Testimoni::class);
+    }
+
+    public function transaction(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }

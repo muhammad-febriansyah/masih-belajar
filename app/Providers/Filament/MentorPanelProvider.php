@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\JmlTrxChart;
+use App\Filament\Widgets\StatsOverview;
+use App\Filament\Widgets\TotalTrxChart;
 use App\Models\Setting;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -51,7 +54,9 @@ class MentorPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Mentor/Widgets'), for: 'App\\Filament\\Mentor\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+                StatsOverview::class,
+                TotalTrxChart::class,
+                JmlTrxChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

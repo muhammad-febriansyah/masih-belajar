@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\JmlTrxChart;
+use App\Filament\Widgets\StatsOverview;
+use App\Filament\Widgets\TotalTrxChart;
 use App\Models\Setting;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -41,6 +44,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('storage/' . $setting->long_logo))
             ->brandLogoHeight('5rem')
             ->font('Poppins', provider: GoogleFontProvider::class)
+            ->databaseNotifications()
             ->colors([
                 'primary' => '#8e0100',
             ])
@@ -52,7 +56,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+                StatsOverview::class,
+                TotalTrxChart::class,
+                JmlTrxChart::class,
             ])
             ->middleware([
                 EncryptCookies::class,

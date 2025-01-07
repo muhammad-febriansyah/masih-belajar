@@ -67,6 +67,7 @@ class KelasResource extends Resource
                 Wizard::make([
                     Wizard\Step::make('Kelas')
                         ->columns(3)
+                        ->completedIcon('heroicon-m-check-badge')
                         ->schema([
                             Section::make([
                                 TextInput::make('title')
@@ -129,8 +130,9 @@ class KelasResource extends Resource
                                 RichEditor::make('description')->label('Deskripsi')->required()->columns(1),
                             ])->columnSpan(['lg' => 3]),
                         ]),
-                    Wizard\Step::make('Content')
+                    Wizard\Step::make('Section')
                         ->columns(3)
+                        ->completedIcon('heroicon-m-check-badge')
                         ->schema([
                             Repeater::make('section')->label('Section')->collapsed()->cloneable()->relationship('section')
                                 ->schema([
@@ -149,7 +151,22 @@ class KelasResource extends Resource
                                         ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])
                                 ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1]),
                         ]),
-                ])
+                    Wizard\Step::make('Quiz')
+                        ->columns(3)
+                        ->completedIcon('heroicon-m-check-badge')
+                        ->schema([
+                            Repeater::make('quiz')->label('Quiz')->collapsed()->cloneable()->relationship('quiz')
+                                ->schema([
+                                    TextInput::make('question')->label('Pertanyaan')->placeholder('Pertanyaan')->required()->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1]),
+                                    Repeater::make('quizAnswer')->label('Jawaban')->collapsed()->cloneable()->relationship('quizAnswer')
+                                        ->schema([
+                                            TextInput::make('answer')->label('Jawaban Quiz')->placeholder('Jawaban Quiz')->required()->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1]),
+                                            TextInput::make('point')->label('Point Quiz')->placeholder('Point')->required(),
+                                        ])
+                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])
+                                ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1]),
+                        ]),
+                ])->skippable()
             ])->columns(1);
     }
 
@@ -160,13 +177,13 @@ class KelasResource extends Resource
                 TextColumn::make('No')->rowIndex(),
                 TextColumn::make('title')->label('Judul')->searchable()->sortable(),
                 TextColumn::make('user.name')->label('Mentor')->sortable(),
+                TextColumn::make('created_at')->label('Tgl')->sortable()->dateTime(),
                 SelectColumn::make('status')
                     ->options([
                         'pending' => 'Pending',
                         'ditolak' => 'Ditolak',
                         'disetujui' => 'Disetujui',
                     ]),
-
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -181,7 +198,7 @@ class KelasResource extends Resource
                     ->options(Category::all()->pluck('name', 'id')),
                 SelectFilter::make('user_id')->searchable()->label('Mentor')
                     ->options(User::where('role', 'mentor')->pluck('name', 'id')),
-            ], layout: FiltersLayout::AboveContent)
+            ], layout: FiltersLayout::Modal)
             ->actions([
                 Tables\Actions\EditAction::make()->label('')->icon('heroicon-s-pencil')->button()->color('success'),
                 Tables\Actions\DeleteAction::make()->after(function ($record) {
