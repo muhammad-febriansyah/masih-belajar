@@ -15,6 +15,9 @@ class CreateKelas extends CreateRecord
     {
         $data['status'] = 'pending';
         $data['user_id'] = auth()->user()->id;
+        if ($data['discount'] == null) {
+            $data['discount'] = 0;
+        }
         return $data;
     }
 

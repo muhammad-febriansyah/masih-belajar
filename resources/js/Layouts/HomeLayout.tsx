@@ -28,7 +28,7 @@ export default function HomeLayout({ children }: Props) {
                 />
             </Head>
             <div className="overflow-x-hidden">
-                {/* <ScrollProgress /> */}
+                <ScrollProgress />
                 <Navbar />
                 {children}
                 <Footer />

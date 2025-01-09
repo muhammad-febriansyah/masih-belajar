@@ -165,7 +165,7 @@ class KelasResource extends Resource
                     ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'ditolak' => 'danger',
-                        'disetujui' => 'primary',
+                        'disetujui' => 'info',
                     })->formatStateUsing(fn($record) => match ($record->status) {
                         'pending' => 'Pending',    // Display text for 'pending'
                         'ditolak' => 'Rejected',   // Display text for 'ditolak'
