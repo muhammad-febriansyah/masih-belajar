@@ -177,6 +177,7 @@ class KelasResource extends Resource
                             'disetujui' => 'heroicon-s-check-circle',
                         };
                     }),
+                TextColumn::make('created_at')->label('Dibuat')->sortable()->dateTime(),
             ])
             ->filters([
                 SelectFilter::make('status')

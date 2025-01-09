@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Kelas;
+use App\Models\Level;
 use App\Models\Setting;
+use App\Models\Type;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
@@ -23,8 +28,48 @@ class HomeController extends Controller
     public function kelas()
     {
         $setting = Setting::first();
+        $data = Kelas::select(
+            'kelas.*',
+            DB::raw('AVG(testimonis.rating) as average_rating')
+        )
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.status', 'disetujui')
+            ->groupBy('kelas.id')
+            ->latest()
+            ->paginate(2);
+        $category = Category::all();
+        $tipekelas = Type::all();
+        $level = Level::all();
         return Inertia::render('Home/Kelas/Index', [
-            'setting' => $setting
+            'setting' => $setting,
+            'kelas' => $data,
+            'category' => $category,
+            'tipekelas' => $tipekelas,
+            'level' => $level
+        ]);
+    }
+
+    public function detailkelas($slug)
+    {
+        $setting = Setting::first();
+        $data = Kelas::select(
+            'kelas.*',
+            DB::raw('AVG(testimonis.rating) as average_rating')
+        )
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.status', 'disetujui')
+            ->groupBy('kelas.id')
+            ->latest()
+            ->paginate(6);
+        $category = Category::all();
+        $tipekelas = Type::all();
+        $level = Level::all();
+        return Inertia::render('Home/Kelas/Detail', [
+            'setting' => $setting,
+            'kelas' => $data,
+            'category' => $category,
+            'tipekelas' => $tipekelas,
+            'level' => $level
         ]);
     }
 

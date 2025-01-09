@@ -19,6 +19,7 @@ use Inertia\Inertia;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/home/kelas', [HomeController::class, 'kelas'])->name('home.kelas');
+Route::get('/home/detailkelas/{slug}', [HomeController::class, 'detailkelas'])->name('home.detailkelas');
 Route::get('/home/login', [HomeController::class, 'login'])->name('home.login');
 Route::get('/home/register', [HomeController::class, 'register'])->name('home.register');
 Route::post('/home/checklogin', [HomeController::class, 'checklogin'])->name('home.checklogin');
