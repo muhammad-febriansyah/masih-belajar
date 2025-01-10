@@ -1,6 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
 export default function NavMobile() {
@@ -8,8 +8,18 @@ export default function NavMobile() {
     const toogleDrawer = () => {
         setIsOpen(!isOpen);
     };
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto"; // Kembalikan scroll ke body
+        }
+        return () => {
+            document.body.style.overflow = "auto";
+        };
+    }, [isOpen]);
     return (
-        <div>
+        <div className="z-[999]">
             <button onClick={toogleDrawer} className="z-[999] relative">
                 <motion.div
                     initial={{ rotate: 0 }}
@@ -28,7 +38,7 @@ export default function NavMobile() {
             <motion.div
                 initial={{ x: "-100%" }}
                 animate={{ x: isOpen ? 0 : "-100%" }}
-                className="fixed left-0 right-0 h-full p-6 pt-20 overflow-y-auto bg-white backdrop-blur"
+                className="fixed left-0 right-0 min-h-screen p-6 pt-20 overflow-y-auto bg-white backdrop-blur"
             >
                 <ul className="flex flex-col items-center space-y-3">
                     <li>

@@ -24,15 +24,13 @@ export default function Navbar() {
         };
 
         window.addEventListener("scroll", handleScroll);
-
-        // Clean up the event listener
         return () => {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
     return (
         <nav
-            className={`fixed h-20 flex items-center inset-0  z-[99] ${
+            className={`fixed h-20 flex items-center inset-0  z-[999] ${
                 isScrolled
                     ? "bg-white bg-opacity-30 backdrop-blur-md"
                     : "bg-white"

@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Kelas;
 use App\Models\Level;
+use App\Models\Section;
 use App\Models\Setting;
+use App\Models\Testimoni;
 use App\Models\Type;
 use App\Models\User;
+use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +39,7 @@ class HomeController extends Controller
             ->where('kelas.status', 'disetujui')
             ->groupBy('kelas.id')
             ->latest()
-            ->paginate(2);
+            ->paginate(6);
         $category = Category::all();
         $tipekelas = Type::all();
         $level = Level::all();
@@ -51,25 +54,35 @@ class HomeController extends Controller
 
     public function detailkelas($slug)
     {
+        $kelas = Kelas::where('slug', $slug)->first();
+        $kelas->views = $kelas->views + 1;
+        $kelas->save();
         $setting = Setting::first();
-        $data = Kelas::select(
+        $sections = Section::where('kelas_id', $kelas->id)->get();
+        $videos = Video::whereIn('section_id', $sections->pluck('id'))->get();
+        $testimoni = Testimoni::where('kelas_id', $kelas->id)
+            ->latest()
+            ->get();
+
+        $allclass = Kelas::select(
             'kelas.*',
             DB::raw('AVG(testimonis.rating) as average_rating')
         )
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
             ->where('kelas.status', 'disetujui')
+            ->where('kelas.id', '!=', $kelas->id)
+            ->where('kelas.user_id', $kelas->user_id)
             ->groupBy('kelas.id')
             ->latest()
-            ->paginate(6);
-        $category = Category::all();
-        $tipekelas = Type::all();
-        $level = Level::all();
+            ->limit(4)
+            ->get();
         return Inertia::render('Home/Kelas/Detail', [
             'setting' => $setting,
-            'kelas' => $data,
-            'category' => $category,
-            'tipekelas' => $tipekelas,
-            'level' => $level
+            'kelas' => $kelas,
+            'sectionData' => $sections,
+            'video' => $videos,
+            'testimoni' => $testimoni,
+            'allclass' => $allclass,
         ]);
     }
 
