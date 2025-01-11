@@ -2,6 +2,7 @@ import { SettingType } from "@/types/setting";
 import { Link, usePage } from "@inertiajs/react";
 import { Mail, PhoneCall, Youtube } from "lucide-react";
 import { route } from "ziggy-js";
+import { Button } from "../ui/button";
 interface SettingProps {
     setting: SettingType;
 }
@@ -11,6 +12,14 @@ export default function Footer() {
     return (
         <>
             <footer className="bg-white">
+                <div className="fixed bottom-4 z-[999] right-4">
+                    <a href={`https://wa.me/` + setting.phone} target="_blank">
+                        <Button className="bg-green-500 rounded-full">
+                            <img src="/wa.svg" alt="" />
+                            <span className="ml-1">Konsultasi Kelas</span>
+                        </Button>
+                    </a>
+                </div>
                 <div className="container px-4 py-16 mx-auto space-y-8 sm:px-6 lg:space-y-16 lg:px-2">
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
                         <div className="cols-span-1 lg:col-span-2">

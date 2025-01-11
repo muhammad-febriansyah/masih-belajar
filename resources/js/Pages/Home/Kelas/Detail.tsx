@@ -100,7 +100,7 @@ export default function Detail({
                 </div>
             </section>
             <section className="container py-10">
-                <div className="grid grid-cols-1 gap-6 px-4 lg:px-0 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 px-5 lg:px-0 md:grid-cols-2 lg:grid-cols-3">
                     <div className=" lg:col-span-2">
                         <HeroVideoDialog
                             className={`w-full px-4 lg:px-0 md:w-auto rounded-2xl ${
@@ -146,7 +146,7 @@ export default function Detail({
                                     value="about"
                                     className="p-5 bg-white rounded-2xl"
                                 >
-                                    <div className="mt-5 space-y-5">
+                                    <div className="w-full mt-5 space-y-5">
                                         <h1 className="text-xl font-bold text-left text-black lg:text-2xl">
                                             {kelas.title}
                                         </h1>
@@ -390,7 +390,7 @@ export default function Detail({
                                             />
                                         )}
                                         <div className="flex flex-col">
-                                            <h1 className="text-2xl font-bold text-black">
+                                            <h1 className="text-xl font-bold text-black lg:text-2xl">
                                                 {kelas.user.name}
                                             </h1>
                                             <span className="text-base text-black underline">
@@ -404,7 +404,7 @@ export default function Detail({
                                             />
                                         </div>
                                     </div>
-                                    <h1 className="mt-10 mb-5 text-2xl font-bold">
+                                    <h1 className="mt-10 mb-5 text-xl font-bold lg:text-2xl">
                                         Kelas lainya dari mentor :{" "}
                                         {kelas.user.name}
                                     </h1>
@@ -590,41 +590,59 @@ export default function Detail({
                         </div>
                     </div>
                     <div className="px-5 py-5 bg-white lg:col-span-1 rounded-2xl max-h-min">
-                        <div className="grid grid-cols-3">
+                        <div className="grid grid-cols-3 gap-y-5">
                             <div className="flex flex-col items-center">
-                                <img src="/5.svg" alt="" />
+                                <img
+                                    src={`/storage/${kelas.level.image}`}
+                                    alt=""
+                                    className="object-cover w-12 h-12"
+                                />
                                 <span className="font-semibold ">
                                     {kelas.level.name}
                                 </span>
                             </div>
                             <div className="flex flex-col items-center">
-                                <img src="/6.svg" alt="" />
+                                <img
+                                    src="/8.svg"
+                                    alt=""
+                                    className="w-12 h-12"
+                                />
                                 <span className="font-semibold ">
                                     Sertifikat
                                 </span>
                             </div>
                             <div className="flex flex-col items-center">
-                                <img src="/7.svg" alt="" />
+                                <img
+                                    src="/9.svg"
+                                    alt=""
+                                    className="w-12 h-12"
+                                />
                                 <span className="font-semibold ">
                                     {studentjoin > 0 ? studentjoin : "0"} Siswa
                                 </span>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-3">
                             <div className="flex flex-col items-center">
-                                <img src="/4.svg" alt="" />
+                                <img
+                                    src="/4.svg"
+                                    alt=""
+                                    className="w-12 h-12"
+                                />
                                 <span className="text-base font-semibold text-center">
                                     Unlimited <br /> access
                                 </span>
                             </div>
                             <div className="flex flex-col items-center">
-                                <img src="/8.svg" alt="" />
+                                <img
+                                    src="/8.svg"
+                                    alt=""
+                                    className="w-12 h-12"
+                                />
                                 <span className="font-semibold ">
                                     {totalvideo > 0 ? totalvideo : "0"} Video
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center mt-6 gap-y-8">
-                                <Star className="w-10 h-10 text-red-600" />
+                            <div className="flex flex-col items-center">
+                                <Star className="text-red-600 w-11 h-11" />
                                 <span className="font-semibold ">
                                     {Number(totalstar).toFixed(1)}
                                 </span>

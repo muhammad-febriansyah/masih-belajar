@@ -23,9 +23,10 @@ import { FaqData } from "@/types/faq";
 import { Datum } from "@/types/kelas";
 import { SettingType } from "@/types/setting";
 import { Link } from "@inertiajs/react";
+import "aos/dist/aos.css";
 import { Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-
+import { animate, motion } from "motion/react";
 interface Props {
     setting: SettingType;
     dataKelas: Datum[];
@@ -74,6 +75,7 @@ export default function Index({
             }
         };
         const debounceFetch = setTimeout(fecthKelas, 1000);
+
         return () => {
             clearTimeout(debounceFetch);
         };
@@ -248,10 +250,10 @@ export default function Index({
             </section>
             <section className="py-10 mt-10">
                 <div className="container">
-                    <h1 className="pb-5 text-2xl font-semibold text-center text-black lg:text-4xl">
+                    <h1 className="pb-10 text-2xl font-semibold text-center text-black lg:text-4xl">
                         Kelas <span className="text-maroon">Populer</span>
                     </h1>
-                    <div className="grid grid-cols-1 space-x-3 space-y-5 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid items-center grid-cols-1 space-x-3 space-y-5 md:grid-cols-2 lg:grid-cols-3">
                         {kelaspopuler.map((kel) => (
                             <article
                                 key={kel.id}
