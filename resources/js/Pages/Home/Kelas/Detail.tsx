@@ -36,6 +36,7 @@ import {
     CheckCircle,
     CircleCheckBig,
     LockIcon,
+    Star,
 } from "lucide-react";
 import PulsatingButton from "@/components/ui/pulsating-button";
 import { route } from "ziggy-js";
@@ -47,14 +48,19 @@ interface Props {
     videoDemo: VideoType[];
     allclass: Datum[];
     testimoni: TestimoniType[];
+    studentjoin: number;
+    totalvideo: number;
+    totalstar: number;
 }
 export default function Detail({
     kelas,
     sectionData,
     video,
-    videoDemo,
     allclass,
     testimoni,
+    studentjoin,
+    totalvideo,
+    totalstar,
 }: Props) {
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
@@ -141,7 +147,7 @@ export default function Detail({
                                     className="p-5 bg-white rounded-2xl"
                                 >
                                     <div className="mt-5 space-y-5">
-                                        <h1 className="text-xl font-bold text-left text-black lg:text-2xl md:text-3xl">
+                                        <h1 className="text-xl font-bold text-left text-black lg:text-2xl">
                                             {kelas.title}
                                         </h1>
                                         <div className="flow-root py-3 border border-gray-100 rounded-lg shadow-sm">
@@ -583,35 +589,55 @@ export default function Detail({
                             </Tabs>
                         </div>
                     </div>
-                    <div className="px-5 py-10 bg-white lg:col-span-1 rounded-2xl max-h-min">
+                    <div className="px-5 py-5 bg-white lg:col-span-1 rounded-2xl max-h-min">
                         <div className="grid grid-cols-3">
-                            <div className="flex flex-col items-center gap-y-2">
-                                <ChartNoAxesColumnIncreasing className="w-8 h-8 text-maroon" />
+                            <div className="flex flex-col items-center">
+                                <img src="/5.svg" alt="" />
                                 <span className="font-semibold ">
                                     {kelas.level.name}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center gap-y-2">
-                                <BookUserIcon className="w-8 h-8 text-maroon" />
+                            <div className="flex flex-col items-center">
+                                <img src="/6.svg" alt="" />
                                 <span className="font-semibold ">
                                     Sertifikat
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center gap-y-2">
-                                <CircleCheckBig className="w-8 h-8 text-maroon" />
+                            <div className="flex flex-col items-center">
+                                <img src="/7.svg" alt="" />
+                                <span className="font-semibold ">
+                                    {studentjoin > 0 ? studentjoin : "0"} Siswa
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3">
+                            <div className="flex flex-col items-center">
+                                <img src="/4.svg" alt="" />
                                 <span className="text-base font-semibold text-center">
                                     Unlimited <br /> access
                                 </span>
                             </div>
+                            <div className="flex flex-col items-center">
+                                <img src="/8.svg" alt="" />
+                                <span className="font-semibold ">
+                                    {totalvideo > 0 ? totalvideo : "0"} Video
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center mt-6 gap-y-8">
+                                <Star className="w-10 h-10 text-red-600" />
+                                <span className="font-semibold ">
+                                    {Number(totalstar).toFixed(1)}
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-center p-5 mt-5 space-x-3 bg-white border border-maroon rounded-2xl">
+                        <div className="flex items-center p-3 mt-10 space-x-3 transition-all duration-200 bg-white border border-maroon rounded-2xl group hover:bg-maroon">
                             <img
                                 src={`/storage/${kelas.category.image}`}
                                 alt="User Avatar"
                                 className="object-cover w-12 h-12"
                             />
                             <div className="flex flex-col">
-                                <h1 className="text-2xl font-bold text-black">
+                                <h1 className="text-2xl font-bold text-black group-hover:text-white">
                                     {kelas.category.name}
                                 </h1>
                             </div>
@@ -637,7 +663,7 @@ export default function Detail({
                         <br />
                         <Link href={route("home.login")} className="mt-5">
                             <PulsatingButton className="w-full bg-maroon">
-                                Gabung Kelas Sekarang
+                                Beli Kelas
                             </PulsatingButton>
                         </Link>
                     </div>

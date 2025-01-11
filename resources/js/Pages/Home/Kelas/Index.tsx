@@ -1,5 +1,6 @@
 import HomeLayout from "@/Layouts/HomeLayout";
 import Checkbox from "@/components/Checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -295,6 +296,13 @@ export default function Index({ kelas, category, tipekelas, level }: Props) {
                                                         )
                                                     </span>
                                                 </div>
+                                                {kel.total_transaksi > 0 && (
+                                                    <Badge className="bg-maroon">
+                                                        {kel.total_transaksi > 0
+                                                            ? "Terlaris"
+                                                            : ""}
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </Link>
                                         {/* Rating di bawah */}
