@@ -10,7 +10,6 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { CategoryTypes } from "@/types/category";
 import { KelasType } from "@/types/kelas";
 import { LevelType } from "@/types/level";
@@ -19,6 +18,13 @@ import { Link } from "@inertiajs/react";
 import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { route } from "ziggy-js";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 interface Props {
     kelas: KelasType;
     category: CategoryTypes[];
@@ -100,7 +106,7 @@ export default function Index({ kelas, category, tipekelas, level }: Props) {
             </section>
             <section className="container py-10">
                 <div className="flex flex-col justify-between gap-4 px-4 lg:flex-row lg:px-2">
-                    <div className="overflow-auto p-5 space-y-10 bg-white rounded-2xl max-h-[700px] lg:w-[350px]">
+                    <div className="overflow-auto p-5 space-y-10 bg-white rounded-2xl max-h-[700px] lg:w-[270px]">
                         <Input
                             type="text"
                             placeholder="Cari Kelas"
@@ -195,11 +201,11 @@ export default function Index({ kelas, category, tipekelas, level }: Props) {
                     </div>
                     <div className="w-full rounded-2xl">
                         {filteredKelas.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-5 mt-5 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 space-x-3 space-y-5 md:grid-cols-2 lg:grid-cols-3">
                                 {filteredKelas.map((kel) => (
                                     <article
                                         key={kel.id}
-                                        className="overflow-hidden transition bg-white rounded-2xl grid grid-rows-[auto_1fr_auto]"
+                                        className="bg-white rounded-2xl"
                                     >
                                         <Link
                                             href={route(
@@ -208,17 +214,17 @@ export default function Index({ kelas, category, tipekelas, level }: Props) {
                                             )}
                                             className="relative block"
                                         >
-                                            <span className="absolute px-5 py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
+                                            <span className="absolute px-5 z-[999] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
                                                 {kel.category.name}
                                             </span>
 
                                             <img
                                                 alt=""
                                                 src={`/storage/${kel.image}`}
-                                                className="object-cover w-full h-56"
+                                                className="object-cover w-full h-56 transition duration-300 hover:scale-110"
                                             />
 
-                                            <div className="p-4 space-y-3 bg-white sm:p-6">
+                                            <div className="p-4 space-y-3 sm:p-6">
                                                 <h3 className="mt-0.5 text-biruTua mb-5 text-xl line-clamp-2 font-bold">
                                                     {kel.title}
                                                 </h3>
@@ -267,34 +273,59 @@ export default function Index({ kelas, category, tipekelas, level }: Props) {
                                                         )}
                                                     </span>
                                                 </div>
-                                                <div className="flex pt-3">
-                                                    {Array.from(
-                                                        { length: 5 },
-                                                        (_, index) => (
-                                                            <svg
-                                                                key={index}
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 576 512"
-                                                                fill="currentColor"
-                                                                className={`w-5 h-5 ${
-                                                                    Number(
-                                                                        kel.average_rating
-                                                                    ) > index
-                                                                        ? "text-yellow-400"
-                                                                        : "text-gray-300"
-                                                                }`}
-                                                            >
-                                                                <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                            </svg>
-                                                        )
-                                                    )}
-                                                    <span className="ml-2 font-semibold text-black">
-                                                        (
-                                                        {Number(
-                                                            kel.average_rating
+                                                <div className="flex items-center justify-between pt-3">
+                                                    <div className="flex items-center">
+                                                        {Array.from(
+                                                            { length: 5 },
+                                                            (_, index) => (
+                                                                <svg
+                                                                    key={index}
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    viewBox="0 0 576 512"
+                                                                    fill="currentColor"
+                                                                    className={`w-5 h-5 ${
+                                                                        Number(
+                                                                            kel.average_rating
+                                                                        ) >
+                                                                        index
+                                                                            ? "text-yellow-400"
+                                                                            : "text-gray-300"
+                                                                    }`}
+                                                                >
+                                                                    <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
+                                                                </svg>
+                                                            )
                                                         )}
-                                                        )
-                                                    </span>
+                                                        <span className="ml-2 font-semibold text-black">
+                                                            (
+                                                            {Number(
+                                                                kel.average_rating
+                                                            )}
+                                                            )
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger>
+                                                                    <img
+                                                                        src={`/storage/${kel.level.image}`}
+                                                                        alt=""
+                                                                        className="object-cover w-8 h-8 rounded-full"
+                                                                    />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>
+                                                                        {
+                                                                            kel
+                                                                                .level
+                                                                                .name
+                                                                        }
+                                                                    </p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    </div>
                                                 </div>
                                                 {kel.total_transaksi > 0 && (
                                                     <Badge className="bg-maroon">

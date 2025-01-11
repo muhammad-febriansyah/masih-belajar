@@ -6,16 +6,19 @@ use App\Filament\Resources\LevelResource\Pages;
 use App\Filament\Resources\LevelResource\RelationManagers;
 use App\Models\Level;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 class LevelResource extends Resource
@@ -34,6 +37,21 @@ class LevelResource extends Resource
                 Section::make()
                     ->schema([
                         TextInput::make('name')->required()->label('Level Kelas'),
+                        FileUpload::make('image')->label('Foto/gambar')->disk('public')
+                            ->directory('image-upload-server')
+                            ->label('Foto/gambar')
+                            ->maxSize(3072)
+                            ->image()
+                            ->deletable(true)
+                            ->deleteUploadedFileUsing(function ($record, $file) {
+                                if (isset($record->image)) {
+                                    if ($record->image == $file->image) {
+                                        if (File::exists(public_path('storage\\' . $record->image))) {
+                                            File::delete(public_path('storage\\' . $record->image));
+                                        }
+                                    }
+                                }
+                            }),
                     ])
 
             ]);
@@ -45,6 +63,8 @@ class LevelResource extends Resource
             ->columns([
                 TextColumn::make('No')->rowIndex(),
                 TextColumn::make('name')->label('Level Kelas')->searchable(),
+                ImageColumn::make('image')->label('Foto/gambar')->width(50)->height(50),
+
             ])
             ->filters([
                 //
