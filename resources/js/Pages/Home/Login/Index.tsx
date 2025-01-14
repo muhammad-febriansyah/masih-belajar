@@ -34,7 +34,7 @@ export default function Index() {
     return (
         <HomeLayout>
             <section className="container py-10 mt-16 md:mt-32">
-                <div className="grid items-center grid-cols-1 gap-4 px-4 md:grid-cols-2">
+                <div className="grid items-center grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="col-span-1 lg:max-w-[80%] px-6 py-10 bg-white rounded-2xl">
                         <div className="space-y-3 pb-7">
                             <h1 className="text-3xl font-bold text-biruTua">

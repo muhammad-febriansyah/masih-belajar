@@ -15,6 +15,9 @@ export default {
         extend: {
             container: {
                 center: "true",
+                padding: {
+                    DEFAULT: "2rem",
+                },
             },
             fontFamily: {
                 sans: ["Poppins", "sans-serif"],
