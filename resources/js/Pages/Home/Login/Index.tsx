@@ -22,7 +22,7 @@ export default function Index() {
     });
     const handleSubmit: FormEventHandler = async (e) => {
         e.preventDefault();
-        post(route("home.checklogin"), {
+        post(route("checklogin"), {
             onError: () => {
                 toast.error("Email atau password yang anda masukkan salah.", {
                     position: "top-right",
@@ -33,26 +33,8 @@ export default function Index() {
     };
     return (
         <HomeLayout>
-            <section className="flex items-center justify-center h-56 bg-white mt-14">
-                <div className="px-6 text-center space-y-7 ">
-                    <h1 className="text-3xl font-bold lg:text-5xl">Login</h1>
-                    <Breadcrumb className="flex flex-row items-center justify-center mx-auto space-x-2">
-                        <BreadcrumbList>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink asChild>
-                                    <Link href={route("home")}>Home</Link>
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Login</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                </div>
-            </section>
-            <section className="container py-10">
-                <div className="grid grid-cols-1 gap-4 px-4 md:grid-cols-2">
+            <section className="container py-10 mt-16 md:mt-32">
+                <div className="grid items-center grid-cols-1 gap-4 px-4 md:grid-cols-2">
                     <div className="col-span-1 lg:max-w-[80%] px-6 py-10 bg-white rounded-2xl">
                         <div className="space-y-3 pb-7">
                             <h1 className="text-3xl font-bold text-biruTua">
@@ -105,7 +87,7 @@ export default function Index() {
                             <p className="mb-3 text-sm text-gray-500 sm:mt-0">
                                 Belum punya akun?{" "}
                                 <Link
-                                    href={route("home.register")}
+                                    href={route("register")}
                                     className="text-gray-700 underline"
                                 >
                                     Daftar Sekarang

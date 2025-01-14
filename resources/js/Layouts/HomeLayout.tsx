@@ -29,7 +29,7 @@ export default function HomeLayout({ children }: Props) {
             </Head>
             <div className="overflow-x-hidden">
                 <ScrollProgress />
-                <Navbar />
+                <Navbar setting={setting} dataKelas={[]} />
                 {children}
                 <Footer />
             </div>

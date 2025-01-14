@@ -28,7 +28,7 @@ export default function Navbar({ dataKelas = [] }: Props) {
                 setSearchCompleted(false);
                 try {
                     const response = await fetch(
-                        route("home.searchKelas", { query })
+                        route("searchKelas", { query })
                     );
                     const data = await response.json();
                     setSearchKelas(data);
@@ -92,9 +92,7 @@ export default function Navbar({ dataKelas = [] }: Props) {
                     <ul className="absolute w-full mt-2 overflow-auto bg-white shadow-lg rounded-2xl">
                         {searchKelas.map((kelas, index) => (
                             <li className="px-4 py-2 border-b" key={index}>
-                                <Link
-                                    href={route("home.detailkelas", kelas.slug)}
-                                >
+                                <Link href={route("detailkelas", kelas.slug)}>
                                     {kelas.title}
                                 </Link>
                             </li>
@@ -102,10 +100,10 @@ export default function Navbar({ dataKelas = [] }: Props) {
                     </ul>
                 </div>
                 <div className="hidden space-x-3 lg:flex">
-                    <Link href={route("home.register")}>
+                    <Link href={route("daftar")}>
                         <PulsatingButton>Daftar</PulsatingButton>
                     </Link>
-                    <Link href={route("home.login")}>
+                    <Link href={route("masuk")}>
                         <RainbowButton>Masuk</RainbowButton>
                     </Link>
                 </div>

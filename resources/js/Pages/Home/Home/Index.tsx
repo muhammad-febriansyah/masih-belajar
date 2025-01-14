@@ -59,7 +59,7 @@ export default function Index({
                 setSearchCompleted(false);
                 try {
                     const response = await fetch(
-                        route("home.searchKelas", { query })
+                        route("searchKelas", { query })
                     );
                     const data = await response.json();
                     setSearchKelas(data);
@@ -114,7 +114,7 @@ export default function Index({
                                     >
                                         <Link
                                             href={route(
-                                                "home.detailkelas",
+                                                "detailkelas",
                                                 kelas.slug
                                             )}
                                         >
@@ -125,12 +125,12 @@ export default function Index({
                             </ul>
                         </div>
                         <div className="hidden space-x-2 lg:flex ">
-                            <Link href={route("home.kelas")}>
+                            <Link href={route("kelas")}>
                                 <Button className="rounded-2xl">
                                     Lihat Kelas
                                 </Button>
                             </Link>
-                            <Link href={route("home.register")}>
+                            <Link href={route("daftar")}>
                                 <Button className="rounded-2xl ">
                                     Daftar Gratis
                                 </Button>
@@ -188,8 +188,8 @@ export default function Index({
             <section className="py-10 mt-10">
                 <div className="container">
                     <div className="grid items-center grid-cols-1 px-4 lg:grid-cols-2">
-                        <div className="order-2 mt-10 space-y-5 lg:mt-0 lg:order-1">
-                            <h1 className="text-2xl font-semibold text-black lg:text-3xl">
+                        <div className="order-1 mt-10 space-y-5 lg:mt-0 lg:order-1">
+                            <h1 className="text-xl font-semibold text-black lg:text-3xl">
                                 Menjadi{" "}
                                 <span className="text-maroon">Expert</span>
                             </h1>
@@ -201,7 +201,7 @@ export default function Index({
                                 semuanya tersedia dengan harga yang sangat
                                 terjangkau.
                             </p>
-                            <Link href={route("home.kelas")}>
+                            <Link href={route("kelas")}>
                                 <PulsatingButton className="mt-5">
                                     Lihat Kelas
                                 </PulsatingButton>
@@ -253,24 +253,24 @@ export default function Index({
                     <h1 className="pb-10 text-2xl font-semibold text-center text-black lg:text-4xl">
                         Kelas <span className="text-maroon">Populer</span>
                     </h1>
-                    <div className="grid items-center grid-cols-1 space-x-3 space-y-5 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid min-h-full grid-cols-1 gap-3 px-5 lg:px-2 md:grid-cols-2 lg:grid-cols-3">
                         {kelaspopuler.map((kel) => (
                             <article
                                 key={kel.id}
                                 className="bg-white rounded-2xl"
                             >
                                 <Link
-                                    href={route("home.detailkelas", kel.slug)}
+                                    href={route("detailkelas", kel.slug)}
                                     className="relative block"
                                 >
-                                    <span className="absolute px-5 z-[999] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
+                                    <span className="absolute px-5 z-[9] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
                                         {kel.category.name}
                                     </span>
 
                                     <img
                                         alt=""
                                         src={`/storage/${kel.image}`}
-                                        className="object-cover w-full h-56 transition duration-300 hover:scale-110"
+                                        className="object-cover w-full h-56 transition duration-300 rounded-2xl hover:scale-110"
                                     />
 
                                     <div className="p-4 space-y-3 sm:p-6">
@@ -317,7 +317,7 @@ export default function Index({
                                                 ).toLocaleString("id-ID")}
                                             </span>
                                         </div>
-                                        <div className="flex items-center justify-between pt-3">
+                                        <div className="flex items-center justify-between">
                                             <div className="flex items-center">
                                                 {Array.from(
                                                     { length: 5 },
@@ -365,7 +365,7 @@ export default function Index({
                                             </div>
                                         </div>
                                         {kel.total_transaksi > 0 && (
-                                            <Badge className="bg-maroon">
+                                            <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
                                                 {kel.total_transaksi > 0
                                                     ? "Terlaris"
                                                     : ""}
@@ -386,7 +386,7 @@ export default function Index({
                             Mulai belajar IT yang sesuai dengan kebutuhan
                             industri sekarang juga!
                         </h1>
-                        <Link href={route("home.register")}>
+                        <Link href={route("daftar")}>
                             <Button className="text-black bg-white rounded-2xl hover:bg-black hover:text-white">
                                 Daftar Gratis
                             </Button>

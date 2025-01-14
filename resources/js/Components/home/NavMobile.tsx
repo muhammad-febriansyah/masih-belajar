@@ -2,6 +2,7 @@ import { Link } from "@inertiajs/react";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { route } from "ziggy-js";
 
 export default function NavMobile() {
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -44,7 +45,7 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href="/"
+                            href={route("home")}
                         >
                             Home
                         </Link>
@@ -52,7 +53,7 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href="/"
+                            href={route("kelas")}
                         >
                             Kelas
                         </Link>
@@ -60,17 +61,17 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href="/"
+                            href={route("masuk")}
                         >
-                            Login
+                            Masuk
                         </Link>
                     </li>
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href="/"
+                            href={route("daftar")}
                         >
-                            Register
+                            Daftar
                         </Link>
                     </li>
                 </ul>

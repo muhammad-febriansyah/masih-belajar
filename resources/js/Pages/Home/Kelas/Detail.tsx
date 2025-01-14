@@ -79,28 +79,40 @@ export default function Detail({
     }, []);
     return (
         <HomeLayout>
-            <section className="flex items-center justify-center h-56 bg-white mt-14">
-                <div className="px-6 text-center space-y-7 ">
-                    <h1 className="text-3xl font-bold lg:text-5xl">
-                        Detail Kelas
+            <section className="relative h-80 bg-maroon ">
+                <div className="flex flex-col items-center justify-center gap-10 px-4 mt-20 text-center py-14">
+                    <h1 className="text-2xl font-bold text-white lg:text-4xl">
+                        {kelas.title}
                     </h1>
-                    <Breadcrumb className="flex flex-row items-center justify-center mx-auto space-x-2">
-                        <BreadcrumbList>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink asChild>
-                                    <Link href={route("home")}>Home</Link>
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Detail Kelas</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <p className="max-w-lg text-sm text-gray-200">
+                        {kelas.description}.
+                    </p>
+                </div>
+                <div className="bg-white  md:hidden flex items-center justify-between z-[88] px-5 rounded-t-2xl left-0 right-0 w-full h-14  bottom-0 fixed">
+                    <div className="flex flex-col">
+                        {kelas.discount > 0 && (
+                            <span className="relative text-base font-medium text-red-600">
+                                Rp.{" "}
+                                {Number(kelas.price).toLocaleString("id-ID")}
+                                <span className="absolute left-0 right-0 bottom-2.5 font-semibold border-b-2 border-red-700"></span>
+                            </span>
+                        )}
+                        <span className="text-base font-semibold text-black">
+                            Rp.{" "}
+                            {Number(
+                                kelas.price - kelas.discount
+                            ).toLocaleString("id-ID")}
+                        </span>
+                    </div>
+                    <Link href={route("login")}>
+                        <PulsatingButton className="w-full bg-maroon">
+                            Beli Kelas
+                        </PulsatingButton>
+                    </Link>
                 </div>
             </section>
-            <section className="container py-10">
-                <div className="grid grid-cols-1 gap-6 px-5 lg:px-0 md:grid-cols-2 lg:grid-cols-3">
+            <section className="container  py-10 transform -translate-y-[4%] md:-translate-y-[8%] left-0 right-0">
+                <div className="grid grid-cols-1 gap-6 px-2 lg:px-4 md:grid-cols-2 lg:grid-cols-3">
                     <div className=" lg:col-span-2">
                         <HeroVideoDialog
                             className={`w-full px-4 lg:px-0 md:w-auto rounded-2xl ${
@@ -114,9 +126,9 @@ export default function Detail({
                         <div className="px-4 lg:px-0">
                             <Tabs
                                 defaultValue="about"
-                                className="mt-10 overflow-auto"
+                                className="items-start mt-10"
                             >
-                                <TabsList>
+                                <TabsList className="flex py-10 mb-5 space-x-2 overflow-x-auto overflow-y-hidden bg-transparent">
                                     <TabsTrigger
                                         value="about"
                                         className="rounded-full"
@@ -147,15 +159,18 @@ export default function Detail({
                                     className="p-5 bg-white rounded-2xl"
                                 >
                                     <div className="w-full mt-5 space-y-5">
-                                        <h1 className="text-xl font-bold text-left text-black lg:text-2xl">
-                                            {kelas.title}
-                                        </h1>
                                         <div className="flow-root py-3 border border-gray-100 rounded-lg shadow-sm">
                                             <dl className="-my-3 text-sm divide-y divide-gray-100">
                                                 <div className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-3 sm:gap-4">
-                                                    <dt className="font-medium text-gray-900">
-                                                        Harga Potongan Kelas
-                                                    </dt>
+                                                    {kelas.discount != 0 ? (
+                                                        <dt className="font-medium text-gray-900">
+                                                            Harga Potongan Kelas
+                                                        </dt>
+                                                    ) : (
+                                                        <dt className="font-medium text-gray-900">
+                                                            Harga Kelas
+                                                        </dt>
+                                                    )}
                                                     <dd className="text-gray-700 sm:col-span-2">
                                                         Rp.{" "}
                                                         {Number(
@@ -250,7 +265,7 @@ export default function Detail({
                                     <p
                                         className="mt-5 text-sm leading-relaxed text-gray-700"
                                         dangerouslySetInnerHTML={{
-                                            __html: kelas.description,
+                                            __html: kelas.body,
                                         }}
                                     />
                                 </TabsContent>
@@ -525,65 +540,85 @@ export default function Detail({
 
                                 <TabsContent value="testimoni">
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                        {testimoni.map((testimoni, index) => (
-                                            <div
-                                                className="p-5 bg-white rounded-2xl"
-                                                key={index}
-                                            >
-                                                <div className="flex items-center space-x-3">
-                                                    {testimoni.user.image !=
-                                                    null ? (
-                                                        <img
-                                                            src={`/storage/${testimoni.user.image}`}
-                                                            className="object-cover w-16 h-16 rounded-full"
-                                                            alt=""
-                                                        />
-                                                    ) : (
-                                                        <img
-                                                            src="/default-avatar.svg"
-                                                            className="object-cover w-16 h-16 rounded-full"
-                                                            alt=""
-                                                        />
-                                                    )}
-                                                    <div className="flex flex-col mt-2 gap-y-1">
-                                                        <h1 className="text-lg font-semibold text-black line-clamp-2">
-                                                            {
-                                                                testimoni.user
-                                                                    .name
-                                                            }
-                                                        </h1>
-                                                        <span className="text-sm text-gray-500 underline">
-                                                            Student
-                                                        </span>
+                                        {testimoni.length > 0 ? (
+                                            testimoni.map(
+                                                (testimoni, index) => (
+                                                    <div
+                                                        className="p-5 bg-white rounded-2xl"
+                                                        key={index}
+                                                    >
+                                                        <div className="flex items-center space-x-3">
+                                                            {testimoni.user
+                                                                .image !=
+                                                            null ? (
+                                                                <img
+                                                                    src={`/storage/${testimoni.user.image}`}
+                                                                    className="object-cover w-16 h-16 rounded-full"
+                                                                    alt=""
+                                                                />
+                                                            ) : (
+                                                                <img
+                                                                    src="/default-avatar.svg"
+                                                                    className="object-cover w-16 h-16 rounded-full"
+                                                                    alt=""
+                                                                />
+                                                            )}
+                                                            <div className="flex flex-col mt-2 gap-y-1">
+                                                                <h1 className="text-lg font-semibold text-black line-clamp-2">
+                                                                    {
+                                                                        testimoni
+                                                                            .user
+                                                                            .name
+                                                                    }
+                                                                </h1>
+                                                                <span className="text-sm text-gray-500 underline">
+                                                                    Student
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="mt-5 text-base text-black">
+                                                            {testimoni.body}
+                                                        </p>
+                                                        <div className="flex items-center justify-start mt-10 bg-white">
+                                                            {Array.from(
+                                                                { length: 5 },
+                                                                (_, index) => (
+                                                                    <svg
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        viewBox="0 0 576 512"
+                                                                        fill="currentColor"
+                                                                        className={`w-5 h-5 ${
+                                                                            Number(
+                                                                                testimoni.rating
+                                                                            ) >
+                                                                            index
+                                                                                ? "text-yellow-400"
+                                                                                : "text-gray-300"
+                                                                        }`}
+                                                                    >
+                                                                        <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
+                                                                    </svg>
+                                                                )
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <p className="mt-5 text-base text-black">
-                                                    {testimoni.body}
-                                                </p>
-                                                <div className="flex items-center justify-start mt-10 bg-white">
-                                                    {Array.from(
-                                                        { length: 5 },
-                                                        (_, index) => (
-                                                            <svg
-                                                                key={index}
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 576 512"
-                                                                fill="currentColor"
-                                                                className={`w-5 h-5 ${
-                                                                    Number(
-                                                                        testimoni.rating
-                                                                    ) > index
-                                                                        ? "text-yellow-400"
-                                                                        : "text-gray-300"
-                                                                }`}
-                                                            >
-                                                                <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                            </svg>
-                                                        )
-                                                    )}
-                                                </div>
+                                                )
+                                            )
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
+                                                <img
+                                                    src="/nodata.svg"
+                                                    className="object-cover size-32"
+                                                    alt=""
+                                                />
+                                                <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
+                                                    Belum ada review...
+                                                </span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 </TabsContent>
                             </Tabs>
@@ -633,7 +668,7 @@ export default function Detail({
                             </div>
                             <div className="flex flex-col items-center">
                                 <img
-                                    src="/8.svg"
+                                    src="/12.svg"
                                     alt=""
                                     className="w-12 h-12"
                                 />
@@ -679,7 +714,7 @@ export default function Detail({
                         </div>
                         <br />
                         <br />
-                        <Link href={route("home.login")} className="mt-5">
+                        <Link href={route("login")} className="mt-5">
                             <PulsatingButton className="w-full bg-maroon">
                                 Beli Kelas
                             </PulsatingButton>

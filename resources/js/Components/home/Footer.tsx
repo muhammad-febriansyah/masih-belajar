@@ -12,7 +12,7 @@ export default function Footer() {
     return (
         <>
             <footer className="bg-white">
-                <div className="fixed bottom-4 z-[999] right-4">
+                <div className="fixed md:bottom-4 bottom-16 z-[88] right-4">
                     <a href={`https://wa.me/` + setting.phone} target="_blank">
                         <Button className="bg-green-500 rounded-full">
                             <img src="/wa.svg" alt="" />
@@ -66,7 +66,7 @@ export default function Footer() {
                                 <ul className="mt-6 space-y-4 text-sm">
                                     <li>
                                         <Link
-                                            href={route("home.kelas")}
+                                            href={route("kelas")}
                                             className="text-gray-700 transition-all duration-200 hover:text-maroon hover:font-semibold"
                                         >
                                             {" "}
@@ -76,7 +76,7 @@ export default function Footer() {
 
                                     <li>
                                         <Link
-                                            href={route("home.login")}
+                                            href={route("masuk")}
                                             className="text-gray-700 hover:text-maroon hover:font-semibold "
                                         >
                                             {" "}
@@ -86,7 +86,7 @@ export default function Footer() {
 
                                     <li>
                                         <Link
-                                            href={route("home.register")}
+                                            href={route("daftar")}
                                             className="text-gray-700 hover:text-maroon hover:font-semibold"
                                         >
                                             {" "}

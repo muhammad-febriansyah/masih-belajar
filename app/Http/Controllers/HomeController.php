@@ -146,7 +146,7 @@ class HomeController extends Controller
             $request->session()->regenerate();
             return to_route('student.home');
         }
-        return to_route('home.login')->withErrors(['email' => 'Email ini tidak terdaftar.']);
+        return to_route('masuk')->withErrors(['email' => 'Email ini tidak terdaftar.']);
     }
 
     public function register()
@@ -170,7 +170,7 @@ class HomeController extends Controller
         ]);
         $check = User::where('email', $request->email)->first();
         if ($check) {
-            return to_route('home.register');
+            return to_route('daftar');
         }
 
         $q = new User();
@@ -186,6 +186,6 @@ class HomeController extends Controller
         $q->role = "student";
         $q->status = 1;
         $q->save();
-        return to_route('home.login');
+        return to_route('masuk');
     }
 }

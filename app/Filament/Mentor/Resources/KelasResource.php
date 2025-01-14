@@ -16,6 +16,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Form;
@@ -109,7 +110,8 @@ class KelasResource extends Resource
                                 Matinee::make('link_overview')
                                     ->label('Link Overview')
                                     ->showPreview(),
-                                RichEditor::make('description')->label('Deskripsi')->required()->columns(1),
+                                Textarea::make('description')->label('Deskripsi')->required()->placeholder('Deskripsi Kelas'),
+                                RichEditor::make('body')->label('Detail Kelas')->required()->columns(1),
                             ])->columnSpan(['lg' => 3]),
                         ]),
                     Wizard\Step::make('Section')

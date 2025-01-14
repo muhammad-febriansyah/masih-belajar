@@ -25,7 +25,7 @@ export interface Datum {
     price: number;
     discount: number;
     description: string;
-    body: null;
+    body: string;
     benefit: string[];
     link_overview: LinkOverview;
     image: string;
