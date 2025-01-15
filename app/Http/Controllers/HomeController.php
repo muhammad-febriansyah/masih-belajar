@@ -144,7 +144,7 @@ class HomeController extends Controller
     {
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password, 'status' => 1, 'role' => 'student'])) {
             $request->session()->regenerate();
-            return to_route('student.home');
+            return to_route('dashboard.home');
         }
         return to_route('masuk')->withErrors(['email' => 'Email ini tidak terdaftar.']);
     }

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { SettingType } from "@/types/setting";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MainLayout from "@/Layouts/MainLayout";
 
 interface Props {
     kelas: KelasType;
@@ -56,7 +57,7 @@ export default function Index({
     });
 
     return (
-        <HomeLayout>
+        <MainLayout>
             <section className="flex items-center justify-center mb-20 h-72 lg:h-80 bg-maroon mt-14">
                 <div className="relative px-6 py-5 text-center space-y-7">
                     <h1 className="text-2xl font-bold text-white lg:text-5xl">
@@ -469,6 +470,6 @@ export default function Index({
                     </Tabs>
                 </div>
             </section>
-        </HomeLayout>
+        </MainLayout>
     );
 }

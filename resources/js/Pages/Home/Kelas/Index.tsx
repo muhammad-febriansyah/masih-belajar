@@ -76,7 +76,7 @@ export default function Index({
             </section>
 
             <section className="container py-5">
-                <div className="w-full px-4">
+                <div className="w-full">
                     <Tabs
                         defaultValue="account"
                         className="justify-center w-full mx-auto"

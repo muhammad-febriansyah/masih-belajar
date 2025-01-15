@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import PulsatingButton from "@/components/ui/pulsating-button";
 import { route } from "ziggy-js";
+import MainLayout from "@/Layouts/MainLayout";
 
 interface Props {
     kelas: Datum;
@@ -78,7 +79,7 @@ export default function Detail({
         };
     }, []);
     return (
-        <HomeLayout>
+        <MainLayout>
             <section className="relative h-80 bg-maroon ">
                 <div className="flex flex-col items-center justify-center gap-10 px-4 mt-20 text-center py-14">
                     <h1 className="text-2xl font-bold text-white lg:text-4xl">
@@ -722,6 +723,6 @@ export default function Detail({
                     </div>
                 </div>
             </section>
-        </HomeLayout>
+        </MainLayout>
     );
 }

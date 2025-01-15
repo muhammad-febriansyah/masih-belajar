@@ -3,15 +3,28 @@ import { Link, usePage } from "@inertiajs/react";
 import { RainbowButton } from "../ui/rainbow-button";
 import PulsatingButton from "../ui/pulsating-button";
 import { Input } from "../ui/input";
-import { Loader2, Menu, Search } from "lucide-react";
+import { Inertia } from "@inertiajs/inertia";
+import {
+    Bell,
+    BookMarkedIcon,
+    ChevronDown,
+    Loader2,
+    LogOut,
+    Menu,
+    Search,
+    User,
+} from "lucide-react";
 import NavMobile from "./NavMobile";
 import { useEffect, useState } from "react";
 import { route } from "ziggy-js";
 import { Datum } from "@/types/kelas";
+import { UserType } from "@/types/user";
+import { Button } from "../ui/button";
 
 interface Props {
     setting: SettingType;
     dataKelas: Datum[];
+    auth: UserType;
 }
 export default function Navbar({ dataKelas = [] }: Props) {
     const [query, setQuery] = useState<string>("");
@@ -19,8 +32,11 @@ export default function Navbar({ dataKelas = [] }: Props) {
     const [loading, setLoading] = useState<boolean>(false);
     const [searchCompleted, setSearchCompleted] = useState<boolean>(false);
     const { setting } = usePage().props as unknown as Props;
+    const { auth } = usePage().props as unknown as Props;
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
-
+    const handleLogout = () => {
+        Inertia.post(route("logout"));
+    };
     useEffect(() => {
         const fecthKelas = async () => {
             if (query) {
@@ -28,7 +44,7 @@ export default function Navbar({ dataKelas = [] }: Props) {
                 setSearchCompleted(false);
                 try {
                     const response = await fetch(
-                        route("searchKelas", { query })
+                        route("dashboard.searchKelas", { query })
                     );
                     const data = await response.json();
                     setSearchKelas(data);
@@ -68,7 +84,7 @@ export default function Navbar({ dataKelas = [] }: Props) {
             }`}
         >
             <div className="container flex items-center justify-between p-3.5">
-                <Link href={route("home")}>
+                <Link href={route("dashboard.home")}>
                     <img
                         src={`/storage/${setting.long_logo}`}
                         alt=""
@@ -99,13 +115,76 @@ export default function Navbar({ dataKelas = [] }: Props) {
                         ))}
                     </ul>
                 </div>
-                <div className="hidden space-x-3 lg:flex">
-                    <Link href={route("daftar")}>
-                        <PulsatingButton>Daftar</PulsatingButton>
-                    </Link>
-                    <Link href={route("masuk")}>
-                        <RainbowButton>Masuk</RainbowButton>
-                    </Link>
+                <div className="items-center hidden gap-x-8 lg:flex">
+                    <div className="relative cursor-pointer group">
+                        <Bell className="size-6 text-maroon" />
+                        <div
+                            className="absolute flex flex-col gap-3 items-center top-12 -left-28 z-[99] shadow-lg shadow-maroon w-[200px] bg-white rounded-xl p-5 text-black
+            opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
+            transition-all duration-200 ease-out"
+                        >
+                            <img src="/nodata.svg" alt="" />
+                            <span className="text-sm text-center text-gray-400">
+                                Belum ada notifikasi.
+                            </span>
+                        </div>
+                    </div>
+
+                    {auth.image ? (
+                        <div className="relative flex items-center gap-2 cursor-pointer group">
+                            <img
+                                src={`/storage/${auth.image}`}
+                                className="rounded-full size-10"
+                                alt=""
+                            />
+                            <ChevronDown className="transition-all duration-200 group-hover:rotate-180" />
+                        </div>
+                    ) : (
+                        <div className="relative flex items-center gap-2 cursor-pointer group">
+                            <img
+                                src="/default-avatar.svg"
+                                className="rounded-full size-10"
+                                alt=""
+                            />
+                            <ChevronDown className="transition-all duration-200 group-hover:rotate-180" />
+                            <div
+                                className="absolute  items-center top-14 -left-28 z-[99] shadow-lg shadow-maroon w-[230px] bg-white rounded-xl p-5 text-black
+            opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
+            transition-all duration-200 ease-out"
+                            >
+                                <ul className="flex flex-col gap-3">
+                                    <li>
+                                        <Link
+                                            href={route("dashboard.kelas")}
+                                            className="flex items-center gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
+                                        >
+                                            <BookMarkedIcon className="size-5" />
+                                            Kelas Saya
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            href={route("dashboard.kelas")}
+                                            className="flex items-center gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
+                                        >
+                                            <User className="size-5" />
+                                            My Profile
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <button
+                                            type="button"
+                                            onClick={handleLogout}
+                                            className="flex items-center w-full gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
+                                        >
+                                            <LogOut className="size-5" />
+                                            Keluar
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="lg:hidden">
                     <NavMobile />

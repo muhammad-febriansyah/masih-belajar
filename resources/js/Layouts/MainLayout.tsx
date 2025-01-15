@@ -10,7 +10,7 @@ type Props = {
 interface SettingProps {
     setting: SettingType;
 }
-export default function HomeLayout({ children }: Props) {
+export default function MainLayout({ children }: Props) {
     const { setting } = usePage().props as unknown as SettingProps;
     return (
         <>

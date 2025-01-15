@@ -12,7 +12,7 @@ export default function Footer() {
     return (
         <>
             <footer className="bg-white">
-                <div className="fixed md:bottom-4 bottom-16 z-[88] right-4">
+                <div className="fixed bottom-4  z-[88] right-4">
                     <a href={`https://wa.me/` + setting.phone} target="_blank">
                         <Button className="bg-green-500 rounded-full">
                             <img src="/wa.svg" alt="" />

@@ -27,6 +27,7 @@ import "aos/dist/aos.css";
 import { Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { animate, motion } from "motion/react";
+import MainLayout from "@/Layouts/MainLayout";
 interface Props {
     setting: SettingType;
     dataKelas: Datum[];
@@ -59,7 +60,7 @@ export default function Index({
                 setSearchCompleted(false);
                 try {
                     const response = await fetch(
-                        route("searchKelas", { query })
+                        route("dashboard.searchKelas", { query })
                     );
                     const data = await response.json();
                     setSearchKelas(data);
@@ -81,7 +82,7 @@ export default function Index({
         };
     }, [query]);
     return (
-        <HomeLayout>
+        <MainLayout>
             <section className="pt-20 pb-0 lg:pt-10 mt-14 bg-maroon">
                 <div className="container grid items-center grid-cols-1 gap-4 px-5 lg:grid-cols-2">
                     <div className="max-w-md mx-auto space-y-5 lg:mx-0 ">
@@ -114,7 +115,7 @@ export default function Index({
                                     >
                                         <Link
                                             href={route(
-                                                "detailkelas",
+                                                "dashboard.detailkelas",
                                                 kelas.slug
                                             )}
                                         >
@@ -125,12 +126,12 @@ export default function Index({
                             </ul>
                         </div>
                         <div className="hidden space-x-2 lg:flex ">
-                            <Link href={route("kelas")}>
+                            <Link href={route("dashboard.kelas")}>
                                 <Button className="rounded-2xl">
                                     Lihat Kelas
                                 </Button>
                             </Link>
-                            <Link href={route("daftar")}>
+                            <Link href={route("dashboard.kelas")}>
                                 <Button className="rounded-2xl ">
                                     Daftar Gratis
                                 </Button>
@@ -201,7 +202,7 @@ export default function Index({
                                 semuanya tersedia dengan harga yang sangat
                                 terjangkau.
                             </p>
-                            <Link href={route("kelas")}>
+                            <Link href={route("dashboard.kelas")}>
                                 <PulsatingButton className="mt-5">
                                     Lihat Kelas
                                 </PulsatingButton>
@@ -225,7 +226,7 @@ export default function Index({
                             {setting.site_name} ?
                         </span>
                     </h1>
-                    <div className="grid items-center grid-cols-2 gap-5 mt-10 lg:grid-cols-3">
+                    <div className="grid items-center grid-cols-2 gap-5 mt-5 lg:mt-10 lg:grid-cols-3">
                         {about.map((about, index) => (
                             <div key={index} className="cursor-pointer group">
                                 <div className="flex justify-center p-5 transition-all duration-300 bg-white hover:scale-110 group-hover:bg-maroon rounded-2xl">
@@ -260,7 +261,10 @@ export default function Index({
                                 className="overflow-hidden bg-white rounded-2xl flex flex-col min-h-[100px]"
                             >
                                 <Link
-                                    href={route("detailkelas", kel.slug)}
+                                    href={route(
+                                        "dashboard.detailkelas",
+                                        kel.slug
+                                    )}
                                     className="relative"
                                 >
                                     <span className="absolute px-5 z-[9] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
@@ -400,7 +404,7 @@ export default function Index({
                             Mulai belajar IT yang sesuai dengan kebutuhan
                             industri sekarang juga!
                         </h1>
-                        <Link href={route("daftar")}>
+                        <Link href={route("dashboard.kelas")}>
                             <Button className="text-black bg-white rounded-2xl hover:bg-black hover:text-white">
                                 Daftar Gratis
                             </Button>
@@ -433,6 +437,6 @@ export default function Index({
                     </Accordion>
                 </div>
             </section>
-        </HomeLayout>
+        </MainLayout>
     );
 }

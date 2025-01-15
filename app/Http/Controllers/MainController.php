@@ -15,6 +15,7 @@ use App\Models\Type;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -22,6 +23,7 @@ class MainController extends Controller
 {
     public function index()
     {
+        $auth = Auth::user();
         $setting = Setting::first();
         $about = About::all();
         $faq = Faq::latest()->get();
@@ -47,12 +49,14 @@ class MainController extends Controller
             'totalstar' => $totalstar,
             'totalkelas' => $totalkelas,
             'faq' => $faq,
-            'kelaspopuler' => $kelaspopuler
+            'kelaspopuler' => $kelaspopuler,
+            'auth' => $auth
         ]);
     }
 
     public function kelas()
     {
+        $auth = Auth::user();
         $setting = Setting::first();
         $data = Kelas::select(
             'kelas.*',
@@ -72,7 +76,8 @@ class MainController extends Controller
             'kelas' => $data,
             'category' => $category,
             'tipekelas' => $tipekelas,
-            'level' => $level
+            'level' => $level,
+            'auth' => $auth
         ]);
     }
 
@@ -89,6 +94,7 @@ class MainController extends Controller
 
     public function detailkelas($slug)
     {
+        $auth = Auth::user();
         $kelas = Kelas::where('slug', $slug)->first();
         $kelas->views = $kelas->views + 1;
         $kelas->save();
@@ -125,7 +131,16 @@ class MainController extends Controller
             'allclass' => $allclass,
             'studentjoin' => $studentjoin,
             'totalvideo' => $totalvideo,
-            'totalstar' => $totalstar
+            'totalstar' => $totalstar,
+            'auth' => $auth
         ]);
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return to_route('home');
     }
 }

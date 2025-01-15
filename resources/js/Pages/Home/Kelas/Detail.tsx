@@ -112,10 +112,10 @@ export default function Detail({
                 </div>
             </section>
             <section className="container  py-10 transform -translate-y-[4%] md:-translate-y-[8%] left-0 right-0">
-                <div className="grid grid-cols-1 gap-6 px-2 lg:px-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 lg: md:grid-cols-2 lg:grid-cols-3">
                     <div className=" lg:col-span-2">
                         <HeroVideoDialog
-                            className={`w-full px-4 lg:px-0 md:w-auto rounded-2xl ${
+                            className={`w-full  lg:px-0 md:w-auto rounded-2xl ${
                                 isScrolled ? "" : "lg:z-[999]"
                             }`}
                             animationStyle="from-center"
@@ -123,7 +123,7 @@ export default function Detail({
                             thumbnailSrc={`/storage/${kelas.image}`}
                             thumbnailAlt="Hero Video"
                         />
-                        <div className="px-4 lg:px-0">
+                        <div className=" lg:px-0">
                             <Tabs
                                 defaultValue="about"
                                 className="items-start mt-10"

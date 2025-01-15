@@ -32,14 +32,15 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/main/home', [MainController::class, 'index'])->name('main.home');
-    Route::get('/main/kelas', [MainController::class, 'kelas'])->name('main.kelas');
-    Route::get('/main/searchKelas', [MainController::class, 'searchKelas'])->name('main.searchKelas');
-    Route::get('/main/detailkelas/{slug}', [MainController::class, 'detailkelas'])->name('main.detailkelas');
+    Route::get('/dashboard/home', [MainController::class, 'index'])->name('dashboard.home');
+    Route::get('/dashboard/kelas', [MainController::class, 'kelas'])->name('dashboard.kelas');
+    Route::get('/dashboard/searchKelas', [MainController::class, 'searchKelas'])->name('dashboard.searchKelas');
+    Route::get('/dashboard/detailkelas/{slug}', [MainController::class, 'detailkelas'])->name('dashboard.detailkelas');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/logout', [MainController::class, 'logout'])->name('logout');
 });
 
 require __DIR__ . '/auth.php';
