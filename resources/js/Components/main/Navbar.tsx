@@ -5,6 +5,15 @@ import PulsatingButton from "../ui/pulsating-button";
 import { Input } from "../ui/input";
 import { Inertia } from "@inertiajs/inertia";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import {
     Bell,
     BookMarkedIcon,
     ChevronDown,
@@ -116,75 +125,72 @@ export default function Navbar({ dataKelas = [] }: Props) {
                     </ul>
                 </div>
                 <div className="items-center hidden gap-x-8 lg:flex">
-                    <div className="relative cursor-pointer group">
-                        <Bell className="size-6 text-maroon" />
-                        <div
-                            className="absolute flex flex-col gap-3 items-center top-12 -left-28 z-[99] shadow-lg shadow-maroon w-[200px] bg-white rounded-xl p-5 text-black
-            opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
-            transition-all duration-200 ease-out"
-                        >
+                    <DropdownMenu>
+                        <DropdownMenuTrigger>
+                            <Bell className="size-6 text-maroon" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[200px] flex flex-col justify-center gap-5">
                             <img src="/nodata.svg" alt="" />
                             <span className="text-sm text-center text-gray-400">
                                 Belum ada notifikasi.
                             </span>
-                        </div>
-                    </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger>
+                            {auth.image ? (
+                                <div className="relative flex items-center gap-2 cursor-pointer group">
+                                    <img
+                                        src={`/storage/${auth.image}`}
+                                        className="rounded-full size-10"
+                                        alt=""
+                                    />
+                                    <ChevronDown className="transition-all duration-200 group-hover:rotate-180" />
+                                </div>
+                            ) : (
+                                <div className="relative flex items-center gap-2 cursor-pointer group">
+                                    <img
+                                        src="/default-avatar.svg"
+                                        className="rounded-full size-10"
+                                        alt=""
+                                    />
+                                    <ChevronDown className="transition-all duration-200 group-hover:rotate-180" />
+                                </div>
+                            )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="mt-5">
+                            <DropdownMenuItem>
+                                <Link
+                                    href={route("dashboard.kelassaya")}
+                                    className="flex items-center gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
+                                >
+                                    <BookMarkedIcon className="size-5" />
+                                    Kelas Saya
+                                </Link>
+                            </DropdownMenuItem>
 
-                    {auth.image ? (
-                        <div className="relative flex items-center gap-2 cursor-pointer group">
-                            <img
-                                src={`/storage/${auth.image}`}
-                                className="rounded-full size-10"
-                                alt=""
-                            />
-                            <ChevronDown className="transition-all duration-200 group-hover:rotate-180" />
-                        </div>
-                    ) : (
-                        <div className="relative flex items-center gap-2 cursor-pointer group">
-                            <img
-                                src="/default-avatar.svg"
-                                className="rounded-full size-10"
-                                alt=""
-                            />
-                            <ChevronDown className="transition-all duration-200 group-hover:rotate-180" />
-                            <div
-                                className="absolute  items-center top-14 -left-28 z-[99] shadow-lg shadow-maroon w-[230px] bg-white rounded-xl p-5 text-black
-            opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
-            transition-all duration-200 ease-out"
-                            >
-                                <ul className="flex flex-col gap-3">
-                                    <li>
-                                        <Link
-                                            href={route("dashboard.kelas")}
-                                            className="flex items-center gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
-                                        >
-                                            <BookMarkedIcon className="size-5" />
-                                            Kelas Saya
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href={route("dashboard.kelas")}
-                                            className="flex items-center gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
-                                        >
-                                            <User className="size-5" />
-                                            My Profile
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <button
-                                            type="button"
-                                            onClick={handleLogout}
-                                            className="flex items-center w-full gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
-                                        >
-                                            <LogOut className="size-5" />
-                                            Keluar
-                                        </button>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    )}
+                            <DropdownMenuItem>
+                                <Link
+                                    href={route("dashboard.myprofile")}
+                                    className="flex items-center gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
+                                >
+                                    <User className="size-5" />
+                                    My Profile
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                                <button
+                                    type="button"
+                                    onClick={handleLogout}
+                                    className="flex items-center w-full gap-3 px-3 py-1.5 font-medium transition-all duration-200 rounded-lg hover:text-white hover:bg-maroon"
+                                >
+                                    <LogOut className="size-5" />
+                                    Keluar
+                                </button>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 <div className="lg:hidden">
                     <NavMobile />

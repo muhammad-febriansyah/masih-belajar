@@ -88,7 +88,7 @@ export default function HeroVideoDialog({
                     alt={thumbnailAlt}
                     width={1920}
                     height={1080}
-                    className="w-full rounded-2xl border shadow-lg transition-all duration-200 ease-out group-hover:brightness-[0.8]"
+                    className="w-full rounded-2xl border  transition-all duration-200 ease-out group-hover:brightness-[0.8]"
                 />
                 <div className="absolute inset-0 flex scale-[0.9] items-center justify-center rounded-2xl transition-all duration-200 ease-out group-hover:scale-100">
                     <div className="flex items-center justify-center rounded-full size-28 bg-primary/10 backdrop-blur-md">
@@ -112,7 +112,7 @@ export default function HeroVideoDialog({
                         animate={{ opacity: 1 }}
                         onClick={() => setIsVideoOpen(false)}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md"
+                        className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-md"
                     >
                         <motion.div
                             {...selectedAnimation}
@@ -126,7 +126,7 @@ export default function HeroVideoDialog({
                             <motion.button className="absolute right-0 p-2 text-xl text-white rounded-full -top-16 bg-neutral-900/50 ring-1 backdrop-blur-md dark:bg-neutral-100/50 dark:text-black">
                                 <XIcon className="size-5" />
                             </motion.button>
-                            <div className="relative isolate z-[1] size-full overflow-hidden rounded-2xl border-2 border-white">
+                            <div className="relative isolate z-[1] size-full overflow-hidden rounded-2xl border-2 border-maroon">
                                 <iframe
                                     src={videoSrc}
                                     className="size-full rounded-2xl"

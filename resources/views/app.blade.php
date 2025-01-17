@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
@@ -16,6 +17,8 @@
     <!-- Scripts -->
     @routes
     @viteReactRefresh
+    <script type="text/javascript" src="{{ env('MIDTRANS_URL') }}" data-client-key="{{ env('MIDTRANS_CLIENTKEY') }}">
+    </script>
     @vite(['resources/js/app.tsx', "resources/js/Pages/{$page['component']}.tsx"])
     @inertiaHead
 </head>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/kelas', [MainController::class, 'kelas'])->name('dashboard.kelas');
     Route::get('/dashboard/searchKelas', [MainController::class, 'searchKelas'])->name('dashboard.searchKelas');
     Route::get('/dashboard/detailkelas/{slug}', [MainController::class, 'detailkelas'])->name('dashboard.detailkelas');
+    Route::get('/dashboard/check-out/{slug}', [MainController::class, 'checkout'])->name('dashboard.checkout');
+    Route::post('/dashboard/createTransaction', [PaymentController::class, 'createTransaction'])->name('dashboard.createTransaction');
+    Route::post('/dashboard/checkPromoCode', [MainController::class, 'checkPromoCode'])->name('dashboard.checkPromoCode');
+    Route::get('/dashboard/kelas-saya', [MainController::class, 'kelassaya'])->name('dashboard.kelassaya');
+    Route::get('/dashboard/my-profile', [MainController::class, 'profile'])->name('dashboard.myprofile');
+    Route::get('/dashboard/list-sertifikat', [MainController::class, 'sertifikat'])->name('dashboard.sertifikat');
+    Route::post('/dashboard/updateprofile', [MainController::class, 'updateprofile'])->name('dashboard.updateprofile');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

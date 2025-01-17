@@ -3,23 +3,36 @@ import { Link, usePage } from "@inertiajs/react";
 import { Mail, PhoneCall, Youtube } from "lucide-react";
 import { route } from "ziggy-js";
 import { Button } from "../ui/button";
+import { useEffect, useState } from "react";
 interface SettingProps {
     setting: SettingType;
 }
 
 export default function Footer() {
     const { setting } = usePage().props as unknown as SettingProps;
+    const [isVisible, setIsVisible] = useState<boolean>(true);
+    useEffect(() => {
+        const currentURL = window.location.href;
+        if (currentURL.includes("/detailkelas")) {
+            setIsVisible(false);
+        }
+    }, []);
     return (
         <>
             <footer className="bg-white">
-                <div className="fixed bottom-4  z-[88] right-4">
-                    <a href={`https://wa.me/` + setting.phone} target="_blank">
-                        <Button className="bg-green-500 rounded-full">
-                            <img src="/wa.svg" alt="" />
-                            <span className="ml-1">Konsultasi Kelas</span>
-                        </Button>
-                    </a>
-                </div>
+                {isVisible && (
+                    <div className="fixed  bottom-4 z-[88] right-4">
+                        <a
+                            href={`https://wa.me/` + setting.phone}
+                            target="_blank"
+                        >
+                            <Button className="bg-green-500 rounded-full">
+                                <img src="/wa.svg" alt="" />
+                                <span className="ml-1">Konsultasi Kelas</span>
+                            </Button>
+                        </a>
+                    </div>
+                )}
                 <div className="container px-4 py-16 mx-auto space-y-8 sm:px-6 lg:space-y-16 lg:px-2">
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
                         <div className="cols-span-1 lg:col-span-2">
@@ -66,7 +79,7 @@ export default function Footer() {
                                 <ul className="mt-6 space-y-4 text-sm">
                                     <li>
                                         <Link
-                                            href={route("kelas")}
+                                            href={route("dashboard.kelas")}
                                             className="text-gray-700 transition-all duration-200 hover:text-maroon hover:font-semibold"
                                         >
                                             {" "}
@@ -76,11 +89,11 @@ export default function Footer() {
 
                                     <li>
                                         <Link
-                                            href={route("masuk")}
+                                            href={route("dashboard.myprofile")}
                                             className="text-gray-700 hover:text-maroon hover:font-semibold "
                                         >
                                             {" "}
-                                            Masuk{" "}
+                                            Profile{" "}
                                         </Link>
                                     </li>
 
@@ -90,7 +103,7 @@ export default function Footer() {
                                             className="text-gray-700 hover:text-maroon hover:font-semibold"
                                         >
                                             {" "}
-                                            Daftar{" "}
+                                            Belajar{" "}
                                         </Link>
                                     </li>
                                 </ul>

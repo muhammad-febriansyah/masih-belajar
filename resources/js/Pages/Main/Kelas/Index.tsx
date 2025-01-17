@@ -15,7 +15,7 @@ import { KelasType } from "@/types/kelas";
 import { LevelType } from "@/types/level";
 import { TipeKelasTypes } from "@/types/typecplass";
 import { Link } from "@inertiajs/react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CheckCircle, CheckCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { route } from "ziggy-js";
 import {
@@ -108,7 +108,7 @@ export default function Index({
                                         >
                                             <Link
                                                 href={route(
-                                                    "detailkelas",
+                                                    "dashboard.detailkelas",
                                                     kel.slug
                                                 )}
                                                 className="relative"
@@ -150,28 +150,38 @@ export default function Index({
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-row items-center pt-5 space-x-2">
-                                                        {kel.discount > 0 && (
-                                                            <span className="relative text-base font-medium text-red-600">
+                                                    {kel.type.name ===
+                                                    "Premium" ? (
+                                                        <div className="flex flex-row items-center pt-5 space-x-2">
+                                                            {kel.discount >
+                                                                0 && (
+                                                                <span className="relative text-base font-medium text-red-600">
+                                                                    Rp.{" "}
+                                                                    {Number(
+                                                                        kel.price
+                                                                    ).toLocaleString(
+                                                                        "id-ID"
+                                                                    )}
+                                                                    <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
+                                                                </span>
+                                                            )}
+                                                            <span className="text-base font-medium text-black">
                                                                 Rp.{" "}
                                                                 {Number(
-                                                                    kel.price
+                                                                    kel.price -
+                                                                        kel.discount
                                                                 ).toLocaleString(
                                                                     "id-ID"
                                                                 )}
-                                                                <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
                                                             </span>
-                                                        )}
-                                                        <span className="text-base font-medium text-black">
-                                                            Rp.{" "}
-                                                            {Number(
-                                                                kel.price -
-                                                                    kel.discount
-                                                            ).toLocaleString(
-                                                                "id-ID"
-                                                            )}
-                                                        </span>
-                                                    </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-row items-center pt-5 space-x-2">
+                                                            <span className="text-base font-medium text-black">
+                                                                Rp. 0
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div className="flex items-center justify-between pt-3">
                                                         <div className="flex items-center">
                                                             {Array.from(
@@ -231,25 +241,44 @@ export default function Index({
                                                             </TooltipProvider>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {kel.total_transaksi >
-                                                            0 && (
-                                                            <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
-                                                                {kel.total_transaksi >
-                                                                0
-                                                                    ? "Terlaris"
-                                                                    : ""}
-                                                            </Badge>
-                                                        )}
-                                                        {kel.type.name ===
-                                                        "Premium" ? (
-                                                            <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
-                                                                {kel.type.name}
+                                                    <div className="flex items-center gap-2 ">
+                                                        {kel.total_bergabung >
+                                                        0 ? (
+                                                            <Badge className="transition-all duration-300 bg-green-600 hover:scale-110">
+                                                                <CheckCircleIcon className="w-4 h-4 mr-1" />{" "}
+                                                                Bergabung
                                                             </Badge>
                                                         ) : (
-                                                            <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
-                                                                {kel.type.name}
-                                                            </Badge>
+                                                            <>
+                                                                {kel.total_transaksi >
+                                                                    0 && (
+                                                                    <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
+                                                                        {kel.total_transaksi >
+                                                                        0
+                                                                            ? "Terlaris"
+                                                                            : ""}
+                                                                    </Badge>
+                                                                )}
+                                                                {kel.type
+                                                                    .name ===
+                                                                "Premium" ? (
+                                                                    <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
+                                                                        {
+                                                                            kel
+                                                                                .type
+                                                                                .name
+                                                                        }
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
+                                                                        {
+                                                                            kel
+                                                                                .type
+                                                                                .name
+                                                                        }
+                                                                    </Badge>
+                                                                )}
+                                                            </>
                                                         )}
                                                     </div>
                                                 </div>
@@ -287,7 +316,7 @@ export default function Index({
                                             >
                                                 <Link
                                                     href={route(
-                                                        "detailkelas",
+                                                        "dashboard.detailkelas",
                                                         kel.slug
                                                     )}
                                                     className="relative"
@@ -335,29 +364,38 @@ export default function Index({
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        <div className="flex flex-row items-center pt-5 space-x-2">
-                                                            {kel.discount >
-                                                                0 && (
-                                                                <span className="relative text-base font-medium text-red-600">
+                                                        {kel.type.name ===
+                                                        "Premium" ? (
+                                                            <div className="flex flex-row items-center pt-5 space-x-2">
+                                                                {kel.discount >
+                                                                    0 && (
+                                                                    <span className="relative text-base font-medium text-red-600">
+                                                                        Rp.{" "}
+                                                                        {Number(
+                                                                            kel.price
+                                                                        ).toLocaleString(
+                                                                            "id-ID"
+                                                                        )}
+                                                                        <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
+                                                                    </span>
+                                                                )}
+                                                                <span className="text-base font-medium text-black">
                                                                     Rp.{" "}
                                                                     {Number(
-                                                                        kel.price
+                                                                        kel.price -
+                                                                            kel.discount
                                                                     ).toLocaleString(
                                                                         "id-ID"
                                                                     )}
-                                                                    <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
                                                                 </span>
-                                                            )}
-                                                            <span className="text-base font-medium text-black">
-                                                                Rp.{" "}
-                                                                {Number(
-                                                                    kel.price -
-                                                                        kel.discount
-                                                                ).toLocaleString(
-                                                                    "id-ID"
-                                                                )}
-                                                            </span>
-                                                        </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-row items-center pt-5 space-x-2">
+                                                                <span className="text-base font-medium text-black">
+                                                                    Rp. 0
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         <div className="flex items-center justify-between pt-3">
                                                             <div className="flex items-center">
                                                                 {Array.from(
@@ -421,30 +459,43 @@ export default function Index({
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            {kel.total_transaksi >
-                                                                0 && (
-                                                                <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
-                                                                    {kel.total_transaksi >
-                                                                    0
-                                                                        ? "Terlaris"
-                                                                        : ""}
-                                                                </Badge>
-                                                            )}
-                                                            {kel.type.name ===
-                                                            "Premium" ? (
-                                                                <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
-                                                                    {
-                                                                        kel.type
-                                                                            .name
-                                                                    }
+                                                            {kel.total_bergabung >
+                                                            0 ? (
+                                                                <Badge className="transition-all duration-300 bg-green-600 hover:scale-110">
+                                                                    <CheckCircleIcon className="w-4 h-4 mr-1" />{" "}
+                                                                    Bergabung
                                                                 </Badge>
                                                             ) : (
-                                                                <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
-                                                                    {
-                                                                        kel.type
-                                                                            .name
-                                                                    }
-                                                                </Badge>
+                                                                <>
+                                                                    {kel.total_transaksi >
+                                                                        0 && (
+                                                                        <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
+                                                                            {kel.total_transaksi >
+                                                                            0
+                                                                                ? "Terlaris"
+                                                                                : ""}
+                                                                        </Badge>
+                                                                    )}
+                                                                    {kel.type
+                                                                        .name ===
+                                                                    "Premium" ? (
+                                                                        <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
+                                                                            {
+                                                                                kel
+                                                                                    .type
+                                                                                    .name
+                                                                            }
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
+                                                                            {
+                                                                                kel
+                                                                                    .type
+                                                                                    .name
+                                                                            }
+                                                                        </Badge>
+                                                                    )}
+                                                                </>
                                                             )}
                                                         </div>
                                                     </div>

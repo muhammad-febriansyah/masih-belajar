@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Faq;
 use App\Models\Kelas;
 use App\Models\Level;
+use App\Models\PromoCode;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\Testimoni;
@@ -14,9 +15,12 @@ use App\Models\Transaction;
 use App\Models\Type;
 use App\Models\User;
 use App\Models\Video;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class MainController extends Controller
@@ -57,17 +61,19 @@ class MainController extends Controller
     public function kelas()
     {
         $auth = Auth::user();
+        $user_id = Auth::id();
         $setting = Setting::first();
         $data = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating')
+            DB::raw('AVG(testimonis.rating) as average_rating'),
+            DB::raw('COUNT(CASE WHEN transactions.status = "paid" AND transactions.user_id = ? THEN 1 END) as total_bergabung', [$user_id])
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
             ->where('kelas.status', 'disetujui')
             ->groupBy('kelas.id')
-            ->orderByDesc('total_transaksi')->paginate(6);
+            ->orderByDesc('total_transaksi')->addBinding(['user_id' => $user_id], 'select')->paginate(6);
         $category = Category::all();
         $tipekelas = Type::all();
         $level = Level::all();
@@ -95,7 +101,15 @@ class MainController extends Controller
     public function detailkelas($slug)
     {
         $auth = Auth::user();
-        $kelas = Kelas::where('slug', $slug)->first();
+        $user_id = Auth::id();
+        $kelas = Kelas::select(
+            'kelas.*',
+            DB::raw('COUNT(CASE WHEN transactions.status = "paid" AND transactions.user_id = ? THEN 1 END) as total_bergabung')
+        )
+            ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
+            ->where('kelas.slug', $slug)
+            ->addBinding([$auth->id], 'select')  // Binding positional parameter
+            ->first();
         $kelas->views = $kelas->views + 1;
         $kelas->save();
         $setting = Setting::first();
@@ -109,18 +123,19 @@ class MainController extends Controller
         $testimoni = Testimoni::where('kelas_id', $kelas->id)
             ->latest()
             ->get();
-
         $allclass = Kelas::select(
             'kelas.*',
-            DB::raw('AVG(testimonis.rating) as average_rating')
+            DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
+            DB::raw('AVG(testimonis.rating) as average_rating'),
+            DB::raw('COUNT(CASE WHEN transactions.status = "paid" AND transactions.user_id = ? THEN 1 END) as total_bergabung', [$user_id])
         )
+            ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
             ->where('kelas.status', 'disetujui')
             ->where('kelas.id', '!=', $kelas->id)
             ->where('kelas.user_id', $kelas->user_id)
             ->groupBy('kelas.id')
-            ->latest()
-            ->limit(4)
+            ->orderByDesc('total_transaksi')->addBinding(['user_id' => $user_id], 'select')->limit(4)
             ->get();
         return Inertia::render('Main/Kelas/Detail', [
             'setting' => $setting,
@@ -134,6 +149,107 @@ class MainController extends Controller
             'totalstar' => $totalstar,
             'auth' => $auth
         ]);
+    }
+    public function checkout($slug)
+    {
+        $auth = Auth::user();
+        $kelas = Kelas::select(
+            'kelas.*',
+            DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
+            DB::raw('AVG(testimonis.rating) as average_rating')
+        )
+            ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.status', 'disetujui')
+            ->where('kelas.slug', $slug)
+            ->groupBy('kelas.id')
+            ->orderByDesc('total_transaksi')->first();
+        $kodepromo = PromoCode::where('status', 'active')->first();
+        $setting = Setting::first();
+        return Inertia::render('Main/Kelas/CheckOut', [
+            'setting' => $setting,
+            'kelas' => $kelas,
+            'auth' => $auth
+        ]);
+    }
+
+    public function checkPromoCode(Request $request)
+    {
+        try {
+            $kodePromo = $request->input('kode');
+            $promo = PromoCode::where('code', $kodePromo)
+                ->where('status', 'active')
+                ->first();
+
+            if ($promo) {
+                return response()->json([
+                    'status' => 'success',
+                    'discount' => $promo->discount, // Diskon dalam bentuk nominal
+                    'message' => 'Kode promo berhasil diterima',
+                    'code' => 200,
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'code' => 404,
+                'message' => 'Kode promo tidak ditemukan atau tidak aktif',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 'error',
+                'code' => 500,
+                'message' => 'Terjadi kesalahan. Silakan coba lagi.',
+            ]);
+        }
+    }
+
+
+    public function kelassaya()
+    {
+        $setting = Setting::first();
+        $auth = User::findOrFail(Auth::user()->id);
+        return Inertia::render('Main/Kelas/KelasSaya', ['setting' => $setting, 'auth' => $auth]);
+    }
+
+    public function sertifikat()
+    {
+        $setting = Setting::first();
+        $auth = User::findOrFail(Auth::user()->id);
+        return Inertia::render('Main/Sertifikat/Index', ['setting' => $setting, 'auth' => $auth]);
+    }
+
+    public function profile()
+    {
+        $auth = User::findOrFail(Auth::user()->id);
+        $setting = Setting::first();
+        return Inertia::render('Main/Profile/Index', ['auth' => $auth, 'setting' => $setting,]);
+    }
+
+    public function updateprofile(Request $request)
+    {
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,png,jpeg,gif,svg|max:3048',
+        ]);
+        $user = User::findOrFail(Auth::user()->id);
+        if ($request->file('image')) {
+            $filename = $request->image->store('profile', 'public');
+            $user->image = $filename;
+        }
+        $user->name = $request->name;
+        $user->email = $request->email;
+        if ($request->has('password') && $request->password) {
+            $user->password = Hash::make($request->password);
+        }
+        $user->tempat_lahir = $request->tempat_lahir;
+        $tanggalLahir = Carbon::parse($request->tanggal_lahir);
+        $umur = $tanggalLahir->diffInYears(Carbon::now());
+        $user->tanggal_lahir = $request->tanggal_lahir;
+        $user->umur = $umur;
+        $user->jk = $request->jk;
+        $user->phone = $request->phone;
+        $user->alamat = $request->alamat;
+        $user->save();
     }
 
     public function logout(Request $request)
