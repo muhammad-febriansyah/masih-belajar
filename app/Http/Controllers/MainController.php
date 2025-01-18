@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\About;
+use App\Models\BalasDiskusi;
 use App\Models\Category;
+use App\Models\Diskusi;
 use App\Models\Faq;
 use App\Models\Kelas;
 use App\Models\Level;
@@ -235,8 +237,10 @@ class MainController extends Controller
         $videos = Video::whereIn('section_id', $sections->pluck('id'))->get();
         $testimoni = Testimoni::where('kelas_id', $kelas->id)->get();
         $setting = Setting::first();
+        $diskusi = Diskusi::where('kelas_id', $kelas->id)->get();
         $auth = User::findOrFail(Auth::user()->id);
-        return Inertia::render('Main/Belajar/Index', ['setting' => $setting, 'auth' => $auth, 'kelas' => $kelas, 'sectionData' => $sections, 'video' => $videos, 'testimoni' => $testimoni]);
+        $balasDiskusi = BalasDiskusi::whereIn('diskusi_id', $diskusi->pluck('id'))->get();
+        return Inertia::render('Main/Belajar/Index', ['setting' => $setting, 'auth' => $auth, 'kelas' => $kelas, 'sectionData' => $sections, 'video' => $videos, 'testimoni' => $testimoni, 'diskusi' => $diskusi, 'balasDiskusi' => $balasDiskusi]);
     }
 
     public function getReadVideos()
@@ -283,6 +287,36 @@ class MainController extends Controller
         $q->save();
     }
 
+    public function sendDiskusi(Request $request)
+    {
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,png,jpeg,gif,svg|max:3048', // Validasi file image
+            'subject' => 'required|string',  // Tambahkan validasi subject
+            'title' => 'required|string',    // Tambahkan validasi title
+            'body' => 'required|string',     // Tambahkan validasi body
+            'kelasId' => 'required|integer', // Validasi kelasId
+        ]);
+        $q = new Diskusi();
+        if ($request->hasFile('image')) {
+            $filename = $request->image->store('images', 'public');  // Simpan file di storage/public/images
+            $q->image = $filename;
+        }
+        $q->user_id = Auth::user()->id;
+        $q->kelas_id = $request->kelasId;
+        $q->subject = $request->subject;
+        $q->title = $request->title;
+        $q->body = $request->body;
+        $q->save();
+    }
+
+    public function balasDiskusi(Request $request)
+    {
+        $q = new BalasDiskusi();
+        $q->user_id = Auth::user()->id;
+        $q->diskusi_id = $request->diskusiId;
+        $q->body = $request->balas;
+        $q->save();
+    }
 
 
     public function sertifikat()

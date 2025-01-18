@@ -14,8 +14,9 @@ import {
     Loader2,
     Pencil,
     PlayCircleIcon,
+    Plus,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { route } from "ziggy-js";
 import {
@@ -36,12 +37,24 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { TestimoniType } from "@/types/testimoni";
+import { Input } from "@/components/ui/input";
+import { DiskusiType } from "@/types/diskusi";
+import { BalasDiskusiType } from "@/types/balas_diskusi";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+
 interface Props {
     setting: SettingType;
     kelas: Datum;
     sectionData: SectionType[];
     video: VideoType[];
     testimoni: TestimoniType[];
+    diskusi: DiskusiType[];
+    balasDiskusi: BalasDiskusiType[];
 }
 export default function Index({
     setting,
@@ -49,6 +62,8 @@ export default function Index({
     sectionData,
     video,
     testimoni,
+    diskusi,
+    balasDiskusi,
 }: Props) {
     const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(
         null
@@ -71,6 +86,31 @@ export default function Index({
     >([]);
     const [progress, setProgress] = useState<number>(0);
     const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(0);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [subject, setSubject] = useState<string | null>(null);
+    const [image, setImage] = useState<File | null>(null);
+    const [title, setTitle] = useState<string | null>(null);
+    const [body, setBody] = useState<string>("");
+    const [balas, setBalas] = useState<string>("");
+    const [diskusiId, setDiskusiId] = useState<string>("");
+    const diskusiIdRef = useRef<HTMLInputElement>(null); // Membuat ref untuk input hidden
+    const [loading, setLoading] = useState<boolean>(false);
+    const kelasId = kelas.id;
+    const [selectedItem, setSelectedItem] = useState<Number | null>(null); // Menyimpan ID item yang sedang terbuka
+
+    const toggleAccordion = (id: Number) => {
+        if (selectedItem === id) {
+            setSelectedItem(null); // Menutup item jika sudah terbuka
+        } else {
+            setSelectedItem(id); // Membuka item baru
+        }
+    };
+    const { data, setData, post, processing, errors, reset } = useForm({
+        rating: rating,
+        kelasId: kelasId, // Misalnya kelasId adalah 1
+        testimonial: "",
+    });
+
     const handleVideoClick = (
         videoUrl: string,
         videoTitle: string,
@@ -97,12 +137,6 @@ export default function Index({
         setRating(value); // Set the selected rating
         setData("rating", value);
     };
-    const kelasId = kelas.id;
-    const { data, setData, post, processing, errors, reset } = useForm({
-        rating: rating,
-        kelasId: kelasId, // Misalnya kelasId adalah 1
-        testimonial: "",
-    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -355,6 +389,75 @@ export default function Index({
         }
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const sendDiskusi = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        const formData = new FormData();
+        if (image) formData.append("image", image); // Kirim file image
+        formData.append("subject", subject || "");
+        formData.append("title", title || "");
+        formData.append("body", body);
+        formData.append("kelasId", kelas.id.toString()); // Ganti dengan id kelas yang sesuai
+
+        try {
+            await Inertia.post(route("dashboard.sendDiskusi"), formData, {
+                onFinish: () => {
+                    setLoading(false);
+                    setIsDialogOpen(false);
+                    toast.success("Pertanyaan berhasil dikirim!", {
+                        position: "top-right",
+                    });
+                },
+            });
+        } catch (error) {
+            console.error("Error sending diskusi:", error);
+            setLoading(false);
+        }
+    };
+    const sendBalasdiskusi = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const diskusiId = diskusiIdRef.current?.value; // Mengambil nilai dari ref
+        console.log("Diskusi ID dari ref:", diskusiId); // Pastikan nilai diskusiId ada
+
+        if (!diskusiId) {
+            console.error("Diskusi ID kosong!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("diskusiId", diskusiId);
+        formData.append("balas", balas);
+
+        try {
+            Inertia.post(route("dashboard.balasDiskusi"), formData, {
+                onFinish: () => {
+                    setLoading(false);
+                    setIsDialogOpen(false);
+                    toast.success("Balasan berhasil dikirim!", {
+                        position: "top-right",
+                    });
+                },
+            });
+        } catch (error) {
+            console.error("Error sending response:", error);
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         axios
             .get(route("dashboard.getReadVideos"))
@@ -419,6 +522,7 @@ export default function Index({
         const newProgress = (completedVideos / totalVideos) * 100;
         setProgress(newProgress);
     }, [readVideos, video.length]);
+
     return (
         <>
             <Head>
@@ -678,7 +782,7 @@ export default function Index({
                         <span className="text-lg font-semibold text-black">
                             Progress Kelas
                         </span>
-                        <div className="mt-5 mb-10 lg:max-w-lg">
+                        <div className="mt-5 mb-10 ">
                             <span id="ProgressLabel" className="sr-only">
                                 Loading
                             </span>
@@ -689,14 +793,14 @@ export default function Index({
                                 aria-valuenow={progress} // Gunakan progress sebagai nilai
                                 className="relative block bg-gray-200 rounded-full"
                             >
-                                <span className="absolute inset-0 flex items-center justify-center text-[10px]/4">
+                                <span className="absolute inset-0 flex items-center justify-center text-base">
                                     <span className="font-bold text-white">
                                         {progress}%{" "}
                                     </span>
                                 </span>
 
                                 <span
-                                    className="block h-4 text-center bg-indigo-600 rounded-full"
+                                    className="block text-center rounded-full bg-maroon h-7"
                                     style={{ width: `${progress}%` }} // Sesuaikan lebar berdasarkan progress
                                 />
                             </span>
@@ -773,6 +877,425 @@ export default function Index({
                             </TabsContent>
                             <TabsContent value="diskusi">
                                 <h3 className="text-xl font-bold">Diskusi</h3>
+                                <Dialog>
+                                    <DialogTrigger>
+                                        <Button className="mt-5 rounded-full bg-maroon">
+                                            <Plus /> Form Diskusi
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-h-[90vh] overflow-y-auto">
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                Form Diskusi
+                                            </DialogTitle>
+                                            <DialogDescription className="overflow-y-auto">
+                                                <form onSubmit={sendDiskusi}>
+                                                    <div className="my-5 space-y-5">
+                                                        <div className="grid items-center w-full gap-3">
+                                                            <label
+                                                                htmlFor="judul"
+                                                                className="block text-sm font-semibold text-gray-700"
+                                                            >
+                                                                Judul
+                                                            </label>
+                                                            <Input
+                                                                value={
+                                                                    title || ""
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setTitle(
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                required
+                                                                placeholder="Masukkan judul diskusi"
+                                                            />
+                                                        </div>
+                                                        <div className="mb-4">
+                                                            <label
+                                                                htmlFor="subject"
+                                                                className="block text-sm font-semibold text-gray-700"
+                                                            >
+                                                                Subject
+                                                            </label>
+                                                            <Input
+                                                                required
+                                                                value={
+                                                                    subject ||
+                                                                    ""
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setSubject(
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className="w-full p-2 mt-2 border border-gray-300 rounded-md"
+                                                                placeholder="Masukkan subject diskusi"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label
+                                                                htmlFor="body"
+                                                                className="block text-sm font-semibold text-gray-700"
+                                                            >
+                                                                Keterangan
+                                                            </label>
+                                                            <Textarea
+                                                                id="testimonial"
+                                                                value={
+                                                                    body || ""
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setBody(
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className="w-full p-2 mt-2 border border-gray-300 rounded-md"
+                                                                placeholder="Masukkan keterangan diskusi"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label
+                                                                htmlFor="image"
+                                                                className="block mb-5 text-sm font-semibold text-gray-700"
+                                                            >
+                                                                Upload
+                                                                Foto/Gambar
+                                                                (Optional)
+                                                            </label>
+                                                            {imagePreview && (
+                                                                <div className="flex justify-center mt-3 mb-5">
+                                                                    <img
+                                                                        src={
+                                                                            imagePreview
+                                                                        }
+                                                                        alt="Image Preview"
+                                                                        className="object-cover w-72 h-52 rounded-2xl" // Customize the size and styling as needed
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex justify-center">
+                                                                <Input
+                                                                    type="file"
+                                                                    id="image"
+                                                                    accept="image/*"
+                                                                    onChange={
+                                                                        handleFileChange
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Submit Button */}
+                                                    <div className="flex justify-end gap-2">
+                                                        {loading ? (
+                                                            <Button
+                                                                disabled
+                                                                className="rounded-full bg-maroon"
+                                                            >
+                                                                <Loader2 className="animate-spin" />
+                                                                Tunggu
+                                                                Sebentar...
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                type="submit"
+                                                                className="rounded-full bg-maroon"
+                                                            >
+                                                                Kirim Pertanyaan
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setIsDialogOpen(
+                                                                    false
+                                                                )
+                                                            } // Close the dialog
+                                                            className="text-white bg-gray-500 rounded-full"
+                                                        >
+                                                            Batal
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                    </DialogContent>
+                                </Dialog>
+                                {diskusi.length > 0 ? (
+                                    <div className="flex flex-col gap-5 mt-10">
+                                        {diskusi.map((disk) => (
+                                            <div
+                                                key={disk.id}
+                                                className="flex flex-col items-start gap-5 p-8 bg-white rounded-2xl"
+                                            >
+                                                {disk.image && (
+                                                    <Dialog>
+                                                        <DialogTrigger>
+                                                            <img
+                                                                src={`/storage/${disk.image}`}
+                                                                alt=""
+                                                                className="object-cover w-64 h-40 rounded-2xl"
+                                                            />
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogDescription>
+                                                                    <img
+                                                                        src={`/storage/${disk.image}`}
+                                                                        alt=""
+                                                                        className="object-cover size-full rounded-2xl"
+                                                                    />
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                )}
+                                                <h5 className="text-xl font-medium text-black">
+                                                    {disk.title}
+                                                </h5>
+                                                <p className="text-sm leading-relaxed text-gray-500 ">
+                                                    {disk.body}
+                                                </p>
+                                                <div className="flex flex-col items-center justify-between w-full gap-5 md:flex-row">
+                                                    {disk.user.image ? (
+                                                        <div className="relative flex items-center gap-2 cursor-pointer group">
+                                                            <img
+                                                                src={`/storage/${disk.user.image}`}
+                                                                className="rounded-full size-10"
+                                                                alt=""
+                                                            />
+                                                            <span className="text-sm font-medium text-black ">
+                                                                {disk.user.name}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="relative flex items-center gap-2 cursor-pointer group">
+                                                            <img
+                                                                src="/default-avatar.svg"
+                                                                className="rounded-full size-10"
+                                                                alt=""
+                                                            />
+                                                            <span className="text-sm font-medium text-black ">
+                                                                {disk.user.name}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-row items-center gap-5">
+                                                        <Dialog>
+                                                            <DialogTrigger>
+                                                                <span className="text-base font-semibold cursor-pointer text-maroon hover:underline">
+                                                                    Balas
+                                                                </span>
+                                                            </DialogTrigger>
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>
+                                                                        Balas
+                                                                        Pertanyaan
+                                                                    </DialogTitle>
+                                                                    <DialogDescription>
+                                                                        <form
+                                                                            onSubmit={
+                                                                                sendBalasdiskusi
+                                                                            }
+                                                                        >
+                                                                            <div className="my-10">
+                                                                                <label
+                                                                                    htmlFor="balasan"
+                                                                                    className="block text-sm font-semibold text-gray-700"
+                                                                                >
+                                                                                    Balasan
+                                                                                </label>
+                                                                                <input
+                                                                                    type="hidden"
+                                                                                    ref={
+                                                                                        diskusiIdRef
+                                                                                    }
+                                                                                    value={
+                                                                                        disk.id
+                                                                                    } // Memastikan nilai disk.id
+                                                                                />
+
+                                                                                <Textarea
+                                                                                    id="balasan"
+                                                                                    value={
+                                                                                        balas ||
+                                                                                        ""
+                                                                                    }
+                                                                                    onChange={(
+                                                                                        e
+                                                                                    ) =>
+                                                                                        setBalas(
+                                                                                            e
+                                                                                                .target
+                                                                                                .value
+                                                                                        )
+                                                                                    }
+                                                                                    className="w-full p-2 mt-2 border border-gray-300 rounded-md"
+                                                                                    placeholder="Ketikkan balasan disini..."
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex justify-end gap-2">
+                                                                                {loading ? (
+                                                                                    <Button
+                                                                                        disabled
+                                                                                        className="rounded-full bg-maroon"
+                                                                                    >
+                                                                                        <Loader2 className="animate-spin" />
+                                                                                        Tunggu
+                                                                                        Sebentar...
+                                                                                    </Button>
+                                                                                ) : (
+                                                                                    <Button
+                                                                                        type="submit"
+                                                                                        className="rounded-full bg-maroon"
+                                                                                    >
+                                                                                        Kirim
+                                                                                        Pertanyaan
+                                                                                    </Button>
+                                                                                )}
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        setIsDialogOpen(
+                                                                                            false
+                                                                                        )
+                                                                                    } // Close the dialog
+                                                                                    className="text-white bg-gray-500 rounded-full"
+                                                                                >
+                                                                                    Batal
+                                                                                </Button>
+                                                                            </div>
+                                                                        </form>
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+                                                            </DialogContent>
+                                                        </Dialog>
+
+                                                        <Dialog>
+                                                            <DialogTrigger>
+                                                                <span className="text-base font-semibold cursor-pointer text-maroon hover:underline">
+                                                                    Lihat
+                                                                    Balasan
+                                                                </span>
+                                                            </DialogTrigger>
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>
+                                                                        Jawaban
+                                                                    </DialogTitle>
+                                                                    <DialogDescription
+                                                                        className="space-y-5 overflow-y-auto max-h-96" // Menambahkan scroll pada konten
+                                                                    >
+                                                                        {balasDiskusi.filter(
+                                                                            (
+                                                                                balasan
+                                                                            ) =>
+                                                                                balasan.diskusi_id ===
+                                                                                disk.id
+                                                                        )
+                                                                            .length >
+                                                                        0 ? (
+                                                                            balasDiskusi
+                                                                                .filter(
+                                                                                    (
+                                                                                        balasan
+                                                                                    ) =>
+                                                                                        balasan.diskusi_id ===
+                                                                                        disk.id
+                                                                                )
+                                                                                .map(
+                                                                                    (
+                                                                                        balasan,
+                                                                                        index
+                                                                                    ) => (
+                                                                                        <div
+                                                                                            key={
+                                                                                                index
+                                                                                            }
+                                                                                            className="p-5 mx-3 mt-5 bg-white border-2 border-maroon rounded-2xl"
+                                                                                        >
+                                                                                            {disk
+                                                                                                .user
+                                                                                                .image ? (
+                                                                                                <div className="flex items-center gap-2 mb-5 cursor-pointer group">
+                                                                                                    <img
+                                                                                                        src={`/storage/${balasan.user.image}`}
+                                                                                                        className="rounded-full size-10"
+                                                                                                        alt=""
+                                                                                                    />
+                                                                                                    <span className="text-sm font-medium text-black">
+                                                                                                        {
+                                                                                                            balasan
+                                                                                                                .user
+                                                                                                                .name
+                                                                                                        }
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            ) : (
+                                                                                                <div className="flex items-center gap-2 mb-5 cursor-pointer group">
+                                                                                                    <img
+                                                                                                        src="/default-avatar.svg"
+                                                                                                        className="rounded-full size-10"
+                                                                                                        alt=""
+                                                                                                    />
+                                                                                                    <span className="text-sm font-medium text-black">
+                                                                                                        {
+                                                                                                            balasan
+                                                                                                                .user
+                                                                                                                .name
+                                                                                                        }
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            <p className="text-sm leading-relaxed text-black">
+                                                                                                {
+                                                                                                    balasan.body
+                                                                                                }
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    )
+                                                                                )
+                                                                        ) : (
+                                                                            <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
+                                                                                <img
+                                                                                    src="/nodata.svg"
+                                                                                    className="object-cover size-32"
+                                                                                    alt=""
+                                                                                />
+                                                                                <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
+                                                                                    Belum
+                                                                                    ada
+                                                                                    jawaban.
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
+                                        <img
+                                            src="/nodata.svg"
+                                            className="object-cover size-32"
+                                            alt=""
+                                        />
+                                        <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
+                                            Belum ada diskusi...
+                                        </span>
+                                    </div>
+                                )}
                             </TabsContent>
                             <TabsContent value="mentor">
                                 <div className="flex items-center p-5 mt-10 space-x-5 bg-white rounded-2xl">

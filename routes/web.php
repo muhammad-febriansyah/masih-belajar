@@ -48,6 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/list-sertifikat', [MainController::class, 'sertifikat'])->name('dashboard.sertifikat');
     Route::post('/dashboard/updateprofile', [MainController::class, 'updateprofile'])->name('dashboard.updateprofile');
     Route::post('/dashboard/sendTestimonial', [MainController::class, 'sendTestimonial'])->name('dashboard.sendTestimonial');
+    Route::post('/dashboard/sendDiskusi', [MainController::class, 'sendDiskusi'])->name('dashboard.sendDiskusi');
+    Route::post('/dashboard/balasDiskusi', [MainController::class, 'balasDiskusi'])->name('dashboard.balasDiskusi');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

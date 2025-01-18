@@ -57,4 +57,9 @@ class Kelas extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function diskusi(): HasMany
+    {
+        return $this->hasMany(Diskusi::class);
+    }
 }

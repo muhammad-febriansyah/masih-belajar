@@ -1,5 +1,6 @@
 import SideBar from "@/components/main/SideBar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
     Tooltip,
     TooltipContent,
@@ -11,22 +12,36 @@ import { Datum } from "@/types/kelas";
 import { UserType } from "@/types/user";
 import { Link } from "@inertiajs/react";
 import { CheckCircleIcon } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 interface Props {
     auth: UserType;
     kelas: Datum[];
 }
 export default function KelasSaya({ auth, kelas }: Props) {
+    const [search, setSearch] = useState<string>("");
+    const filteredKelas = kelas.filter((kel) => {
+        const matchesSearch = kel.title
+            .toLowerCase()
+            .includes(search.toLowerCase());
+        return matchesSearch;
+    });
     return (
         <MainLayout>
             <section className="container py-10 mt-16 lg:mt-22">
                 <div className="flex flex-col items-start justify-between gap-5 lg:flex-row">
                     <SideBar />
                     <div className="w-full lg:w-[75%]">
-                        {kelas.length > 0 ? (
+                        <Input
+                            type="text"
+                            placeholder="Cari Kelas"
+                            value={search}
+                            className="max-w-md mb-10 rounded-2xl"
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        {filteredKelas.length > 0 ? (
                             <div className="grid min-h-full grid-cols-1 gap-3 lg:grid-cols-3">
-                                {kelas.map((kel) => (
+                                {filteredKelas.map((kel) => (
                                     <div
                                         key={kel.id}
                                         className="flex flex-col overflow-hidden bg-white rounded-2xl"
