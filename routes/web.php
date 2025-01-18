@@ -42,8 +42,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/checkPromoCode', [MainController::class, 'checkPromoCode'])->name('dashboard.checkPromoCode');
     Route::get('/dashboard/kelas-saya', [MainController::class, 'kelassaya'])->name('dashboard.kelassaya');
     Route::get('/dashboard/my-profile', [MainController::class, 'profile'])->name('dashboard.myprofile');
+    Route::get('/dashboard/belajar/{slug}', [MainController::class, 'belajar'])->name('dashboard.belajar');
+    Route::post('/dashboard/videoRead', [MainController::class, 'videoRead'])->name('dashboard.videoRead');
+    Route::get('/dashboard/getReadVideos', [MainController::class, 'getReadVideos'])->name('dashboard.getReadVideos');
     Route::get('/dashboard/list-sertifikat', [MainController::class, 'sertifikat'])->name('dashboard.sertifikat');
     Route::post('/dashboard/updateprofile', [MainController::class, 'updateprofile'])->name('dashboard.updateprofile');
+    Route::post('/dashboard/sendTestimonial', [MainController::class, 'sendTestimonial'])->name('dashboard.sendTestimonial');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

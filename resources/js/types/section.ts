@@ -7,6 +7,7 @@ export interface SectionType {
     created_at: string;
     updated_at: string;
     kelas: Kelas;
+    videos_count: number;
 }
 
 export interface Kelas {

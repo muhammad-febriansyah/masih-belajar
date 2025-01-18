@@ -8,19 +8,7 @@ interface Props {
 }
 export default function SideBar() {
     const { auth } = usePage().props as unknown as Props;
-    const { url, component } = usePage();
-
-    // Dapatkan URL dari route "dashboard.myprofile"
-
-    // Memeriksa apakah URL saat ini sama dengan route yang aktif
-    // Dapatkan URL dari route "dashboard.myprofile"
-    const profileRoute = route("dashboard.myprofile");
-
-    // Memeriksa apakah URL saat ini sama dengan route yang aktif
-    const isActive = url.startsWith(profileRoute) // Mengecek jika URL saat ini dimulai dengan profileRoute
-        ? " active:bg-red-950"
-        : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-gray-100 active:bg-gray-200";
-
+    const { url } = usePage();
     return (
         <div className="bg-white w-full lg:w-[25%] rounded-2xl p-5">
             <div className="flex flex-col gap-y-5">

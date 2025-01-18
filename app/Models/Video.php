@@ -20,4 +20,9 @@ class Video extends Model
     {
         return $this->belongsTo(Section::class);
     }
+
+    public function VideoReader()
+    {
+        return $this->hasMany(VideoReader::class);
+    }
 }

@@ -4,6 +4,7 @@ export interface VideoType {
     title: string;
     url: Url;
     duration: string;
+    status: number;
     created_at: string;
     updated_at: string;
     section: Section;

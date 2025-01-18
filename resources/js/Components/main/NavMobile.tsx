@@ -1,13 +1,17 @@
 import { Link } from "@inertiajs/react";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { route } from "ziggy-js";
+import { Inertia } from "@inertiajs/inertia";
 
 export default function NavMobile() {
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const toogleDrawer = () => {
         setIsOpen(!isOpen);
+    };
+    const handleLogout = () => {
+        Inertia.post(route("logout"));
     };
     useEffect(() => {
         if (isOpen) {
@@ -45,7 +49,7 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href={route("home")}
+                            href={route("dashboard.home")}
                         >
                             Home
                         </Link>
@@ -53,7 +57,7 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href={route("kelas")}
+                            href={route("dashboard.kelas")}
                         >
                             Kelas
                         </Link>
@@ -61,7 +65,7 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href={route("masuk")}
+                            href={route("dashboard.kelassaya")}
                         >
                             Belajar
                         </Link>
@@ -75,12 +79,13 @@ export default function NavMobile() {
                         </Link>
                     </li>
                     <li>
-                        <Link
+                        <button
+                            type="button"
+                            onClick={handleLogout}
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
-                            href={route("daftar")}
                         >
                             Keluar
-                        </Link>
+                        </button>
                     </li>
                 </ul>
             </motion.div>

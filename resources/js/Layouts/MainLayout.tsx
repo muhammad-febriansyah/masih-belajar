@@ -2,6 +2,7 @@ import Footer from "@/components/main/Footer";
 import Navbar from "@/components/main/Navbar";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import { SettingType } from "@/types/setting";
+import { UserType } from "@/types/user";
 import { Head, usePage } from "@inertiajs/react";
 
 type Props = {
@@ -9,9 +10,11 @@ type Props = {
 };
 interface SettingProps {
     setting: SettingType;
+    auth: UserType;
 }
 export default function MainLayout({ children }: Props) {
     const { setting } = usePage().props as unknown as SettingProps;
+    const { auth } = usePage().props as unknown as SettingProps;
     return (
         <>
             <Head>
@@ -29,7 +32,7 @@ export default function MainLayout({ children }: Props) {
             </Head>
             <div className="overflow-x-hidden">
                 <ScrollProgress />
-                <Navbar setting={setting} dataKelas={[]} />
+                <Navbar setting={setting} auth={auth} dataKelas={[]} />
                 {children}
                 <Footer />
             </div>

@@ -15,6 +15,7 @@ use App\Models\Transaction;
 use App\Models\Type;
 use App\Models\User;
 use App\Models\Video;
+use App\Models\VideoReader;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -207,10 +208,82 @@ class MainController extends Controller
 
     public function kelassaya()
     {
+        $user_id = Auth::id();
+        $data = Kelas::select(
+            'kelas.*',
+            DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
+            DB::raw('AVG(testimonis.rating) as average_rating'),
+        )
+            ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.status', 'disetujui')
+            ->where('transactions.user_id', $user_id)
+            ->where('transactions.status', 'paid')
+            ->groupBy('kelas.id')
+            ->orderByDesc('total_transaksi')->get();
         $setting = Setting::first();
         $auth = User::findOrFail(Auth::user()->id);
-        return Inertia::render('Main/Kelas/KelasSaya', ['setting' => $setting, 'auth' => $auth]);
+        return Inertia::render('Main/Kelas/KelasSaya', ['setting' => $setting, 'auth' => $auth, 'kelas' => $data]);
     }
+
+    public function belajar($slug)
+    {
+        $kelas = Kelas::where('slug', $slug)->first();
+        $sections = Section::where('kelas_id', $kelas->id)
+            ->withCount('videos')  // Menghitung jumlah video terkait dengan setiap Section
+            ->get();
+        $videos = Video::whereIn('section_id', $sections->pluck('id'))->get();
+        $testimoni = Testimoni::where('kelas_id', $kelas->id)->get();
+        $setting = Setting::first();
+        $auth = User::findOrFail(Auth::user()->id);
+        return Inertia::render('Main/Belajar/Index', ['setting' => $setting, 'auth' => $auth, 'kelas' => $kelas, 'sectionData' => $sections, 'video' => $videos, 'testimoni' => $testimoni]);
+    }
+
+    public function getReadVideos()
+    {
+        $readVideos = VideoReader::all(); // Ambil seluruh data dari tabel read_videos
+        return response()->json($readVideos); // Kembalikan data dalam bentuk JSON
+    }
+
+    public function videoRead(Request $request)
+    {
+        $existingVideoReader = VideoReader::where('user_id', Auth::user()->id)
+            ->where('section_id', $request->section_id)
+            ->where('video_id', $request->video_id)
+            ->exists(); // Hanya memeriksa keberadaan data
+        if (!$existingVideoReader) {
+            $videoReader = new VideoReader();
+            $videoReader->user_id = Auth::user()->id;
+            $videoReader->section_id = $request->section_id;
+            $videoReader->video_id = $request->video_id;
+            $videoReader->status = 1;
+            $videoReader->save();
+        }
+
+        $video = Video::find($request->video_id);
+        $video->status = 1;
+
+        $previousVideos = Video::where('section_id', $request->section_id)
+            ->where('id', '<', $request->video_id)
+            ->get();
+
+        foreach ($previousVideos as $previousVideo) {
+            $previousVideo->status = 1;
+            $previousVideo->save();
+        }
+    }
+
+    public function sendTestimonial(Request $request)
+    {
+        $q = new Testimoni();
+        $q->user_id = Auth::user()->id;
+        $q->rating = $request->rating;
+        $q->body = $request->testimonial;
+        $q->kelas_id = $request->kelasId;
+        $q->save();
+    }
+
+
 
     public function sertifikat()
     {

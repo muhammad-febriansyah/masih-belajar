@@ -22,4 +22,9 @@ class Section extends Model
     {
         return $this->hasMany(Video::class);
     }
+
+    public function VideoReader()
+    {
+        return $this->hasMany(VideoReader::class);
+    }
 }
