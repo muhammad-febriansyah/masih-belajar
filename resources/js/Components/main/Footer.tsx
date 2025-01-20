@@ -16,12 +16,21 @@ export default function Footer() {
         if (currentURL.includes("/detailkelas")) {
             setIsVisible(false);
         }
+        if (currentURL.includes("/kelas-saya")) {
+            setIsVisible(false);
+        }
+        if (currentURL.includes("/list-sertifikat")) {
+            setIsVisible(false);
+        }
+        if (currentURL.includes("/my-profile")) {
+            setIsVisible(false);
+        }
     }, []);
     return (
         <>
             <footer className="bg-white">
                 {isVisible && (
-                    <div className="fixed  bottom-4 z-[88] right-4">
+                    <div className="fixed bottom-4  z-[88] right-4">
                         <a
                             href={`https://wa.me/` + setting.phone}
                             target="_blank"

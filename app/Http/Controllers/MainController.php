@@ -126,6 +126,30 @@ class MainController extends Controller
         $testimoni = Testimoni::where('kelas_id', $kelas->id)
             ->latest()
             ->get();
+        $totalstartmentor = Testimoni::where('kelas_id', $kelas->id)
+            ->whereHas('kelas', function ($query) use ($kelas) {
+                $query->where('user_id', $kelas->user_id);
+            })
+            ->sum('rating');
+        $totalTestimoni = Testimoni::where('kelas_id', $kelas->id)
+            ->whereHas('kelas', function ($query) use ($kelas) {
+                $query->where('user_id', $kelas->user_id);
+            })
+            ->count();
+
+        if ($totalTestimoni > 0) {
+            $averageRating = $totalstartmentor / $totalTestimoni;
+            $averageRating = number_format($averageRating, 1); // Format rating menjadi satu desimal
+        } else {
+            $averageRating = 0; // Jika tidak ada testimoni
+        }
+        $totalulasan = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })->count();
+        $totalsiswa = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })->count();
+        $totalkelasmentor = Kelas::where('user_id', $kelas->user_id)->count();
         $allclass = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
@@ -150,8 +174,30 @@ class MainController extends Controller
             'studentjoin' => $studentjoin,
             'totalvideo' => $totalvideo,
             'totalstar' => $totalstar,
-            'auth' => $auth
+            'auth' => $auth,
+            'averageRating' => $averageRating,
+            'totalulasan' => $totalulasan,
+            'totalkelasmentor' => $totalkelasmentor,
+            'totalsiswa' => $totalsiswa,
         ]);
+    }
+
+    public function createFreeTransaction(Request $request)
+    {
+        try {
+            $trx = new Transaction();
+            $trx->kelas_id = $request->kelas_id;
+            $trx->user_id = Auth::user()->id;
+            $trx->invoice_number = 'COURSE' . time();
+            $trx->amount = 0;
+            $trx->payment_method = 'manual';
+            $trx->status = 'free';
+            $trx->payment_url = "-";
+            $trx->save();
+            return to_route('dashboard.kelassaya');
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
     public function checkout($slug)
     {
@@ -213,7 +259,7 @@ class MainController extends Controller
         $user_id = Auth::id();
         $data = Kelas::select(
             'kelas.*',
-            DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
+            DB::raw('COUNT(transactions.id) as total_transaksi'),
             DB::raw('AVG(testimonis.rating) as average_rating'),
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
@@ -221,18 +267,47 @@ class MainController extends Controller
             ->where('kelas.status', 'disetujui')
             ->where('transactions.user_id', $user_id)
             ->where('transactions.status', 'paid')
+            ->Orwhere('transactions.status', 'free')
             ->groupBy('kelas.id')
-            ->orderByDesc('total_transaksi')->get();
+            ->orderByDesc('total_transaksi')
+            ->get();
+
+        // Ambil semua ID kelas yang sesuai
+        $kelasIds = $data->pluck('id');
+
+        // Ambil video yang sudah dibaca oleh pengguna dalam kelas-kelas ini
+        $videoreadGrouped = Video::whereHas('section', function ($query) use ($kelasIds) {
+            $query->whereIn('kelas_id', $kelasIds);
+        })
+            ->where('status', 1)
+            ->get()
+            ->groupBy('section.kelas_id');
+
+        // Menghitung progress untuk setiap kelas
+        $kelasWithProgress = $data->map(function ($kelas) use ($videoreadGrouped) {
+            $totalVideos = Video::whereHas('section', function ($query) use ($kelas) {
+                $query->where('kelas_id', $kelas->id);
+            })->count();
+            $videosRead = $videoreadGrouped->get($kelas->id, collect())->count();
+
+            $progress = $totalVideos > 0 ? ($videosRead / $totalVideos) * 100 : 0;
+
+            // Menambahkan field progress ke data kelas
+            $kelas->progress = round($progress, 2);
+
+            return $kelas;
+        });
+
         $setting = Setting::first();
         $auth = User::findOrFail(Auth::user()->id);
-        return Inertia::render('Main/Kelas/KelasSaya', ['setting' => $setting, 'auth' => $auth, 'kelas' => $data]);
+        return Inertia::render('Main/Kelas/KelasSaya', ['setting' => $setting, 'auth' => $auth, 'kelas' => $kelasWithProgress, 'videoread' => $videoreadGrouped]);
     }
 
     public function belajar($slug)
     {
-        $kelas = Kelas::where('slug', $slug)->first();
+        $kelas = Kelas::where('slug', $slug)->first(); // Ambil satu kelas berdasarkan slug
         $sections = Section::where('kelas_id', $kelas->id)
-            ->withCount('videos')  // Menghitung jumlah video terkait dengan setiap Section
+            ->withCount('videos') // Menghitung jumlah video pada setiap section
             ->get();
         $videos = Video::whereIn('section_id', $sections->pluck('id'))->get();
         $testimoni = Testimoni::where('kelas_id', $kelas->id)->get();
@@ -240,12 +315,56 @@ class MainController extends Controller
         $diskusi = Diskusi::where('kelas_id', $kelas->id)->get();
         $auth = User::findOrFail(Auth::user()->id);
         $balasDiskusi = BalasDiskusi::whereIn('diskusi_id', $diskusi->pluck('id'))->get();
-        return Inertia::render('Main/Belajar/Index', ['setting' => $setting, 'auth' => $auth, 'kelas' => $kelas, 'sectionData' => $sections, 'video' => $videos, 'testimoni' => $testimoni, 'diskusi' => $diskusi, 'balasDiskusi' => $balasDiskusi]);
+        $totalstartmentor = Testimoni::where('kelas_id', $kelas->id)
+            ->whereHas('kelas', function ($query) use ($kelas) {
+                $query->where('user_id', $kelas->user_id);
+            })
+            ->sum('rating');
+        $totalTestimoni = Testimoni::where('kelas_id', $kelas->id)
+            ->whereHas('kelas', function ($query) use ($kelas) {
+                $query->where('user_id', $kelas->user_id);
+            })
+            ->count();
+
+        if ($totalTestimoni > 0) {
+            $averageRating = $totalstartmentor / $totalTestimoni;
+            $averageRating = number_format($averageRating, 1); // Format rating menjadi satu desimal
+        } else {
+            $averageRating = 0; // Jika tidak ada testimoni
+        }
+        $totalulasan = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })->count();
+        $totalsiswa = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })->count();
+        $totalkelasmentor = Kelas::where('user_id', $kelas->user_id)->count();
+
+        // Kirim data ke frontend menggunakan Inertia
+        return Inertia::render('Main/Belajar/Index', [
+            'setting' => $setting,
+            'auth' => $auth,
+            'kelas' => $kelas,
+            'sectionData' => $sections,
+            'video' => $videos,
+            'testimoni' => $testimoni,
+            'diskusi' => $diskusi,
+            'balasDiskusi' => $balasDiskusi,
+            'averageRating' => $averageRating,
+            'totalulasan' => $totalulasan,
+            'totalsiswa' => $totalsiswa,
+            'totalkelasmentor' => $totalkelasmentor
+        ]);
     }
+
+
+
 
     public function getReadVideos()
     {
-        $readVideos = VideoReader::all(); // Ambil seluruh data dari tabel read_videos
+        $readVideos = VideoReader::whereHas('section', function ($query) {
+            $query->where('kelas_id', Auth::user()->kelas_id);
+        })->where('user_id', Auth::user()->id)->get();
         return response()->json($readVideos); // Kembalikan data dalam bentuk JSON
     }
 
@@ -254,7 +373,7 @@ class MainController extends Controller
         $existingVideoReader = VideoReader::where('user_id', Auth::user()->id)
             ->where('section_id', $request->section_id)
             ->where('video_id', $request->video_id)
-            ->exists(); // Hanya memeriksa keberadaan data
+            ->exists();
         if (!$existingVideoReader) {
             $videoReader = new VideoReader();
             $videoReader->user_id = Auth::user()->id;
@@ -266,15 +385,15 @@ class MainController extends Controller
 
         $video = Video::find($request->video_id);
         $video->status = 1;
+        $video->save();
+        // $previousVideos = Video::where('section_id', $request->section_id)
+        //     ->where('id', '<', $request->video_id)
+        //     ->get();
 
-        $previousVideos = Video::where('section_id', $request->section_id)
-            ->where('id', '<', $request->video_id)
-            ->get();
-
-        foreach ($previousVideos as $previousVideo) {
-            $previousVideo->status = 1;
-            $previousVideo->save();
-        }
+        // foreach ($previousVideos as $previousVideo) {
+        //     $previousVideo->status = 1;
+        //     $previousVideo->save();
+        // }
     }
 
     public function sendTestimonial(Request $request)
@@ -318,6 +437,11 @@ class MainController extends Controller
         $q->save();
     }
 
+    public function exam($slug)
+    {
+        $setting = Setting::first();
+        return Inertia::render('Main/Exam/Index', ['setting' => $setting]);
+    }
 
     public function sertifikat()
     {

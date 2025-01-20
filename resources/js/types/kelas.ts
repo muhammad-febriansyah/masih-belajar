@@ -36,6 +36,7 @@ export interface Datum {
     average_rating: null | string;
     total_bergabung: number;
     total_transaksi: number;
+    progress: number;
     level: Level;
     type: Category;
     category: Category;

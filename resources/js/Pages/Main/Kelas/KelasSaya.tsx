@@ -10,6 +10,8 @@ import {
 import MainLayout from "@/Layouts/MainLayout";
 import { Datum } from "@/types/kelas";
 import { UserType } from "@/types/user";
+import { VideoType } from "@/types/video";
+import { VideoReaderType } from "@/types/video_reader";
 import { Link } from "@inertiajs/react";
 import { CheckCircleIcon } from "lucide-react";
 import React, { useState } from "react";
@@ -17,8 +19,10 @@ import React, { useState } from "react";
 interface Props {
     auth: UserType;
     kelas: Datum[];
+    progress: number;
+    videoread: VideoType[];
 }
-export default function KelasSaya({ auth, kelas }: Props) {
+export default function KelasSaya({ auth, kelas, progress, videoread }: Props) {
     const [search, setSearch] = useState<string>("");
     const filteredKelas = kelas.filter((kel) => {
         const matchesSearch = kel.title
@@ -29,7 +33,7 @@ export default function KelasSaya({ auth, kelas }: Props) {
     return (
         <MainLayout>
             <section className="container py-10 mt-16 lg:mt-22">
-                <div className="flex flex-col items-start justify-between gap-5 lg:flex-row">
+                <div className="flex flex-col items-start justify-start gap-5 lg:flex-row">
                     <SideBar />
                     <div className="w-full lg:w-[75%]">
                         <Input
@@ -40,7 +44,7 @@ export default function KelasSaya({ auth, kelas }: Props) {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                         {filteredKelas.length > 0 ? (
-                            <div className="grid min-h-full grid-cols-1 gap-3 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-5 min-h-min lg:grid-cols-3">
                                 {filteredKelas.map((kel) => (
                                     <div
                                         key={kel.id}
@@ -67,7 +71,7 @@ export default function KelasSaya({ auth, kelas }: Props) {
                                                 <h3 className="mb-5 text-xl font-bold text-black line-clamp-2">
                                                     {kel.title}
                                                 </h3>
-                                                <div className="flex items-center">
+                                                <div className="flex items-center mb-5">
                                                     {kel.user.image ? (
                                                         <img
                                                             src={`/storage/${kel.user.image}`}
@@ -90,6 +94,36 @@ export default function KelasSaya({ auth, kelas }: Props) {
                                                         </span>
                                                     </div>
                                                 </div>
+                                                <div className="pt-5 mb-10">
+                                                    <span
+                                                        id="ProgressLabel"
+                                                        className="sr-only"
+                                                    >
+                                                        Loading
+                                                    </span>
+                                                    <span
+                                                        role="progressbar"
+                                                        aria-labelledby="ProgressLabel"
+                                                        aria-valuenow={
+                                                            kel.progress
+                                                        }
+                                                        aria-valuemax={100}
+                                                        className="relative block bg-gray-200 rounded-full"
+                                                    >
+                                                        <span className="absolute inset-0 flex items-center justify-center text-base">
+                                                            <span className="font-semibold text-white">
+                                                                {kel.progress}%
+                                                            </span>
+                                                        </span>
+                                                        <span
+                                                            className="block h-5 text-center rounded-full bg-maroon"
+                                                            style={{
+                                                                width: `${kel.progress}%`,
+                                                            }}
+                                                        />
+                                                    </span>
+                                                </div>
+
                                                 <div className="flex items-center justify-between pt-3">
                                                     <div className="flex items-center">
                                                         {Array.from(

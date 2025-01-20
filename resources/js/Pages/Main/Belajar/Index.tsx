@@ -1,4 +1,3 @@
-import MainLayout from "@/Layouts/MainLayout";
 import { Datum, KelasType } from "@/types/kelas";
 import { SectionType } from "@/types/section";
 import { SettingType } from "@/types/setting";
@@ -11,6 +10,7 @@ import {
     Check,
     CheckCheck,
     Clock,
+    File,
     Loader2,
     Pencil,
     PlayCircleIcon,
@@ -40,12 +40,6 @@ import { TestimoniType } from "@/types/testimoni";
 import { Input } from "@/components/ui/input";
 import { DiskusiType } from "@/types/diskusi";
 import { BalasDiskusiType } from "@/types/balas_diskusi";
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
 
 interface Props {
     setting: SettingType;
@@ -55,6 +49,10 @@ interface Props {
     testimoni: TestimoniType[];
     diskusi: DiskusiType[];
     balasDiskusi: BalasDiskusiType[];
+    averageRating: number;
+    totalulasan: number;
+    totalkelasmentor: number;
+    totalsiswa: number;
 }
 export default function Index({
     setting,
@@ -64,6 +62,10 @@ export default function Index({
     testimoni,
     diskusi,
     balasDiskusi,
+    averageRating,
+    totalulasan,
+    totalkelasmentor,
+    totalsiswa,
 }: Props) {
     const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(
         null
@@ -92,19 +94,11 @@ export default function Index({
     const [title, setTitle] = useState<string | null>(null);
     const [body, setBody] = useState<string>("");
     const [balas, setBalas] = useState<string>("");
-    const [diskusiId, setDiskusiId] = useState<string>("");
     const diskusiIdRef = useRef<HTMLInputElement>(null); // Membuat ref untuk input hidden
     const [loading, setLoading] = useState<boolean>(false);
     const kelasId = kelas.id;
     const [selectedItem, setSelectedItem] = useState<Number | null>(null); // Menyimpan ID item yang sedang terbuka
 
-    const toggleAccordion = (id: Number) => {
-        if (selectedItem === id) {
-            setSelectedItem(null); // Menutup item jika sudah terbuka
-        } else {
-            setSelectedItem(id); // Membuka item baru
-        }
-    };
     const { data, setData, post, processing, errors, reset } = useForm({
         rating: rating,
         kelasId: kelasId, // Misalnya kelasId adalah 1
@@ -127,14 +121,14 @@ export default function Index({
             video[0]
         );
         if (videoId === lastVideo.id) {
-            setIsLastVideo(true); // Mark this as the last video
+            setIsLastVideo(true);
         } else {
-            setIsLastVideo(false); // If not the last video
+            setIsLastVideo(false);
         }
     };
 
     const handleRatingClick = (value: number) => {
-        setRating(value); // Set the selected rating
+        setRating(value);
         setData("rating", value);
     };
 
@@ -232,6 +226,7 @@ export default function Index({
             }
         }
     };
+
     const handlePreviousVideo = () => {
         if (selectedVideoId) {
             const currentSectionId = selectedVideoId.sectionId;
@@ -429,15 +424,10 @@ export default function Index({
     };
     const sendBalasdiskusi = async (e: React.FormEvent) => {
         e.preventDefault();
-
         const diskusiId = diskusiIdRef.current?.value; // Mengambil nilai dari ref
-        console.log("Diskusi ID dari ref:", diskusiId); // Pastikan nilai diskusiId ada
-
         if (!diskusiId) {
-            console.error("Diskusi ID kosong!");
             return;
         }
-
         const formData = new FormData();
         formData.append("diskusiId", diskusiId);
         formData.append("balas", balas);
@@ -549,8 +539,7 @@ export default function Index({
                             <span className="ml-2">Kembali</span>
                         </Link>
 
-                        {/* ScrollArea */}
-                        <div className="overflow-y-auto max-h-[700px] py-5 px-2.5">
+                        <ScrollArea className="overflow-y-auto h-screen pt-5 pb-24 px-2.5">
                             {sectionData.map((section, index) => (
                                 <div key={index} className="mt-5">
                                     <h3 className="font-medium">
@@ -655,7 +644,7 @@ export default function Index({
                                     </ul>
                                 </div>
                             ))}
-                        </div>
+                        </ScrollArea>
                     </div>
 
                     {/* Konten utama */}
@@ -664,125 +653,144 @@ export default function Index({
                             <h1 className="text-xl font-bold text-black lg:text-3xl">
                                 {kelas.title}
                             </h1>
+                            <div className="flex items-center gap-2">
+                                <Dialog
+                                    open={isDialogOpen}
+                                    onOpenChange={(open) =>
+                                        setIsDialogOpen(open)
+                                    }
+                                >
+                                    <DialogTrigger>
+                                        <Button
+                                            type="button"
+                                            className="rounded-full bg-maroon"
+                                        >
+                                            <Pencil /> Beri Ulasan
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                Berikan Rating seberapa bagus
+                                                kelas ini 😊
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                <form onSubmit={handleSubmit}>
+                                                    <div className="my-5 space-y-5">
+                                                        <div className="grid flex-1 gap-2">
+                                                            <Label
+                                                                htmlFor="link"
+                                                                className="text-black"
+                                                            >
+                                                                Rating
+                                                            </Label>
+                                                            <div className="flex gap-2">
+                                                                {[
+                                                                    1, 2, 3, 4,
+                                                                    5,
+                                                                ].map(
+                                                                    (star) => (
+                                                                        <svg
+                                                                            key={
+                                                                                star
+                                                                            }
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            viewBox="0 0 576 512"
+                                                                            className={`w-5 h-5 cursor-pointer ${
+                                                                                rating >=
+                                                                                star
+                                                                                    ? "text-yellow-400"
+                                                                                    : "text-gray-300"
+                                                                            }`}
+                                                                            fill="currentColor"
+                                                                            onClick={() =>
+                                                                                handleRatingClick(
+                                                                                    star
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
+                                                                        </svg>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="mb-4">
+                                                            <label
+                                                                htmlFor="testimonial"
+                                                                className="block text-sm font-semibold text-gray-700"
+                                                            >
+                                                                Review
+                                                            </label>
+                                                            <Textarea
+                                                                id="testimonial"
+                                                                value={
+                                                                    data.testimonial
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        "testimonial",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className="w-full p-2 mt-2 border border-gray-300 rounded-md"
+                                                                placeholder="Write your testimonial here..."
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                            <Dialog
-                                open={isDialogOpen}
-                                onOpenChange={(open) => setIsDialogOpen(open)}
-                            >
-                                <DialogTrigger>
+                                                    {/* Submit Button */}
+                                                    <div className="flex justify-end gap-2">
+                                                        {processing ? (
+                                                            <Button
+                                                                disabled
+                                                                className="rounded-full bg-maroon"
+                                                            >
+                                                                <Loader2 className="animate-spin" />
+                                                                Tunggu
+                                                                Sebentar...
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                type="submit"
+                                                                className="rounded-full bg-maroon"
+                                                            >
+                                                                Kirim Review
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            onClick={() =>
+                                                                setIsDialogOpen(
+                                                                    false
+                                                                )
+                                                            } // Close the dialog
+                                                            className="text-white bg-gray-500 rounded-full"
+                                                        >
+                                                            Batal
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                    </DialogContent>
+                                </Dialog>
+                                <Link
+                                    href={route("dashboard.exam", kelas.slug)}
+                                >
                                     <Button
                                         type="button"
                                         className="rounded-full bg-maroon"
                                     >
-                                        <Pencil /> Beri Ulasan
+                                        <File /> Exam
                                     </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>
-                                            Berikan Rating seberapa bagus kelas
-                                            ini 😊
-                                        </DialogTitle>
-                                        <DialogDescription>
-                                            <form onSubmit={handleSubmit}>
-                                                <div className="my-5 space-y-5">
-                                                    <div className="grid flex-1 gap-2">
-                                                        <Label
-                                                            htmlFor="link"
-                                                            className="text-black"
-                                                        >
-                                                            Rating
-                                                        </Label>
-                                                        <div className="flex gap-2">
-                                                            {[
-                                                                1, 2, 3, 4, 5,
-                                                            ].map((star) => (
-                                                                <svg
-                                                                    key={star}
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    viewBox="0 0 576 512"
-                                                                    className={`w-5 h-5 cursor-pointer ${
-                                                                        rating >=
-                                                                        star
-                                                                            ? "text-yellow-400"
-                                                                            : "text-gray-300"
-                                                                    }`}
-                                                                    fill="currentColor"
-                                                                    onClick={() =>
-                                                                        handleRatingClick(
-                                                                            star
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                                </svg>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <div className="mb-4">
-                                                        <label
-                                                            htmlFor="testimonial"
-                                                            className="block text-sm font-semibold text-gray-700"
-                                                        >
-                                                            Review
-                                                        </label>
-                                                        <Textarea
-                                                            id="testimonial"
-                                                            value={
-                                                                data.testimonial
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    "testimonial",
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            }
-                                                            className="w-full p-2 mt-2 border border-gray-300 rounded-md"
-                                                            placeholder="Write your testimonial here..."
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Submit Button */}
-                                                <div className="flex justify-end gap-2">
-                                                    {processing ? (
-                                                        <Button
-                                                            disabled
-                                                            className="rounded-full bg-maroon"
-                                                        >
-                                                            <Loader2 className="animate-spin" />
-                                                            Tunggu Sebentar...
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            type="submit"
-                                                            className="rounded-full bg-maroon"
-                                                        >
-                                                            Kirim Review
-                                                        </Button>
-                                                    )}
-                                                    <Button
-                                                        onClick={() =>
-                                                            setIsDialogOpen(
-                                                                false
-                                                            )
-                                                        } // Close the dialog
-                                                        className="text-white bg-gray-500 rounded-full"
-                                                    >
-                                                        Batal
-                                                    </Button>
-                                                </div>
-                                            </form>
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                </DialogContent>
-                            </Dialog>
+                                </Link>
+                            </div>
                         </div>
-                        <span className="text-lg font-semibold text-black">
+                        {/* <span className="text-lg font-semibold text-black">
                             Progress Kelas
-                        </span>
-                        <div className="mt-5 mb-10 ">
+                        </span> */}
+                        {/* <div className="mt-5 mb-10">
                             <span id="ProgressLabel" className="sr-only">
                                 Loading
                             </span>
@@ -795,16 +803,18 @@ export default function Index({
                             >
                                 <span className="absolute inset-0 flex items-center justify-center text-base">
                                     <span className="font-bold text-white">
-                                        {progress}%{" "}
+                                        {Math.min(progress, 100)}%{" "}
                                     </span>
                                 </span>
 
                                 <span
                                     className="block text-center rounded-full bg-maroon h-7"
-                                    style={{ width: `${progress}%` }} // Sesuaikan lebar berdasarkan progress
+                                    style={{
+                                        width: `${Math.min(progress, 100)}%`,
+                                    }}
                                 />
                             </span>
-                        </div>
+                        </div> */}
 
                         <div className="w-full p-5 bg-white rounded-2xl">
                             {selectedVideoUrl ? (
@@ -879,7 +889,7 @@ export default function Index({
                                 <h3 className="text-xl font-bold">Diskusi</h3>
                                 <Dialog>
                                     <DialogTrigger>
-                                        <Button className="mt-5 rounded-full bg-maroon">
+                                        <Button className="mt-5 mb-5 rounded-full bg-maroon">
                                             <Plus /> Form Diskusi
                                         </Button>
                                     </DialogTrigger>
@@ -1298,35 +1308,76 @@ export default function Index({
                                 )}
                             </TabsContent>
                             <TabsContent value="mentor">
-                                <div className="flex items-center p-5 mt-10 space-x-5 bg-white rounded-2xl">
-                                    {kelas.user.image ? (
-                                        <img
-                                            src={`/storage/${kelas.user.image}`}
-                                            alt="User Avatar"
-                                            className="object-cover w-16 h-16 rounded-full"
-                                        />
-                                    ) : (
-                                        <img
-                                            src="/default-avatar.svg"
-                                            className="object-cover w-16 h-16 rounded-full"
-                                            alt="Laki-laki Avatar"
-                                        />
-                                    )}
-
-                                    <div className="flex flex-col">
-                                        <h1 className="text-xl font-bold text-black lg:text-2xl">
-                                            {kelas.user.name}
-                                        </h1>
-                                        <span className="text-base text-black underline">
-                                            Mentor
-                                        </span>
-                                        <p
-                                            className="hidden text-sm leading-relaxed text-gray-500 lg:block "
-                                            dangerouslySetInnerHTML={{
-                                                __html: kelas.user.bio,
-                                            }}
-                                        />
+                                <div className="p-5 mt-10 space-y-5 bg-white rounded-2xl">
+                                    <div className="flex flex-col items-center justify-center gap-5 md:justify-start md:items-start md:flex-row">
+                                        {kelas.user.image ? (
+                                            <img
+                                                src={`/storage/${kelas.user.image}`}
+                                                alt="User Avatar"
+                                                className="object-cover w-16 h-16 rounded-full"
+                                            />
+                                        ) : (
+                                            <img
+                                                src="/default-avatar.svg"
+                                                className="object-cover w-20 h-20 rounded-full"
+                                                alt="Laki-laki Avatar"
+                                            />
+                                        )}
+                                        <div className="flex flex-col">
+                                            <h1 className="text-xl font-bold text-black lg:text-2xl">
+                                                {kelas.user.name}
+                                            </h1>
+                                            <div className="flex flex-col mt-3">
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src="/icon-mentor/23.svg"
+                                                        alt=""
+                                                        className="w-5 h-5"
+                                                    />
+                                                    <span className="text-base font-medium text-black">
+                                                        {averageRating} Rating
+                                                        Mentor
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src="/icon-mentor/24.svg"
+                                                        alt=""
+                                                        className="w-5 h-5"
+                                                    />
+                                                    <span className="text-base font-medium text-black">
+                                                        {totalulasan} Ulasan
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src="/icon-mentor/25.svg"
+                                                        alt=""
+                                                        className="w-5 h-5"
+                                                    />
+                                                    <span className="text-base font-medium text-black">
+                                                        {totalsiswa} Siswa
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src="/icon-mentor/26.svg"
+                                                        alt=""
+                                                        className="w-5 h-5"
+                                                    />
+                                                    <span className="text-base font-medium text-black">
+                                                        {totalkelasmentor} Kusus
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <p
+                                        className="hidden text-sm leading-relaxed text-gray-500 md:block "
+                                        dangerouslySetInnerHTML={{
+                                            __html: kelas.user.bio,
+                                        }}
+                                    />
                                 </div>
                             </TabsContent>
                             <TabsContent value="ulasan">

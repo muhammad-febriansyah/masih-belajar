@@ -52,6 +52,9 @@ interface Props {
     totalvideo: number;
     totalstar: number;
     averageRating: number;
+    totalulasan: number;
+    totalkelasmentor: number;
+    totalsiswa: number;
 }
 export default function Detail({
     kelas,
@@ -63,6 +66,9 @@ export default function Detail({
     totalvideo,
     totalstar,
     averageRating,
+    totalulasan,
+    totalkelasmentor,
+    totalsiswa,
 }: Props) {
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
@@ -255,7 +261,7 @@ export default function Detail({
                                     value="about"
                                     className="p-5 bg-white rounded-2xl"
                                 >
-                                    <div className="w-full mt-5 space-y-5">
+                                    {/* <div className="w-full mt-5 space-y-5">
                                         <div className="flow-root py-3 border border-gray-100 rounded-lg shadow-sm">
                                             <dl className="-my-3 text-sm divide-y divide-gray-100">
                                                 <div className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-3 sm:gap-4">
@@ -358,7 +364,7 @@ export default function Detail({
                                                 </div>
                                             </dl>
                                         </div>
-                                    </div>
+                                    </div> */}
                                     <p
                                         className="mt-5 text-sm leading-relaxed text-gray-700"
                                         dangerouslySetInnerHTML={{
@@ -481,50 +487,77 @@ export default function Detail({
                                     </Accordion>
                                 </TabsContent>
                                 <TabsContent value="mentor">
-                                    <div className="flex items-center p-5 mt-10 space-x-5 bg-white rounded-2xl">
-                                        {kelas.user.image ? (
-                                            <img
-                                                src={`/storage/${kelas.user.image}`}
-                                                alt="User Avatar"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                            />
-                                        ) : kelas.user.jk === "Laki-laki" ? (
-                                            <img
-                                                src="/lk.png"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                                alt="Laki-laki Avatar"
-                                            />
-                                        ) : (
-                                            <img
-                                                src="/cw.png"
-                                                alt="Perempuan Avatar"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                            />
-                                        )}
-                                        <div className="flex flex-col">
-                                            <h1 className="text-xl font-bold text-black lg:text-2xl">
-                                                {kelas.user.name}
-                                            </h1>
-                                            <div>
-                                                <div>
-                                                    <img
-                                                        src="/icon-mentor/23.svg"
-                                                        alt=""
-                                                        className="w-5 h-5"
-                                                    />
-                                                    <span>
-                                                        {averageRating} Rating
-                                                        Mentor
-                                                    </span>
+                                    <div className="p-5 mt-10 space-y-5 bg-white rounded-2xl">
+                                        <div className="flex flex-col items-center justify-center gap-5 md:justify-start md:items-start md:flex-row">
+                                            {kelas.user.image ? (
+                                                <img
+                                                    src={`/storage/${kelas.user.image}`}
+                                                    alt="User Avatar"
+                                                    className="object-cover w-16 h-16 rounded-full"
+                                                />
+                                            ) : (
+                                                <img
+                                                    src="/default-avatar.svg"
+                                                    className="object-cover w-20 h-20 rounded-full"
+                                                    alt="Laki-laki Avatar"
+                                                />
+                                            )}
+                                            <div className="flex flex-col">
+                                                <h1 className="text-xl font-bold text-black lg:text-2xl">
+                                                    {kelas.user.name}
+                                                </h1>
+                                                <div className="flex flex-col mt-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/23.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {averageRating}{" "}
+                                                            Rating Mentor
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/24.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {totalulasan} Ulasan
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/25.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {totalsiswa} Siswa
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/26.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {totalkelasmentor}{" "}
+                                                            Kusus
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <p
-                                                className="hidden text-sm leading-relaxed text-gray-500 lg:block "
-                                                dangerouslySetInnerHTML={{
-                                                    __html: kelas.user.bio,
-                                                }}
-                                            />
                                         </div>
+                                        <p
+                                            className="hidden text-sm leading-relaxed text-gray-500 md:block "
+                                            dangerouslySetInnerHTML={{
+                                                __html: kelas.user.bio,
+                                            }}
+                                        />
                                     </div>
                                     <h1 className="mt-10 mb-5 text-xl font-bold lg:text-2xl">
                                         Kelas lainya dari mentor :{" "}

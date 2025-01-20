@@ -106,12 +106,6 @@ export default function CheckOut({ kelas, auth }: Props) {
 
     const hargaSetelahDiskon = kelas.price - diskonPromo;
     useEffect(() => {
-        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-            const message = "Apakah kamu yakin ingin meninggalkan halaman ini?";
-            event.returnValue = message; // Untuk mendukung browser yang tidak mengizinkan custom message
-            return message; // Untuk beberapa browser lama
-        };
-        window.addEventListener("beforeunload", handleBeforeUnload);
         const handleScroll = () => {
             if (window.scrollY > 10) {
                 setIsScrolled(true); // Set to true when scrolled
@@ -122,7 +116,6 @@ export default function CheckOut({ kelas, auth }: Props) {
         window.addEventListener("scroll", handleScroll);
         return () => {
             window.removeEventListener("scroll", handleScroll);
-            window.removeEventListener("beforeunload", handleBeforeUnload);
         };
     }, []);
     return (

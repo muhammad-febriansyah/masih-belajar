@@ -1,13 +1,3 @@
-import HomeLayout from "@/Layouts/HomeLayout";
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import HeroVideoDialog from "@/components/ui/hero-video-dialog";
 import { Datum } from "@/types/kelas";
 import { SectionType } from "@/types/section";
 import { TestimoniType } from "@/types/testimoni";
@@ -29,26 +19,13 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    BookUserIcon,
-    ChartNoAxesColumnIcon,
-    ChartNoAxesColumnIncreasing,
-    CheckCircle,
-    CheckCircleIcon,
-    CircleCheckBig,
-    LockIcon,
-    Star,
-} from "lucide-react";
+import { LockIcon, Star } from "lucide-react";
 import PulsatingButton from "@/components/ui/pulsating-button";
 import { route } from "ziggy-js";
 import MainLayout from "@/Layouts/MainLayout";
 import { Badge } from "@/components/ui/badge";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Inertia } from "@inertiajs/inertia";
+import { toast } from "sonner";
 
 interface Props {
     kelas: Datum;
@@ -60,6 +37,10 @@ interface Props {
     studentjoin: number;
     totalvideo: number;
     totalstar: number;
+    averageRating: number;
+    totalulasan: number;
+    totalkelasmentor: number;
+    totalsiswa: number;
 }
 export default function Detail({
     kelas,
@@ -70,8 +51,31 @@ export default function Detail({
     studentjoin,
     totalvideo,
     totalstar,
+    averageRating,
+    totalulasan,
+    totalkelasmentor,
+    totalsiswa,
 }: Props) {
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    const joinFreeClass = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true); // Mulai loading
+
+        try {
+            const response = await Inertia.post(
+                route("dashboard.createFreeTransaction"),
+                {
+                    kelas_id: kelas.id, // Data yang dikirimkan
+                }
+            );
+            setLoading(false); // Selesai loading
+        } catch (error) {
+            console.error("Error:", error);
+            setLoading(false); // Selesai loading
+        }
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -99,25 +103,43 @@ export default function Detail({
                 </div>
                 <div className="bg-white  md:hidden flex items-center justify-between z-[88] px-5 rounded-t-2xl left-0 right-0 w-full h-14  bottom-0 fixed">
                     <div className="flex flex-col">
-                        {kelas.discount > 0 && (
-                            <span className="relative text-base font-medium text-red-600">
-                                Rp.{" "}
-                                {Number(kelas.price).toLocaleString("id-ID")}
-                                <span className="absolute left-0 right-0 bottom-2.5 font-semibold border-b-2 border-red-700"></span>
-                            </span>
+                        {kelas.type.name === "Gratis" ? (
+                            <div></div>
+                        ) : (
+                            <>
+                                {kelas.discount > 0 && (
+                                    <span className="relative text-base font-medium text-red-600">
+                                        Rp.{" "}
+                                        {Number(kelas.price).toLocaleString(
+                                            "id-ID"
+                                        )}
+                                        <span className="absolute left-0 right-0 bottom-2.5 font-semibold border-b-2 border-red-700"></span>
+                                    </span>
+                                )}
+                                <span className="text-base font-semibold text-black">
+                                    Rp.{" "}
+                                    {Number(
+                                        kelas.price - kelas.discount
+                                    ).toLocaleString("id-ID")}
+                                </span>
+                            </>
                         )}
-                        <span className="text-base font-semibold text-black">
-                            Rp.{" "}
-                            {Number(
-                                kelas.price - kelas.discount
-                            ).toLocaleString("id-ID")}
-                        </span>
                     </div>
-                    <Link href={route("dashboard.checkout", kelas.slug)}>
-                        <PulsatingButton className="w-full bg-maroon">
-                            Beli Kelas
+                    {kelas.type.name === "Gratis" ? (
+                        <PulsatingButton
+                            type="button"
+                            onClick={joinFreeClass}
+                            className="w-full bg-maroon"
+                        >
+                            Gabung Kelas
                         </PulsatingButton>
-                    </Link>
+                    ) : (
+                        <Link href={route("dashboard.checkout", kelas.slug)}>
+                            <PulsatingButton className="w-full bg-maroon">
+                                Beli Kelas
+                            </PulsatingButton>
+                        </Link>
+                    )}
                 </div>
             </section>
             <section className="container  py-10 transform -translate-y-[4%] md:-translate-y-[8%] left-0 right-0">
@@ -164,7 +186,7 @@ export default function Detail({
                                     value="about"
                                     className="p-5 bg-white rounded-2xl"
                                 >
-                                    <div className="w-full mt-5 space-y-5">
+                                    {/* <div className="w-full mt-5 space-y-5">
                                         <div className="flow-root py-3 border border-gray-100 rounded-lg shadow-sm">
                                             <dl className="-my-3 text-sm divide-y divide-gray-100">
                                                 <div className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-3 sm:gap-4">
@@ -267,7 +289,7 @@ export default function Detail({
                                                 </div>
                                             </dl>
                                         </div>
-                                    </div>
+                                    </div> */}
                                     <p
                                         className="mt-5 text-sm leading-relaxed text-gray-700"
                                         dangerouslySetInnerHTML={{
@@ -390,40 +412,77 @@ export default function Detail({
                                     </Accordion>
                                 </TabsContent>
                                 <TabsContent value="mentor">
-                                    <div className="flex items-center p-5 mt-10 space-x-5 bg-white rounded-2xl">
-                                        {kelas.user.image ? (
-                                            <img
-                                                src={`/storage/${kelas.user.image}`}
-                                                alt="User Avatar"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                            />
-                                        ) : kelas.user.jk === "Laki-laki" ? (
-                                            <img
-                                                src="/lk.png"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                                alt="Laki-laki Avatar"
-                                            />
-                                        ) : (
-                                            <img
-                                                src="/cw.png"
-                                                alt="Perempuan Avatar"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                            />
-                                        )}
-                                        <div className="flex flex-col">
-                                            <h1 className="text-xl font-bold text-black lg:text-2xl">
-                                                {kelas.user.name}
-                                            </h1>
-                                            <span className="text-base text-black underline">
-                                                Mentor
-                                            </span>
-                                            <p
-                                                className="hidden text-sm leading-relaxed text-gray-500 lg:block "
-                                                dangerouslySetInnerHTML={{
-                                                    __html: kelas.user.bio,
-                                                }}
-                                            />
+                                    <div className="p-5 mt-10 space-y-5 bg-white rounded-2xl">
+                                        <div className="flex flex-col items-center justify-center gap-5 md:justify-start md:items-start md:flex-row">
+                                            {kelas.user.image ? (
+                                                <img
+                                                    src={`/storage/${kelas.user.image}`}
+                                                    alt="User Avatar"
+                                                    className="object-cover w-16 h-16 rounded-full"
+                                                />
+                                            ) : (
+                                                <img
+                                                    src="/default-avatar.svg"
+                                                    className="object-cover w-20 h-20 rounded-full"
+                                                    alt="Laki-laki Avatar"
+                                                />
+                                            )}
+                                            <div className="flex flex-col">
+                                                <h1 className="text-xl font-bold text-black lg:text-2xl">
+                                                    {kelas.user.name}
+                                                </h1>
+                                                <div className="flex flex-col mt-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/23.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {averageRating}{" "}
+                                                            Rating Mentor
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/24.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {totalulasan} Ulasan
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/25.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {totalsiswa} Siswa
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src="/icon-mentor/26.svg"
+                                                            alt=""
+                                                            className="w-5 h-5"
+                                                        />
+                                                        <span className="text-base font-medium text-black">
+                                                            {totalkelasmentor}{" "}
+                                                            Kusus
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
+                                        <p
+                                            className="hidden text-sm leading-relaxed text-gray-500 md:block "
+                                            dangerouslySetInnerHTML={{
+                                                __html: kelas.user.bio,
+                                            }}
+                                        />
                                     </div>
                                     <h1 className="mt-10 mb-5 text-xl font-bold lg:text-2xl">
                                         Kelas lainya dari mentor :{" "}
@@ -431,32 +490,29 @@ export default function Detail({
                                     </h1>
                                     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                                         {allclass.map((kel) => (
-                                            <div
+                                            <article
                                                 key={kel.id}
-                                                className="overflow-hidden bg-white rounded-2xl flex flex-col min-h-[100px]"
+                                                className="overflow-hidden transition bg-white rounded-2xl grid grid-rows-[auto_1fr_auto]"
                                             >
                                                 <Link
-                                                    href={route(
-                                                        "dashboard.detailkelas",
-                                                        kel.slug
-                                                    )}
-                                                    className="relative"
+                                                    href={`/student/detailkelas/${kel.slug}`}
+                                                    className="relative block"
                                                 >
-                                                    <span className="absolute px-5 z-[9] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
+                                                    <span className="absolute px-5 py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
                                                         {kel.category.name}
                                                     </span>
 
                                                     <img
                                                         alt=""
                                                         src={`/storage/${kel.image}`}
-                                                        className="object-cover w-full transition-all duration-300 h-60 rounded-t-2xl hover:scale-110"
+                                                        className="object-cover w-full h-56"
                                                     />
 
-                                                    <div className="p-4 space-y-3 sm:p-6">
-                                                        <h3 className="mb-5 text-xl font-bold text-black line-clamp-2">
+                                                    <div className="p-4 space-y-3 bg-white sm:p-6">
+                                                        <h3 className="mt-0.5 text-black mb-5 text-xl line-clamp-2 font-bold">
                                                             {kel.title}
                                                         </h3>
-                                                        <div className="flex items-center">
+                                                        <div className="flex items-center p-2">
                                                             {kel.user.image ? (
                                                                 <img
                                                                     src={`/storage/${kel.user.image}`}
@@ -485,144 +541,64 @@ export default function Detail({
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        {kel.type.name ===
-                                                        "Premium" ? (
-                                                            <div className="flex flex-row items-center pt-5 space-x-2">
-                                                                {kel.discount >
-                                                                    0 && (
-                                                                    <span className="relative text-base font-medium text-red-600">
-                                                                        Rp.{" "}
-                                                                        {Number(
-                                                                            kel.price
-                                                                        ).toLocaleString(
-                                                                            "id-ID"
-                                                                        )}
-                                                                        <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
-                                                                    </span>
-                                                                )}
-                                                                <span className="text-base font-medium text-black">
+                                                        <div className="flex flex-row items-center pt-5 space-x-2">
+                                                            {kel.discount >
+                                                                0 && (
+                                                                <span className="relative text-base font-medium text-red-600">
                                                                     Rp.{" "}
                                                                     {Number(
-                                                                        kel.price -
-                                                                            kel.discount
+                                                                        kel.price
                                                                     ).toLocaleString(
                                                                         "id-ID"
                                                                     )}
+                                                                    <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
                                                                 </span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex flex-row items-center pt-5 space-x-2">
-                                                                <span className="text-base font-medium text-black">
-                                                                    Rp. 0
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center justify-between pt-3">
-                                                            <div className="flex items-center">
-                                                                {Array.from(
-                                                                    {
-                                                                        length: 5,
-                                                                    },
-                                                                    (
-                                                                        _,
-                                                                        index
-                                                                    ) => (
-                                                                        <svg
-                                                                            key={
-                                                                                index
-                                                                            }
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                            viewBox="0 0 576 512"
-                                                                            fill="currentColor"
-                                                                            className={`w-5 h-5 ${
-                                                                                Number(
-                                                                                    kel.average_rating
-                                                                                ) >
-                                                                                index
-                                                                                    ? "text-yellow-400"
-                                                                                    : "text-gray-300"
-                                                                            }`}
-                                                                        >
-                                                                            <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                                        </svg>
-                                                                    )
-                                                                )}
-                                                                <span className="ml-2 font-semibold text-black">
-                                                                    (
-                                                                    {Number(
-                                                                        kel.average_rating
-                                                                    )}
-                                                                    )
-                                                                </span>
-                                                            </div>
-
-                                                            <div>
-                                                                <TooltipProvider>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger>
-                                                                            <img
-                                                                                src={`/storage/${kel.level.image}`}
-                                                                                alt=""
-                                                                                className="object-cover w-8 h-8 rounded-full"
-                                                                            />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>
-                                                                            <p>
-                                                                                {
-                                                                                    kel
-                                                                                        .level
-                                                                                        .name
-                                                                                }
-                                                                            </p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {kel.total_bergabung >
-                                                            0 ? (
-                                                                <Badge className="transition-all duration-300 bg-green-600 hover:scale-110">
-                                                                    <CheckCircleIcon className="w-4 h-4 mr-1" />{" "}
-                                                                    Bergabung
-                                                                </Badge>
-                                                            ) : (
-                                                                <>
-                                                                    {kel.total_transaksi >
-                                                                        0 && (
-                                                                        <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
-                                                                            {kel.total_transaksi >
-                                                                            0
-                                                                                ? "Terlaris"
-                                                                                : ""}
-                                                                        </Badge>
-                                                                    )}
-                                                                    {kel.type
-                                                                        .name ===
-                                                                    "Premium" ? (
-                                                                        <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
-                                                                            {
-                                                                                kel
-                                                                                    .type
-                                                                                    .name
-                                                                            }
-                                                                        </Badge>
-                                                                    ) : (
-                                                                        <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
-                                                                            {
-                                                                                kel
-                                                                                    .type
-                                                                                    .name
-                                                                            }
-                                                                        </Badge>
-                                                                    )}
-                                                                </>
                                                             )}
+                                                            <span className="text-base font-medium text-black">
+                                                                Rp.{" "}
+                                                                {Number(
+                                                                    kel.price -
+                                                                        kel.discount
+                                                                ).toLocaleString(
+                                                                    "id-ID"
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex pt-3">
+                                                            {Array.from(
+                                                                { length: 5 },
+                                                                (_, index) => (
+                                                                    <svg
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        viewBox="0 0 576 512"
+                                                                        fill="currentColor"
+                                                                        className={`w-5 h-5 ${
+                                                                            Number(
+                                                                                kel.average_rating
+                                                                            ) >
+                                                                            index
+                                                                                ? "text-yellow-400"
+                                                                                : "text-gray-300"
+                                                                        }`}
+                                                                    >
+                                                                        <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
+                                                                    </svg>
+                                                                )
+                                                            )}
+                                                            <span className="ml-2 font-semibold text-black">
+                                                                (
+                                                                {Number(
+                                                                    kel.average_rating
+                                                                )}
+                                                                )
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </Link>
-                                                {/* Rating di bawah */}
-                                            </div>
+                                            </article>
                                         ))}
                                     </div>
                                 </TabsContent>
@@ -814,16 +790,15 @@ export default function Detail({
                                     Beli Kelas
                                 </PulsatingButton>
                             </Link>
-                        ) : (
-                            <Link
-                                href={route("dashboard.checkout", kelas.slug)}
-                                className="mt-5"
+                        ) : kelas.type.name === "Gratis" ? (
+                            <PulsatingButton
+                                type="button"
+                                onClick={joinFreeClass}
+                                className="w-full bg-maroon"
                             >
-                                <PulsatingButton className="w-full bg-maroon">
-                                    Gabung Kelas
-                                </PulsatingButton>
-                            </Link>
-                        )}
+                                Gabung Kelas
+                            </PulsatingButton>
+                        ) : null}
                     </div>
                 </div>
             </section>
