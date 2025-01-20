@@ -99,7 +99,14 @@ export default function Navbar({ dataKelas = [] }: Props) {
                         ))}
                     </ul>
                 </div>
-                <div className="hidden space-x-3 lg:flex">
+                <div className="items-center hidden space-x-3 lg:flex">
+                    <Link
+                        href={route("kelas")}
+                        className="text-xl font-semibold "
+                    >
+                        Kelas
+                    </Link>
+                    <span className="hidden text-3xl lg:block">|</span>
                     <Link href={route("daftar")}>
                         <PulsatingButton>Daftar</PulsatingButton>
                     </Link>

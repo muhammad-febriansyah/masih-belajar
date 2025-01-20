@@ -125,6 +125,13 @@ export default function Navbar({ dataKelas = [] }: Props) {
                     </ul>
                 </div>
                 <div className="items-center hidden gap-x-8 lg:flex">
+                    <Link
+                        href={route("dashboard.kelas")}
+                        className="text-xl font-semibold "
+                    >
+                        Kelas
+                    </Link>
+                    <span className="hidden text-3xl lg:block">|</span>
                     <DropdownMenu>
                         <DropdownMenuTrigger>
                             <Bell className="size-6 text-maroon" />

@@ -106,7 +106,23 @@ class HomeController extends Controller
         $testimoni = Testimoni::where('kelas_id', $kelas->id)
             ->latest()
             ->get();
+        $totalstartmentor = Testimoni::where('kelas_id', $kelas->id)
+            ->whereHas('kelas', function ($query) use ($kelas) {
+                $query->where('user_id', $kelas->user_id);
+            })
+            ->sum('rating');
+        $totalTestimoni = Testimoni::where('kelas_id', $kelas->id)
+            ->whereHas('kelas', function ($query) use ($kelas) {
+                $query->where('user_id', $kelas->user_id);
+            })
+            ->count();
 
+        if ($totalTestimoni > 0) {
+            $averageRating = $totalstartmentor / $totalTestimoni;
+            $averageRating = number_format($averageRating, 1); // Format rating menjadi satu desimal
+        } else {
+            $averageRating = 0; // Jika tidak ada testimoni
+        }
         $allclass = Kelas::select(
             'kelas.*',
             DB::raw('AVG(testimonis.rating) as average_rating')
@@ -128,7 +144,8 @@ class HomeController extends Controller
             'allclass' => $allclass,
             'studentjoin' => $studentjoin,
             'totalvideo' => $totalvideo,
-            'totalstar' => $totalstar
+            'totalstar' => $totalstar,
+            'averageRating' => $averageRating
         ]);
     }
 

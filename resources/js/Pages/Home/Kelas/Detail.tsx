@@ -51,6 +51,7 @@ interface Props {
     studentjoin: number;
     totalvideo: number;
     totalstar: number;
+    averageRating: number;
 }
 export default function Detail({
     kelas,
@@ -61,6 +62,7 @@ export default function Detail({
     studentjoin,
     totalvideo,
     totalstar,
+    averageRating,
 }: Props) {
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
@@ -112,18 +114,113 @@ export default function Detail({
                 </div>
             </section>
             <section className="container  py-10 transform -translate-y-[4%] md:-translate-y-[8%] left-0 right-0">
-                <div className="grid grid-cols-1 gap-6 lg: md:grid-cols-2 lg:grid-cols-3">
-                    <div className=" lg:col-span-2">
-                        <HeroVideoDialog
-                            className={`w-full  lg:px-0 md:w-auto rounded-2xl ${
-                                isScrolled ? "" : "lg:z-[999]"
-                            }`}
-                            animationStyle="from-center"
-                            videoSrc={kelas.link_overview.embed_url}
-                            thumbnailSrc={`/storage/${kelas.image}`}
-                            thumbnailAlt="Hero Video"
-                        />
-                        <div className=" lg:px-0">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-5 lg:col-span-2">
+                        <iframe
+                            src={kelas.link_overview.embed_url}
+                            className="w-full h-96 rounded-2xl"
+                            allowFullScreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        ></iframe>
+                        <div className="block px-5 py-5 bg-white md:hidden lg:col-span-1 rounded-2xl max-h-min">
+                            <div className="grid order-2 grid-cols-3 gap-y-5">
+                                <div className="flex flex-col items-center">
+                                    <img
+                                        src={`/storage/${kelas.level.image}`}
+                                        alt=""
+                                        className="object-cover w-12 h-12"
+                                    />
+                                    <span className="font-semibold ">
+                                        {kelas.level.name}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <img
+                                        src="/8.svg"
+                                        alt=""
+                                        className="w-12 h-12"
+                                    />
+                                    <span className="font-semibold ">
+                                        Sertifikat
+                                    </span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <img
+                                        src="/9.svg"
+                                        alt=""
+                                        className="w-12 h-12"
+                                    />
+                                    <span className="font-semibold ">
+                                        {studentjoin > 0 ? studentjoin : "0"}{" "}
+                                        Siswa
+                                    </span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <img
+                                        src="/4.svg"
+                                        alt=""
+                                        className="w-12 h-12"
+                                    />
+                                    <span className="text-base font-semibold text-center">
+                                        Unlimited <br /> access
+                                    </span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <img
+                                        src="/12.svg"
+                                        alt=""
+                                        className="w-12 h-12"
+                                    />
+                                    <span className="font-semibold ">
+                                        {totalvideo > 0 ? totalvideo : "0"}{" "}
+                                        Video
+                                    </span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <Star className="text-red-600 w-11 h-11" />
+                                    <span className="font-semibold ">
+                                        {Number(totalstar).toFixed(1)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center p-3 mt-10 space-x-3 transition-all duration-200 bg-white border border-maroon rounded-2xl group hover:bg-maroon">
+                                <img
+                                    src={`/storage/${kelas.category.image}`}
+                                    alt="User Avatar"
+                                    className="object-cover w-12 h-12"
+                                />
+                                <div className="flex flex-col">
+                                    <h1 className="text-2xl font-bold text-black group-hover:text-white">
+                                        {kelas.category.name}
+                                    </h1>
+                                </div>
+                            </div>
+                            <div className="flex flex-col pt-5">
+                                {kelas.discount > 0 && (
+                                    <span className="relative text-2xl font-medium text-red-600">
+                                        Rp.{" "}
+                                        {Number(kelas.price).toLocaleString(
+                                            "id-ID"
+                                        )}
+                                        <span className="absolute left-0 right-[12rem] bottom-4 font-semibold border-b-2 border-red-700"></span>
+                                    </span>
+                                )}
+                                <span className="text-2xl font-bold text-black">
+                                    Rp.{" "}
+                                    {Number(
+                                        kelas.price - kelas.discount
+                                    ).toLocaleString("id-ID")}
+                                </span>
+                            </div>
+                            <br />
+                            <br />
+                            <Link href={route("masuk")} className="mt-5">
+                                <PulsatingButton className="w-full bg-maroon">
+                                    Beli Kelas
+                                </PulsatingButton>
+                            </Link>
+                        </div>
+                        <div className=" lg:px-0 md:order-2">
                             <Tabs
                                 defaultValue="about"
                                 className="items-start mt-10"
@@ -408,9 +505,19 @@ export default function Detail({
                                             <h1 className="text-xl font-bold text-black lg:text-2xl">
                                                 {kelas.user.name}
                                             </h1>
-                                            <span className="text-base text-black underline">
-                                                Mentor
-                                            </span>
+                                            <div>
+                                                <div>
+                                                    <img
+                                                        src="/icon-mentor/23.svg"
+                                                        alt=""
+                                                        className="w-5 h-5"
+                                                    />
+                                                    <span>
+                                                        {averageRating} Rating
+                                                        Mentor
+                                                    </span>
+                                                </div>
+                                            </div>
                                             <p
                                                 className="hidden text-sm leading-relaxed text-gray-500 lg:block "
                                                 dangerouslySetInnerHTML={{
@@ -624,8 +731,8 @@ export default function Detail({
                             </Tabs>
                         </div>
                     </div>
-                    <div className="px-5 py-5 bg-white lg:col-span-1 rounded-2xl max-h-min">
-                        <div className="grid grid-cols-3 gap-y-5">
+                    <div className="hidden px-5 py-5 bg-white md:block lg:col-span-1 rounded-2xl max-h-min">
+                        <div className="grid order-2 grid-cols-3 gap-y-5">
                             <div className="flex flex-col items-center">
                                 <img
                                     src={`/storage/${kelas.level.image}`}
@@ -714,7 +821,7 @@ export default function Detail({
                         </div>
                         <br />
                         <br />
-                        <Link href={route("login")} className="mt-5">
+                        <Link href={route("masuk")} className="mt-5">
                             <PulsatingButton className="w-full bg-maroon">
                                 Beli Kelas
                             </PulsatingButton>
