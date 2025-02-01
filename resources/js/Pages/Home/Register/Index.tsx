@@ -202,7 +202,7 @@ export default function Index({ setting }: Props) {
                             <p className="mb-3 text-sm text-gray-500 sm:mt-0">
                                 Sudah punya akun?{" "}
                                 <Link
-                                    href={route("login")}
+                                    href={route("masuk")}
                                     className="text-gray-700 underline"
                                 >
                                     Log in

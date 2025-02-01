@@ -84,16 +84,40 @@ export default function Index({
                         onValueChange={setActiveTab}
                     >
                         <TabsList className="flex justify-center w-full pb-20 space-x-2">
-                            <TabsTrigger value="all" key="all">
-                                Semua
+                            <TabsTrigger
+                                value="all"
+                                className="flex items-center gap-1"
+                                key="all"
+                            >
+                                <img src="/k31.svg" className="size-7" alt="" />{" "}
+                                <span>Semua</span>
                             </TabsTrigger>
 
                             {tipekelas.map((tipe) => (
                                 <TabsTrigger
                                     value={`type-${tipe.id}`}
                                     key={tipe.id}
+                                    className="flex items-center gap-1"
                                 >
-                                    {tipe.name}
+                                    {tipe.name === "Premium" ? (
+                                        <>
+                                            <img
+                                                src="/k32.svg"
+                                                className="size-7"
+                                                alt=""
+                                            />{" "}
+                                            <span>{tipe.name}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <img
+                                                src="/k33.svg"
+                                                className="size-7"
+                                                alt=""
+                                            />{" "}
+                                            <span>{tipe.name}</span>
+                                        </>
+                                    )}
                                 </TabsTrigger>
                             ))}
                         </TabsList>

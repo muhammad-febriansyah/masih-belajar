@@ -41,7 +41,7 @@ export default function CheckOut({ kelas, auth }: Props) {
     const [isPromoValid, setIsPromoValid] = useState<boolean>(false);
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const amount = kelas.price - diskonPromo;
+    const amount = kelas.price - diskonPromo + 5000;
     const csrfToken = document
         .querySelector('meta[name="csrf-token"]')
         ?.getAttribute("content");

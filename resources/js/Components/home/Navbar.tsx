@@ -72,7 +72,7 @@ export default function Navbar({ dataKelas = [] }: Props) {
                     <img
                         src={`/storage/${setting.long_logo}`}
                         alt=""
-                        className="w-32 h-32"
+                        className="size-32 md:size-48"
                     />
                 </Link>
                 <div className="hidden lg:block relative  w-[300px] lg:w-[500px]">

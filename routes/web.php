@@ -47,11 +47,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/videoRead', [MainController::class, 'videoRead'])->name('dashboard.videoRead');
     Route::get('/dashboard/getReadVideos', [MainController::class, 'getReadVideos'])->name('dashboard.getReadVideos');
     Route::get('/dashboard/list-sertifikat', [MainController::class, 'sertifikat'])->name('dashboard.sertifikat');
+    Route::get('/dashboard/examEnd/{slug}', [MainController::class, 'examEnd'])->name('dashboard.examEnd');
     Route::post('/dashboard/updateprofile', [MainController::class, 'updateprofile'])->name('dashboard.updateprofile');
     Route::post('/dashboard/sendTestimonial', [MainController::class, 'sendTestimonial'])->name('dashboard.sendTestimonial');
     Route::post('/dashboard/sendDiskusi', [MainController::class, 'sendDiskusi'])->name('dashboard.sendDiskusi');
     Route::post('/dashboard/balasDiskusi', [MainController::class, 'balasDiskusi'])->name('dashboard.balasDiskusi');
     Route::post('/dashboard/createFreeTransaction', [MainController::class, 'createFreeTransaction'])->name('dashboard.createFreeTransaction');
+    Route::post('/dashboard/examanswer', [MainController::class, 'examanswer'])->name('dashboard.examanswer');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

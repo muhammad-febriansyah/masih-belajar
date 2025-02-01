@@ -10,12 +10,15 @@ use App\Models\Faq;
 use App\Models\Kelas;
 use App\Models\Level;
 use App\Models\PromoCode;
+use App\Models\Quiz;
+use App\Models\QuizAnswer;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\Testimoni;
 use App\Models\Transaction;
 use App\Models\Type;
 use App\Models\User;
+use App\Models\UserAnswer;
 use App\Models\Video;
 use App\Models\VideoReader;
 use Carbon\Carbon;
@@ -40,7 +43,7 @@ class MainController extends Controller
         $kelaspopuler = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating') // Menghitung rata-rata rating
+            DB::raw('SUM(testimonis.rating) as average_rating') // Menghitung rata-rata rating
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
@@ -69,7 +72,7 @@ class MainController extends Controller
         $data = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating'),
+            DB::raw('SUM(testimonis.rating) as average_rating'),
             DB::raw('COUNT(CASE WHEN transactions.status = "paid" AND transactions.user_id = ? THEN 1 END) as total_bergabung', [$user_id])
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
@@ -153,7 +156,7 @@ class MainController extends Controller
         $allclass = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating'),
+            DB::raw('SUM(testimonis.rating) as average_rating'),
             DB::raw('COUNT(CASE WHEN transactions.status = "paid" AND transactions.user_id = ? THEN 1 END) as total_bergabung', [$user_id])
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
@@ -205,7 +208,7 @@ class MainController extends Controller
         $kelas = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating')
+            DB::raw('SUM(testimonis.rating) as average_rating')
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
@@ -260,41 +263,35 @@ class MainController extends Controller
         $data = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'),
-            DB::raw('AVG(testimonis.rating) as average_rating'),
+            DB::raw('SUM(testimonis.rating) as average_rating')  // Menambahkan penjumlahan rating
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
             ->where('kelas.status', 'disetujui')
             ->where('transactions.user_id', $user_id)
             ->where('transactions.status', 'paid')
-            ->Orwhere('transactions.status', 'free')
+            ->orWhere('transactions.status', 'free')
             ->groupBy('kelas.id')
             ->orderByDesc('total_transaksi')
             ->get();
 
-        // Ambil semua ID kelas yang sesuai
         $kelasIds = $data->pluck('id');
-
-        // Ambil video yang sudah dibaca oleh pengguna dalam kelas-kelas ini
-        $videoreadGrouped = Video::whereHas('section', function ($query) use ($kelasIds) {
+        $videoreadGrouped = VideoReader::whereHas('section', function ($query) use ($kelasIds) {
             $query->whereIn('kelas_id', $kelasIds);
+        })->whereHas('video', function ($query) {
+            $query->where('status', 1);
         })
             ->where('status', 1)
             ->get()
             ->groupBy('section.kelas_id');
 
-        // Menghitung progress untuk setiap kelas
         $kelasWithProgress = $data->map(function ($kelas) use ($videoreadGrouped) {
-            $totalVideos = Video::whereHas('section', function ($query) use ($kelas) {
+            $totalVideos = VideoReader::whereHas('section', function ($query) use ($kelas) {
                 $query->where('kelas_id', $kelas->id);
             })->count();
             $videosRead = $videoreadGrouped->get($kelas->id, collect())->count();
-
             $progress = $totalVideos > 0 ? ($videosRead / $totalVideos) * 100 : 0;
-
-            // Menambahkan field progress ke data kelas
             $kelas->progress = round($progress, 2);
-
             return $kelas;
         });
 
@@ -356,9 +353,6 @@ class MainController extends Controller
             'totalkelasmentor' => $totalkelasmentor
         ]);
     }
-
-
-
 
     public function getReadVideos()
     {
@@ -439,9 +433,81 @@ class MainController extends Controller
 
     public function exam($slug)
     {
+        $kelas = Kelas::where('slug', $slug)->first();
         $setting = Setting::first();
-        return Inertia::render('Main/Exam/Index', ['setting' => $setting]);
+        $exam = Quiz::where('kelas_id', $kelas->id)->get();
+        $examanswer = QuizAnswer::whereIn('quiz_id', $exam->pluck('id'))->get();
+        return Inertia::render('Main/Exam/Index', ['setting' => $setting, 'kelas' => $kelas, 'quiz' => $exam, 'examanswer' => $examanswer]);
     }
+
+    public function examEnd($slug)
+    {
+        $kelas = Kelas::where('slug', $slug)->first();
+        $setting = Setting::first();
+        $exam = Quiz::where('kelas_id', $kelas->id)->get();
+        $examanswer = QuizAnswer::whereIn('quiz_id', $exam->pluck('id'))->get();
+        $data = UserAnswer::where('user_id', Auth::user()->id)->get();
+
+        // Membuat array yang berisi jawaban yang sudah dipilih oleh user
+        $userAnswers = $data->pluck('answer_id', 'quiz_id')->toArray();
+
+        $totalPoint = $data->sum('point');
+
+        return Inertia::render('Main/Exam/Selesai', [
+            'setting' => $setting,
+            'data' => $data,
+            'totalPoint' => $totalPoint,
+            'kelas' => $kelas,
+            'quiz' => $exam,
+            'examanswer' => $examanswer,
+            'userAnswers' => $userAnswers,
+        ]);
+    }
+
+
+    public function examanswer(Request $request)
+    {
+        $request->validate([
+            'answers' => 'required|array',
+            'answers.*.quiz_id' => 'required|integer',
+            'answers.*.quiz_answer_id' => 'required|integer',
+            'answers.*.point' => 'required|integer',
+        ]);
+
+        foreach ($request->answers as $answer) {
+            // Cek apakah sudah ada jawaban yang disimpan untuk user dan quiz_id tertentu
+            $existingAnswer = UserAnswer::where('user_id', Auth::user()->id)
+                ->where('quiz_id', $answer['quiz_id'])
+                ->first();
+
+            if ($existingAnswer) {
+                // Jika jawaban sudah ada, periksa apakah sudah lebih dari 3 kali pengeditan
+                if ($existingAnswer->edit_count >= 3) {
+                    return response()->json(['message' => 'Anda telah melebihi batas untuk mengedit ujian ini.'], 400);
+                }
+
+                // Increment the edit_count
+                $existingAnswer->edit_count += 1;
+
+                // Update jawaban
+                $existingAnswer->quiz_answer_id = $answer['quiz_answer_id'];
+                $existingAnswer->point = $answer['point'];
+                $existingAnswer->save();
+            } else {
+                // Jika belum ada jawaban, buat jawaban baru
+                $q = new UserAnswer();
+                $q->user_id = Auth::user()->id;
+                $q->quiz_id = $answer['quiz_id'];
+                $q->quiz_answer_id = $answer['quiz_answer_id'];
+                $q->point = $answer['point'];
+                $q->edit_count = 1;  // Pengisian pertama
+                $q->save();
+            }
+        }
+
+        return response()->json(['message' => 'Answers saved successfully.']);
+    }
+
 
     public function sertifikat()
     {

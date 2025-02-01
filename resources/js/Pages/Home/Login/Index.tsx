@@ -87,7 +87,7 @@ export default function Index() {
                             <p className="mb-3 text-sm text-gray-500 sm:mt-0">
                                 Belum punya akun?{" "}
                                 <Link
-                                    href={route("register")}
+                                    href={route("daftar")}
                                     className="text-gray-700 underline"
                                 >
                                     Daftar Sekarang

@@ -31,10 +31,11 @@ class HomeController extends Controller
         $totaluser = User::where('role', 'admin')->count();
         $totalstar = Testimoni::sum('rating');
         $totalkelas = Kelas::where('status', 'disetujui')->count();
+        $testimoni = Testimoni::latest()->get();
         $kelaspopuler = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating') // Menghitung rata-rata rating
+            DB::raw('SUM(testimonis.rating) as average_rating') // Menghitung rata-rata rating
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
@@ -50,7 +51,8 @@ class HomeController extends Controller
             'totalstar' => $totalstar,
             'totalkelas' => $totalkelas,
             'faq' => $faq,
-            'kelaspopuler' => $kelaspopuler
+            'kelaspopuler' => $kelaspopuler,
+            'testimoni' => $testimoni
         ]);
     }
 
@@ -60,7 +62,7 @@ class HomeController extends Controller
         $data = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
-            DB::raw('AVG(testimonis.rating) as average_rating')
+            DB::raw('SUM(testimonis.rating) as average_rating')
         )
             ->leftJoin('transactions', 'kelas.id', '=', 'transactions.kelas_id')
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
@@ -106,15 +108,13 @@ class HomeController extends Controller
         $testimoni = Testimoni::where('kelas_id', $kelas->id)
             ->latest()
             ->get();
-        $totalstartmentor = Testimoni::where('kelas_id', $kelas->id)
-            ->whereHas('kelas', function ($query) use ($kelas) {
-                $query->where('user_id', $kelas->user_id);
-            })
+        $totalstartmentor = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })
             ->sum('rating');
-        $totalTestimoni = Testimoni::where('kelas_id', $kelas->id)
-            ->whereHas('kelas', function ($query) use ($kelas) {
-                $query->where('user_id', $kelas->user_id);
-            })
+        $totalTestimoni = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })
             ->count();
 
         if ($totalTestimoni > 0) {
@@ -123,16 +123,16 @@ class HomeController extends Controller
         } else {
             $averageRating = 0; // Jika tidak ada testimoni
         }
-        $totalulasan = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+        $totalulasan = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
             $query->where('user_id', $kelas->user_id);
         })->count();
-        $totalsiswa = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+        $totalsiswa = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
             $query->where('user_id', $kelas->user_id);
         })->count();
         $totalkelasmentor = Kelas::where('user_id', $kelas->user_id)->count();
         $allclass = Kelas::select(
             'kelas.*',
-            DB::raw('AVG(testimonis.rating) as average_rating')
+            DB::raw('SUM(testimonis.rating) as average_rating')
         )
             ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
             ->where('kelas.status', 'disetujui')

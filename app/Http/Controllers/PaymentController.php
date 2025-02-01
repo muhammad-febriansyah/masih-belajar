@@ -4,49 +4,79 @@ namespace App\Http\Controllers;
 
 use App\Models\Kelas;
 use App\Models\Transaction;
+use App\Models\User;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Midtrans\Config;
 use Midtrans\Snap;
 
 class PaymentController extends Controller
 {
-    public function __construct()
+    public function __construct(Request $request)
     {
-        Config::$serverKey = env('MIDTRANS_SERVERKEY');
-        Config::$clientKey = env('MIDTRANS_CLIENTKEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION');
-        Config::$isSanitized = env('MIDTRANS_IS_SANITIZED');
-        Config::$is3ds = env('MIDTRANS_IS_3DS');
+        \Midtrans\Config::$serverKey = config('services.midtrans.server_key');
+        \Midtrans\Config::$clientKey = config('services.midtrans.client_key');
+        \Midtrans\Config::$isProduction = config('services.midtrans.is_production');
+        \Midtrans\Config::$isSanitized = config('services.midtrans.is_sanitized');
+        \Midtrans\Config::$is3ds = config('services.midtrans.is_3ds');
+        \Midtrans\Config::$overrideNotifUrl = env('APP_URL') . '/api/midtrans-callback';
     }
 
     public function createTransaction(Request $request)
     {
         try {
+            // Validasi input
+            $request->validate([
+                'kelas_id' => 'required|exists:kelas,id',
+                'amount' => 'required|numeric|min:0.01',  // Pastikan amount lebih dari atau sama dengan 0.01
+            ]);
+
+            // Cek apakah amount >= 0.01
+            if ($request->amount < 0.01) {
+                return response()->json(['error' => 'Amount must be at least 0.01'], 400);
+            }
+
+            // Ambil data kelas
+            $kelas = Kelas::findOrFail($request->kelas_id);
+
+            // Membuat objek transaksi di database
             $trx = new Transaction();
             $trx->kelas_id = $request->kelas_id;
             $trx->user_id = Auth::user()->id;
-            $trx->invoice_number = 'COURSE' . time();
+            $trx->nota = 'NOTA' . Auth::user()->id . '-' . time();
             $trx->amount = $request->amount;
-            $trx->payment_method = 'midtrans';
+            $trx->qty = 1;
+            $trx->payment_type = 'midtrans';
             $trx->status = 'pending';
-            $kelas = Kelas::findOrFail($request->kelas_id);
+            $trx->save();
+
+            \Midtrans\Config::$serverKey = config('services.midtrans.server_key');
+            \Midtrans\Config::$clientKey = config('services.midtrans.client_key');
+            \Midtrans\Config::$isProduction = config('services.midtrans.is_production');
+            \Midtrans\Config::$isSanitized = config('services.midtrans.is_sanitized');
+            \Midtrans\Config::$is3ds = config('services.midtrans.is_3ds');
+            \Midtrans\Config::$overrideNotifUrl = env('APP_URL') . '/api/midtrans-callback';
             $item_details = [
                 [
                     'id' => $kelas->id, // ID produk atau layanan
                     'price' => $trx->amount, // Harga per unit
                     'quantity' => 1, // Jumlah item
                     'name' => $kelas->title, // Nama kelas atau item
-                    'category' => $kelas->category->name, // Jika diperlukan
+                    'category' => $kelas->category->name, // Kategori kelas
                 ]
             ];
+
+            // Detail transaksi
             $transaction_details = [
-                'order_id' => 'COURSE' . time(),
-                'gross_amount' => $trx->amount,
+                'order_id' => 'NOTA' . Auth::user()->id . '-' . time(),
+                'gross_amount' => $trx->amount, // Total amount
             ];
 
+            // Detail pelanggan
             $customer_details = [
                 'first_name' => Auth::user()->name,
                 'email' => Auth::user()->email,
@@ -54,60 +84,101 @@ class PaymentController extends Controller
                 'address' => Auth::user()->address ?? 'Indonesia',
             ];
 
+            // Parameter untuk transaksi
             $params = [
                 'transaction_details' => $transaction_details,
                 'item_details' => $item_details, // Tambahkan rincian item
                 'customer_details' => $customer_details,
             ];
 
-            $snapToken = Snap::createTransaction($params)->redirect_url;
-            $trx->payment_url = $snapToken;
+            // Konfigurasi Midtrans
+            Config::$serverKey = env('MIDTRANS_SERVERKEY');
+            Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+            Config::$clientKey = env('MIDTRANS_CLIENTKEY');
+
+            // Membuat transaksi dengan Midtrans dan mendapatkan snapToken
+            $snapResponse = Snap::createTransaction($params);
+            $snapToken = $snapResponse->token;  // Ambil token transaksi dari response
+
+            // Menyimpan snapToken ke transaksi
+            $trx->payment_url = $snapResponse->redirect_url; // Simpan URL pembayaran ke transaksi jika perlu
             $trx->save();
-            return response()->json([
-                'redirect_url' => $snapToken
-            ]);
+
+            return response()->json(['snapToken' => $snapToken]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function callback()
+
+
+    public function callback(Request $request)
     {
-        $notif = new \Midtrans\Notification();
-        $transaction = $notif->transaction_status;
-        $type = $notif->payment_type;
-        $order_id = $notif->order_id;
-        $fraud = $notif->fraud_status;
-        Log::info("Processing payment for order_id: $order_id, transaction status: $transaction, payment type: $type");
-        $q = Transaction::where("invoice_number", $order_id)->first();
-        if (!$q) {
-            Log::warning("No transaction found for payment ID: " . $order_id);
-            return; // Early exit if transaction is not found
+        // Pastikan MIDTRANS_SERVERKEY terdefinisi dengan benar
+        $serverKey = env('MIDTRANS_SERVERKEY');
+
+        // Periksa apakah MIDTRANS_SERVERKEY ada di .env
+        if (!$serverKey) {
+            return response()->json(['message' => 'Server key is missing'], 400);
         }
-        DB::transaction(function () use ($transaction, $type, $fraud, $q, $order_id) {
-            if ($q->status == 'pending') {
-                if ($transaction == 'capture') {
-                    if ($type == 'credit_card' && $fraud == 'accept') {
-                        $q->status = 'paid';
-                        Log::info("Transaction order_id: $order_id successfully captured using " . $type);
-                    }
-                } elseif ($transaction == 'settlement') {
-                    $q->status = 'paid';
-                    Log::info("Transaction order_id: $order_id successfully transferred using " . $type);
-                } elseif ($transaction == 'pending') {
-                    $q->status = 'pending';
-                    Log::info("Waiting for customer to finish transaction order_id: $order_id using " . $type);
-                } elseif ($transaction == 'deny' || $transaction == 'expire' || $transaction == 'cancel') {
-                    $q->status = 'failed';
-                    Log::info("Payment using " . $type . " for transaction order_id: $order_id is " . $transaction . ".");
-                }
-                if (!$q->save()) {
-                    Log::error("Failed to update status for order_id: $order_id, errors: " . json_encode($q->getErrors()));
-                    return;
-                }
-            } else {
-                Log::info("Transaction for order_id: {$order_id} has already been processed with status: {$q->status}");
-            }
-        });
+
+        // Encode server key untuk authorization header
+        $auth = base64_encode($serverKey);
+
+        // Mengirim request ke Midtrans API untuk memeriksa status transaksi
+        $httpResponse = Http::withHeaders([
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'Authorization' => "Basic $auth",
+        ])->get('https://api.midtrans.com/v2/transaction/status'); // Update the URL as needed
+
+        // Log response for debugging purposes
+        Log::info("Midtrans API Response", ['response' => $httpResponse->body()]);
+
+        // Jika request gagal (misalnya authorization error), kirim response error
+        if ($httpResponse->failed()) {
+            return response()->json(['message' => 'Authorization failed or Invalid response from Midtrans'], 401);
+        }
+
+        // Decode body JSON response dari Midtrans
+        $midtransResponse = json_decode($httpResponse->body());
+
+        // Pastikan order_id ada dalam response
+        if (!isset($midtransResponse->order_id)) {
+            return response()->json(['message' => 'Order ID not found in response'], 400);
+        }
+
+        // Cari transaksi berdasarkan invoice_number
+        $transaction = Transaction::where("invoice_number", $midtransResponse->order_id)->firstOrFail();
+
+        // Cek apakah status transaksi sudah diproses sebelumnya
+        if ($transaction->status === 'settlement' || $transaction->status === 'capture') {
+            return response()->json(['message' => 'Transaction has been processed before'], 200);
+        }
+
+        // Update status transaksi berdasarkan status dari Midtrans API
+        switch ($midtransResponse->transaction_status) {
+            case 'capture':
+                $transaction->status = 'capture';
+                break;
+            case 'settlement':
+                $transaction->status = 'settlement';
+                break;
+            case 'pending':
+                $transaction->status = 'pending';
+                break;
+            case 'expire':
+            case 'cancel':
+            case 'deny':
+                $transaction->status = 'failed';
+                break;
+            default:
+                return response()->json(['message' => 'Unknown transaction status'], 400);
+        }
+
+        // Simpan status yang telah diperbarui
+        $transaction->save();
+
+        return response()->json(['message' => 'Transaction has been processed'], 200);
     }
 }

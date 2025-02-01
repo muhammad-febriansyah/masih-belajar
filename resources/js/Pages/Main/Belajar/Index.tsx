@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { route } from "ziggy-js";
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -448,6 +449,16 @@ export default function Index({
         }
     };
 
+    const allVideosWatched = video.every(
+        (filteredVideo) =>
+            filteredVideo.status === 1 ||
+            readVideos.some(
+                (readVideo) =>
+                    readVideo.section_id === filteredVideo.section_id &&
+                    readVideo.video_id === filteredVideo.id
+            )
+    );
+
     useEffect(() => {
         axios
             .get(route("dashboard.getReadVideos"))
@@ -539,7 +550,7 @@ export default function Index({
                             <span className="ml-2">Kembali</span>
                         </Link>
 
-                        <ScrollArea className="overflow-y-auto h-screen pt-5 pb-24 px-2.5">
+                        <ScrollArea className="overflow-y-auto h-screen pt-5 pb-16 px-2.5">
                             {sectionData.map((section, index) => (
                                 <div key={index} className="mt-5">
                                     <h3 className="font-medium">
@@ -644,6 +655,15 @@ export default function Index({
                                     </ul>
                                 </div>
                             ))}
+                            {allVideosWatched && (
+                                <Link
+                                    href={route("dashboard.exam", kelas.slug)}
+                                    className="flex items-center gap-3 px-4 py-5 mt-5 text-white transition-all duration-300 bg-gray-500 rounded-2xl hover:bg-maroon"
+                                >
+                                    <File className="w-5 h-5" />{" "}
+                                    <span className="font-semibold">Exam</span>
+                                </Link>
+                            )}
                         </ScrollArea>
                     </div>
 
@@ -759,32 +779,35 @@ export default function Index({
                                                                 Kirim Review
                                                             </Button>
                                                         )}
-                                                        <Button
-                                                            onClick={() =>
-                                                                setIsDialogOpen(
-                                                                    false
-                                                                )
-                                                            } // Close the dialog
-                                                            className="text-white bg-gray-500 rounded-full"
-                                                        >
-                                                            Batal
-                                                        </Button>
+                                                        <DialogClose asChild>
+                                                            <Button
+                                                                type="button"
+                                                                className="text-white bg-gray-500 rounded-full"
+                                                            >
+                                                                Batal
+                                                            </Button>
+                                                        </DialogClose>
                                                     </div>
                                                 </form>
                                             </DialogDescription>
                                         </DialogHeader>
                                     </DialogContent>
                                 </Dialog>
-                                <Link
-                                    href={route("dashboard.exam", kelas.slug)}
-                                >
-                                    <Button
-                                        type="button"
-                                        className="rounded-full bg-maroon"
+                                {allVideosWatched && (
+                                    <Link
+                                        href={route(
+                                            "dashboard.exam",
+                                            kelas.slug
+                                        )}
                                     >
-                                        <File /> Exam
-                                    </Button>
-                                </Link>
+                                        <Button
+                                            type="button"
+                                            className="rounded-full bg-maroon"
+                                        >
+                                            <File /> Exam
+                                        </Button>
+                                    </Link>
+                                )}
                             </div>
                         </div>
                         {/* <span className="text-lg font-semibold text-black">
@@ -1019,17 +1042,14 @@ export default function Index({
                                                                 Kirim Pertanyaan
                                                             </Button>
                                                         )}
-                                                        <Button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setIsDialogOpen(
-                                                                    false
-                                                                )
-                                                            } // Close the dialog
-                                                            className="text-white bg-gray-500 rounded-full"
-                                                        >
-                                                            Batal
-                                                        </Button>
+                                                        <DialogClose asChild>
+                                                            <Button
+                                                                type="button"
+                                                                className="text-white bg-gray-500 rounded-full"
+                                                            >
+                                                                Batal
+                                                            </Button>
+                                                        </DialogClose>
                                                     </div>
                                                 </form>
                                             </DialogDescription>
@@ -1169,17 +1189,16 @@ export default function Index({
                                                                                         Pertanyaan
                                                                                     </Button>
                                                                                 )}
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        setIsDialogOpen(
-                                                                                            false
-                                                                                        )
-                                                                                    } // Close the dialog
-                                                                                    className="text-white bg-gray-500 rounded-full"
+                                                                                <DialogClose
+                                                                                    asChild
                                                                                 >
-                                                                                    Batal
-                                                                                </Button>
+                                                                                    <Button
+                                                                                        type="button"
+                                                                                        className="text-white bg-gray-500 rounded-full"
+                                                                                    >
+                                                                                        Batal
+                                                                                    </Button>
+                                                                                </DialogClose>
                                                                             </div>
                                                                         </form>
                                                                     </DialogDescription>
