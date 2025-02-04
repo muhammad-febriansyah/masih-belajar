@@ -62,10 +62,12 @@ export default function Index({
     const secondRow = testimoni.slice(testimoni.length / 2);
 
     const ReviewCard = ({
+        id,
         user,
         body,
         rating,
     }: {
+        id: number;
         user: UserType;
         body: string;
         rating: number;
@@ -451,28 +453,30 @@ export default function Index({
                         ))}
                     </div>
                     <div className="flex justify-center">
-                        <Button className="mt-10 bg-maroon rounded-2xl">
-                            Lihat Kelas Lainnya <ArrowRight />
-                        </Button>
+                        <Link href={route("kelas")}>
+                            <Button className="mt-10 bg-maroon rounded-2xl">
+                                Lihat Kelas Lainnya <ArrowRight />
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </section>
-            <section className="container mt-10">
-                <h1 className="mb-5 text-xl font-semibold text-center lg:text-3xl">
+            <section className="container py-10">
+                <h1 className="mb-10 text-xl font-semibold text-center lg:text-4xl">
                     Apa kata mereka ?
                 </h1>
                 <Marquee pauseOnHover className="[--duration:20s]">
                     {firstRow.map((review) => (
-                        <ReviewCard key={review.user.name} {...review} />
+                        <ReviewCard key={review.id} {...review} />
                     ))}
                 </Marquee>
                 <Marquee reverse pauseOnHover className="[--duration:20s]">
                     {secondRow.map((review) => (
-                        <ReviewCard key={review.user.name} {...review} />
+                        <ReviewCard key={review.id} {...review} />
                     ))}
                 </Marquee>
             </section>
-            <section className="mt-10 bg-maroon">
+            <section className="py-10 bg-maroon">
                 <div className="container">
                     <div className="flex flex-col items-center justify-center gap-5 py-10">
                         <h1 className="max-w-xl text-xl font-semibold text-center text-white lg:leading-relaxed lg:text-3xl">

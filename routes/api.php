@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EmailSending;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('/midtrans-callback', [PaymentController::class, 'callback'])->name('midtrans-callback');
+Route::post('/send-email', [EmailSending::class, 'sendEmail'])->name('sendEmail');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

@@ -56,13 +56,11 @@ export default function CheckOut({ kelas, auth }: Props) {
                     amount,
                 }
             );
-            console.log(response); // Log response untuk memeriksa URL yang diterima
             const redirectUrl = response.data.redirect_url; // Dapatkan URL dari response
             if (redirectUrl) {
                 window.location.href = redirectUrl; // Redirect ke URL pembayaran
             }
         } catch (error) {
-            console.log(error);
             toast.error("Ada kesalahan saat mengirim pesan. Coba lagi nanti.");
         } finally {
             setLoading(false);

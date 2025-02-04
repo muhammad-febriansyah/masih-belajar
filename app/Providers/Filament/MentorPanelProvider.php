@@ -41,7 +41,7 @@ class MentorPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->favicon(asset('storage/' . $setting->logo))
             ->brandLogo(asset('storage/' . $setting->long_logo))
-            ->brandLogoHeight('2rem')
+            ->brandLogoHeight('5rem')
             ->font('Poppins', provider: GoogleFontProvider::class)
             ->colors([
                 'primary' => '#8e0100',

@@ -40,6 +40,7 @@ class MainController extends Controller
         $totaluser = User::where('role', 'admin')->count();
         $totalstar = Testimoni::sum('rating');
         $totalkelas = Kelas::where('status', 'disetujui')->count();
+        $testimoni = Testimoni::latest()->get();
         $kelaspopuler = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
@@ -60,7 +61,8 @@ class MainController extends Controller
             'totalkelas' => $totalkelas,
             'faq' => $faq,
             'kelaspopuler' => $kelaspopuler,
-            'auth' => $auth
+            'auth' => $auth,
+            'testimoni' => $testimoni
         ]);
     }
 
@@ -129,15 +131,13 @@ class MainController extends Controller
         $testimoni = Testimoni::where('kelas_id', $kelas->id)
             ->latest()
             ->get();
-        $totalstartmentor = Testimoni::where('kelas_id', $kelas->id)
-            ->whereHas('kelas', function ($query) use ($kelas) {
-                $query->where('user_id', $kelas->user_id);
-            })
+        $totalstartmentor = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })
             ->sum('rating');
-        $totalTestimoni = Testimoni::where('kelas_id', $kelas->id)
-            ->whereHas('kelas', function ($query) use ($kelas) {
-                $query->where('user_id', $kelas->user_id);
-            })
+        $totalTestimoni = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
+            $query->where('user_id', $kelas->user_id);
+        })
             ->count();
 
         if ($totalTestimoni > 0) {
@@ -146,10 +146,10 @@ class MainController extends Controller
         } else {
             $averageRating = 0; // Jika tidak ada testimoni
         }
-        $totalulasan = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+        $totalulasan = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
             $query->where('user_id', $kelas->user_id);
         })->count();
-        $totalsiswa = Testimoni::where('kelas_id', $kelas->id)->whereHas('kelas', function ($query) use ($kelas) {
+        $totalsiswa = Testimoni::whereHas('kelas', function ($query) use ($kelas) {
             $query->where('user_id', $kelas->user_id);
         })->count();
         $totalkelasmentor = Kelas::where('user_id', $kelas->user_id)->count();

@@ -24,10 +24,14 @@ import { Datum } from "@/types/kelas";
 import { SettingType } from "@/types/setting";
 import { Link } from "@inertiajs/react";
 import "aos/dist/aos.css";
-import { Loader2, Search } from "lucide-react";
+import { ArrowRight, Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { animate, motion } from "motion/react";
 import MainLayout from "@/Layouts/MainLayout";
+import { TestimoniType } from "@/types/testimoni";
+import { cn } from "@/lib/utils";
+import { UserType } from "@/types/user";
+import { Marquee } from "@/components/ui/marquee";
 interface Props {
     setting: SettingType;
     dataKelas: Datum[];
@@ -37,6 +41,7 @@ interface Props {
     totaluser: number;
     totalstar: number;
     totalkelas: number;
+    testimoni: TestimoniType[];
 }
 export default function Index({
     setting,
@@ -47,12 +52,67 @@ export default function Index({
     totalkelas,
     faq,
     kelaspopuler,
+    testimoni,
 }: Props) {
     const [query, setQuery] = useState<string>("");
     const [searchKelas, setSearchKelas] = useState<Datum[]>(dataKelas);
     const [loading, setLoading] = useState<boolean>(false);
     const [searchCompleted, setSearchCompleted] = useState<boolean>(false);
+    const firstRow = testimoni.slice(0, testimoni.length / 2);
+    const secondRow = testimoni.slice(testimoni.length / 2);
 
+    const ReviewCard = ({
+        id,
+        user,
+        body,
+        rating,
+    }: {
+        id: number;
+        user: UserType;
+        body: string;
+        rating: number;
+    }) => {
+        return (
+            <figure
+                className={cn(
+                    "relative w-72 cursor-pointer overflow-hidden rounded-2xl border p-5",
+                    // light styles
+                    "border-gray-950/[.1] bg-gray-950/[.01] hover:bg-gray-950/[.05]",
+                    // dark styles
+                    "dark:border-gray-50/[.1] dark:bg-gray-50/[.10] dark:hover:bg-gray-50/[.15]"
+                )}
+            >
+                <div className="flex flex-row items-center gap-2">
+                    <img
+                        className="rounded-full"
+                        width="32"
+                        height="32"
+                        alt=""
+                        src={`/storage/${user.image}`}
+                    />
+                    <div className="flex flex-col">
+                        <figcaption className="text-sm font-semibold text-maroon">
+                            {user.name}
+                        </figcaption>
+                        <p className="text-xs font-medium">{user.email}</p>
+                    </div>
+                </div>
+                <blockquote className="mt-2 text-sm">{body}</blockquote>
+                <span>
+                    {Array.from({ length: rating }, (_, index) => (
+                        <span key={index} className="text-yellow-500">
+                            ★
+                        </span>
+                    ))}
+                    {Array.from({ length: 5 - rating }, (_, index) => (
+                        <span key={index} className="text-gray-400">
+                            ★
+                        </span>
+                    ))}
+                </span>
+            </figure>
+        );
+    };
     useEffect(() => {
         const fecthKelas = async () => {
             if (query) {
@@ -131,11 +191,11 @@ export default function Index({
                                     Lihat Kelas
                                 </Button>
                             </Link>
-                            <Link href={route("dashboard.kelas")}>
+                            {/* <Link href={route("dashboard.kelas")}>
                                 <Button className="rounded-2xl ">
                                     Daftar Gratis
                                 </Button>
-                            </Link>
+                            </Link> */}
                         </div>
                     </div>
                     <div className="block place-items-center">
@@ -226,7 +286,7 @@ export default function Index({
                             {setting.site_name} ?
                         </span>
                     </h1>
-                    <div className="grid items-center grid-cols-2 gap-5 mt-5 lg:mt-10 lg:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-5 mt-5 lg:mt-10 lg:grid-cols-3">
                         {about.map((about, index) => (
                             <div key={index} className="cursor-pointer group">
                                 <div className="flex justify-center p-5 transition-all duration-300 bg-white hover:scale-110 group-hover:bg-maroon rounded-2xl">
@@ -395,9 +455,31 @@ export default function Index({
                             </div>
                         ))}
                     </div>
+                    <div className="flex justify-center">
+                        <Link href={route("dashboard.kelas")}>
+                            <Button className="mt-10 bg-maroon rounded-2xl">
+                                Lihat Kelas Lainnya <ArrowRight />
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </section>
-            <section className="mt-10 bg-maroon">
+            <section className="container py-10">
+                <h1 className="mb-10 text-xl font-semibold text-center lg:text-4xl">
+                    Apa kata mereka ?
+                </h1>
+                <Marquee pauseOnHover className="[--duration:20s]">
+                    {firstRow.map((review) => (
+                        <ReviewCard key={review.id} {...review} />
+                    ))}
+                </Marquee>
+                <Marquee reverse pauseOnHover className="[--duration:20s]">
+                    {secondRow.map((review) => (
+                        <ReviewCard key={review.id} {...review} />
+                    ))}
+                </Marquee>
+            </section>
+            <section className="py-10 bg-maroon">
                 <div className="container">
                     <div className="flex flex-col items-center justify-center gap-5 py-10">
                         <h1 className="max-w-xl text-xl font-semibold text-center text-white lg:leading-relaxed lg:text-3xl">

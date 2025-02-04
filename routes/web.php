@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EmailSending;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\PaymentController;
@@ -27,6 +28,7 @@ Route::get('/masuk', [HomeController::class, 'login'])->name('masuk');
 Route::get('/daftar', [HomeController::class, 'register'])->name('daftar');
 Route::post('/checklogin', [HomeController::class, 'checklogin'])->name('checklogin');
 Route::post('/saveregister', [HomeController::class, 'saveregister'])->name('saveregister');
+Route::get('/send-email', [EmailSending::class, 'sendEmail'])->name('sendEmail');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
