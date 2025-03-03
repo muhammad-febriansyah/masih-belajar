@@ -31,6 +31,14 @@ import { cn } from "@/lib/utils";
 import { Marquee } from "@/components/ui/marquee";
 import { TestimoniType } from "@/types/testimoni";
 import { UserType } from "@/types/user";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { PromoCodeType } from "@/types/promo_code";
 interface Props {
     setting: SettingType;
     dataKelas: Datum[];
@@ -41,6 +49,7 @@ interface Props {
     totalstar: number;
     totalkelas: number;
     testimoni: TestimoniType[];
+    promo: PromoCodeType;
 }
 export default function Index({
     setting,
@@ -51,6 +60,7 @@ export default function Index({
     totalkelas,
     faq,
     kelaspopuler,
+    promo,
     testimoni,
 }: Props) {
     const [query, setQuery] = useState<string>("");
@@ -58,6 +68,7 @@ export default function Index({
     const [loading, setLoading] = useState<boolean>(false);
     const [searchCompleted, setSearchCompleted] = useState<boolean>(false);
 
+    const [open, setOpen] = useState<boolean>(false);
     const firstRow = testimoni.slice(0, testimoni.length / 2);
     const secondRow = testimoni.slice(testimoni.length / 2);
 
@@ -113,6 +124,9 @@ export default function Index({
             </figure>
         );
     };
+    useEffect(() => {
+        setOpen(true);
+    }, []);
     useEffect(() => {
         const fecthKelas = async () => {
             if (query) {
@@ -282,9 +296,7 @@ export default function Index({
                 <div className="container">
                     <h1 className="pb-5 text-2xl font-semibold text-center text-black lg:text-3xl">
                         Kenapa belajar bersama{" "}
-                        <span className="text-maroon">
-                            {setting.site_name} ?
-                        </span>
+                        <span className="text-maroon">Ananta Course ?</span>
                     </h1>
                     <div className="grid grid-cols-2 gap-5 mt-10 lg:grid-cols-3">
                         {about.map((about, index) => (
@@ -516,6 +528,28 @@ export default function Index({
                     </Accordion>
                 </div>
             </section>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="mb-5 font-semibold text-xl">
+                            Diskon Spesial 🔥
+                        </DialogTitle>
+                        <DialogDescription className="items-center justify-center">
+                            <a
+                                href={`https://wa.me/${setting.phone}`}
+                                target="_blank"
+                            >
+                                <img
+                                    src={`/storage/${promo.image}`}
+                                    className="object-contain items-center justify-center w-full"
+                                    alt=""
+                                />
+                            </a>
+                        </DialogDescription>
+                    </DialogHeader>
+                    {/* <Button onClick={() => setOpen(false)}>Tutup</Button> */}
+                </DialogContent>
+            </Dialog>
         </HomeLayout>
     );
 }

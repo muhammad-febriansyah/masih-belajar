@@ -1,11 +1,15 @@
 export interface UserAnswerType {
     id: number;
     quiz_id: number;
+    total_point: number;
     quiz_answer_id: number;
+    kelas_id: number;
     user_id: number;
     point: number;
+    no_sertifikat: number;
     created_at: Date;
     updated_at: Date;
+    kelas: Kelas;
     quiz: Quiz;
     quiz_answer: QuizAnswer;
     user: User;

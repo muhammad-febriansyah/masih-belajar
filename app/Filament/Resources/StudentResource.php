@@ -8,6 +8,10 @@ use App\Models\Student;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\DeleteBulkAction;
@@ -91,6 +95,29 @@ class StudentResource extends Resource
                         }
                     }),
             ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make()->schema([
+                    TextEntry::make('name')->label('Nama'),
+                    TextEntry::make('email')->label('Email'),
+                    TextEntry::make('phone')->label('No.HP'),
+                    TextEntry::make('tempat_lahir')->label('Tempat Lahir'),
+                    TextEntry::make('tanggal_lahir')->label('Tanggal Lahir'),
+                    TextEntry::make('umur')->label('Usia'),
+                    TextEntry::make('jk')->label('Jenis Kelamin'),
+                    TextEntry::make('alamat')->label('Alamat'),
+                    TextEntry::make('created_at')->label('Dibuat Pada')->badge()->color('success')->dateTime(),
+
+                ])->columnSpan(['lg' => 2])->columns(['lg' => 2]),
+                Section::make()->schema([
+                    ImageEntry::make('image')->label('Foto')->width('100%')->height('100%')->circular()
+
+                ])->columnSpan(['lg' => 1]),
+            ])->columns(3);
     }
 
     public static function getRelations(): array

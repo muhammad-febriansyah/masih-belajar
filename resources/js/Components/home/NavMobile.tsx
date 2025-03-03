@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { route } from "ziggy-js";
+import { Button } from "../ui/button";
 
 export default function NavMobile() {
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -60,7 +61,7 @@ export default function NavMobile() {
                     </li>
                     <li>
                         <Link
-                            className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
+                            className="inline-block rounded-full border border-maroon px-12 py-2 text-base font-medium text-maroon hover:bg-maroon hover:text-white focus:ring-3 focus:outline-hidden"
                             href={route("masuk")}
                         >
                             Masuk
@@ -68,7 +69,7 @@ export default function NavMobile() {
                     </li>
                     <li>
                         <Link
-                            className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
+                            className="inline-block transition-all duration-300  border border-maroon bg-maroon px-12 py-2 rounded-full text-base font-medium text-white hover:bg-transparent hover:text-maroon focus:ring-3 focus:outline-hidden"
                             href={route("daftar")}
                         >
                             Daftar

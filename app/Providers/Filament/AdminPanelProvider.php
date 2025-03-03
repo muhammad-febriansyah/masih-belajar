@@ -44,7 +44,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('storage/' . $setting->long_logo))
             ->brandLogoHeight('5rem')
             ->font('Poppins', provider: GoogleFontProvider::class)
-            ->databaseNotifications()
+            // ->databaseNotifications()
             ->colors([
                 'primary' => '#8e0100',
             ])

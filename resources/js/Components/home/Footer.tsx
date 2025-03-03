@@ -79,11 +79,11 @@ export default function Footer() {
                                 <ul className="mt-6 space-y-4 text-sm">
                                     <li>
                                         <Link
-                                            href={route("kelas")}
+                                            href={route("ceksertifikat")}
                                             className="text-gray-700 transition-all duration-200 hover:text-maroon hover:font-semibold"
                                         >
                                             {" "}
-                                            Kelas{" "}
+                                            Cek Sertifikat{" "}
                                         </Link>
                                     </li>
 

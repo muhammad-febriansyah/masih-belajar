@@ -41,12 +41,14 @@ import { TestimoniType } from "@/types/testimoni";
 import { Input } from "@/components/ui/input";
 import { DiskusiType } from "@/types/diskusi";
 import { BalasDiskusiType } from "@/types/balas_diskusi";
+import { VideoReaderType } from "@/types/video_reader";
 
 interface Props {
     setting: SettingType;
     kelas: Datum;
     sectionData: SectionType[];
     video: VideoType[];
+    videoRead: VideoReaderType[];
     testimoni: TestimoniType[];
     diskusi: DiskusiType[];
     balasDiskusi: BalasDiskusiType[];
@@ -67,6 +69,7 @@ export default function Index({
     totalulasan,
     totalkelasmentor,
     totalsiswa,
+    videoRead,
 }: Props) {
     const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(
         null
@@ -99,12 +102,21 @@ export default function Index({
     const [loading, setLoading] = useState<boolean>(false);
     const kelasId = kelas.id;
     const [selectedItem, setSelectedItem] = useState<Number | null>(null); // Menyimpan ID item yang sedang terbuka
-
+    const [watchedVideos, setWatchedVideos] = useState<number[]>([]);
+    const [videoStatus, setVideoStatus] = useState<number[]>([]); // Array untuk menyimpan ID video yang sudah dibaca
     const { data, setData, post, processing, errors, reset } = useForm({
         rating: rating,
         kelasId: kelasId, // Misalnya kelasId adalah 1
         testimonial: "",
     });
+    const markAsWatched = (videoId: number) => {
+        setWatchedVideos((prevWatchedVideos) => {
+            if (!prevWatchedVideos.includes(videoId)) {
+                return [...prevWatchedVideos, videoId];
+            }
+            return prevWatchedVideos;
+        });
+    };
 
     const handleVideoClick = (
         videoUrl: string,
@@ -117,15 +129,43 @@ export default function Index({
         setSelectedVideoTitle(videoTitle);
         setSelectedVideoId({ sectionId, videoId });
         setSectionTitle(sectionTitle);
+
+        // Optimistic update: langsung menandai video sebagai sudah dibaca
+        setReadVideos((prevReadVideos) => {
+            const videoAlreadyRead = prevReadVideos.some(
+                (readVideo) => readVideo.video_id === videoId
+            );
+            if (!videoAlreadyRead) {
+                return [
+                    ...prevReadVideos,
+                    {
+                        section_id: sectionId,
+                        video_id: videoId,
+                    },
+                ];
+            }
+            return prevReadVideos;
+        });
+
+        // Tandai video ini sebagai sudah ditonton
+        markAsWatched(videoId);
+
+        // Logika untuk video terakhir
         const lastVideo = video.reduce(
             (prev, current) => (current.id > prev.id ? current : prev),
             video[0]
         );
-        if (videoId === lastVideo.id) {
-            setIsLastVideo(true);
-        } else {
-            setIsLastVideo(false);
-        }
+        setIsLastVideo(videoId === lastVideo.id);
+
+        // Update status to "read" in the database after optimistic update
+        axios
+            .post(route("dashboard.videoRead"), {
+                section_id: sectionId,
+                video_id: videoId,
+            })
+            .catch((error) => {
+                console.error("Error updating video read status:", error);
+            });
     };
 
     const handleRatingClick = (value: number) => {
@@ -163,48 +203,52 @@ export default function Index({
         if (selectedVideoId) {
             const currentSectionId = selectedVideoId.sectionId;
             const currentVideoId = selectedVideoId.videoId;
-            const nextVideoIndex = video.findIndex(
-                (vid) =>
+
+            // Menemukan video berikutnya
+            const nextVideoIndex = video.findIndex((vid) => {
+                return (
                     (vid.section_id === currentSectionId &&
                         vid.id === currentVideoId + 1) ||
-                    vid.section_id > currentSectionId // If it's the next section
-            );
+                    vid.section_id > currentSectionId // Jika itu video di section berikutnya
+                );
+            });
 
             if (nextVideoIndex !== -1) {
                 const nextVideo = video[nextVideoIndex];
+
+                // Update video terpilih
                 setSelectedVideoUrl(nextVideo.url.embed_url);
                 setSelectedVideoTitle(nextVideo.title);
                 setSelectedVideoId({
                     sectionId: nextVideo.section_id,
                     videoId: nextVideo.id,
                 });
-                setActiveSection(nextVideo.section_id.toString()); // Update active section
+                setActiveSection(nextVideo.section_id.toString());
 
-                // Update status to "read" in the database if not already marked as read
+                // Optimistic update status video sudah dibaca
+                setReadVideos((prevReadVideos) => {
+                    const videoAlreadyRead = prevReadVideos.some(
+                        (video) =>
+                            video.section_id === nextVideo.section_id &&
+                            video.video_id === nextVideo.id
+                    );
+                    if (!videoAlreadyRead) {
+                        return [
+                            ...prevReadVideos,
+                            {
+                                section_id: nextVideo.section_id,
+                                video_id: nextVideo.id,
+                            },
+                        ];
+                    }
+                    return prevReadVideos;
+                });
+
+                // Update status di server setelah optimistik update
                 axios
                     .post(route("dashboard.videoRead"), {
                         section_id: nextVideo.section_id,
                         video_id: nextVideo.id,
-                    })
-                    .then((response) => {
-                        // Pastikan video hanya ditambahkan ke `readVideos` jika belum ada
-                        setReadVideos((prevReadVideos) => {
-                            const videoAlreadyRead = prevReadVideos.some(
-                                (video) =>
-                                    video.section_id === nextVideo.section_id &&
-                                    video.video_id === nextVideo.id
-                            );
-                            if (!videoAlreadyRead) {
-                                return [
-                                    ...prevReadVideos,
-                                    {
-                                        section_id: nextVideo.section_id,
-                                        video_id: nextVideo.id,
-                                    },
-                                ];
-                            }
-                            return prevReadVideos;
-                        });
                     })
                     .catch((error) => {
                         console.error(
@@ -213,17 +257,12 @@ export default function Index({
                         );
                     });
 
-                // Check if the next video is the last video
-                const lastVideo = video.reduce(
-                    (prev, current) => (current.id > prev.id ? current : prev),
-                    video[0]
-                );
+                // Periksa jika video berikutnya adalah video terakhir
+                const lastVideo = video.reduce((prev, current) => {
+                    return current.id > prev.id ? current : prev;
+                }, video[0]);
 
-                if (nextVideo.id === lastVideo.id) {
-                    setIsLastVideo(true); // If next video is the last video
-                } else {
-                    setIsLastVideo(false); // Not the last video
-                }
+                setIsLastVideo(nextVideo.id === lastVideo.id);
             }
         }
     };
@@ -324,43 +363,6 @@ export default function Index({
                     setActiveSection(
                         previousSectionVideo.section_id.toString()
                     );
-
-                    // Update status video yang dibaca di server
-                    axios
-                        .post(route("dashboard.videoRead"), {
-                            section_id: previousSectionVideo.section_id,
-                            video_id: previousSectionVideo.id,
-                        })
-                        .then(() => {
-                            setReadVideos((prevReadVideos) => {
-                                const videoAlreadyRead = prevReadVideos.some(
-                                    (video) =>
-                                        video.section_id ===
-                                            previousSectionVideo.section_id &&
-                                        video.video_id ===
-                                            previousSectionVideo.id
-                                );
-                                if (!videoAlreadyRead) {
-                                    return [
-                                        ...prevReadVideos,
-                                        {
-                                            section_id:
-                                                previousSectionVideo.section_id,
-                                            video_id: previousSectionVideo.id,
-                                        },
-                                    ];
-                                }
-                                return prevReadVideos;
-                            });
-                        })
-                        .catch((error) => {
-                            console.error(
-                                "Error updating video read status:",
-                                error
-                            );
-                        });
-
-                    // Cek apakah video sebelumnya adalah video terakhir di section yang lebih rendah
                     const lastVideoInPreviousSection = video
                         .filter(
                             (vid) =>
@@ -460,6 +462,14 @@ export default function Index({
     );
 
     useEffect(() => {
+        const readVideosData = videoRead.map((readVideo) => ({
+            section_id: readVideo.section_id,
+            video_id: readVideo.video_id,
+        }));
+        setReadVideos(readVideosData);
+    }, [videoRead]);
+
+    useEffect(() => {
         axios
             .get(route("dashboard.getReadVideos"))
             .then((response) => {
@@ -517,12 +527,6 @@ export default function Index({
     }, [currentVideo]); // Update saat video yang dipilih berubah
 
     // Menghitung progress berdasarkan `readVideos`
-    useEffect(() => {
-        const totalVideos = video.length;
-        const completedVideos = readVideos.length; // Video yang sudah dibaca
-        const newProgress = (completedVideos / totalVideos) * 100;
-        setProgress(newProgress);
-    }, [readVideos, video.length]);
 
     return (
         <>
@@ -562,95 +566,97 @@ export default function Index({
                                                 (vid) =>
                                                     vid.section_id ===
                                                     section.id
-                                            ) // Filter video berdasarkan section
+                                            )
                                             .map(
-                                                (filteredVideo, videoIndex) => (
-                                                    <li
-                                                        key={videoIndex}
-                                                        className="flex flex-row items-center w-full px-2 py-3 gap-x-2"
-                                                    >
-                                                        <div
-                                                            onClick={() =>
-                                                                handleVideoClick(
-                                                                    filteredVideo
-                                                                        .url
-                                                                        .embed_url,
-                                                                    filteredVideo.title,
-                                                                    filteredVideo.section_id,
-                                                                    filteredVideo.id,
-                                                                    filteredVideo
-                                                                        .section
-                                                                        .title
-                                                                )
-                                                            }
-                                                            className={`flex flex-col md:flex-row group items-center justify-between w-full px-5 py-3 font-medium text-white transition-all duration-200 rounded-2xl cursor-pointer ${
-                                                                selectedVideoId?.sectionId ===
-                                                                    filteredVideo.section_id &&
-                                                                selectedVideoId?.videoId ===
-                                                                    filteredVideo.id
-                                                                    ? "bg-maroon"
-                                                                    : "bg-gray-200 hover:bg-maroon"
-                                                            } gap-x-2`}
-                                                        >
-                                                            <div className="flex flex-col items-start gap-1.5 text-black group-hover:text-white">
-                                                                <span
-                                                                    className={`${
-                                                                        selectedVideoId?.sectionId ===
-                                                                            filteredVideo.section_id &&
-                                                                        selectedVideoId?.videoId ===
-                                                                            filteredVideo.id
-                                                                            ? "text-white"
-                                                                            : "text-gray-500 group-hover:text-white"
-                                                                    }`}
-                                                                >
-                                                                    {videoIndex +
-                                                                        1}
-                                                                    .{" "}
-                                                                    {
-                                                                        filteredVideo.title
-                                                                    }
-                                                                </span>
-                                                                <span
-                                                                    className={`flex flex-row items-center gap-1  text-sm text-black ${
-                                                                        selectedVideoId?.sectionId ===
-                                                                            filteredVideo.section_id &&
-                                                                        selectedVideoId?.videoId ===
-                                                                            filteredVideo.id
-                                                                            ? "text-white"
-                                                                            : "text-gray-500 group-hover:text-white"
-                                                                    }`}
-                                                                >
-                                                                    <Clock className="w-3.5 h-3.5" />{" "}
-                                                                    {
-                                                                        filteredVideo.duration
-                                                                    }
-                                                                </span>
-                                                            </div>
+                                                (filteredVideo, videoIndex) => {
+                                                    // Cek apakah video sudah dibaca
+                                                    const isVideoRead =
+                                                        readVideos.some(
+                                                            (readVideo) =>
+                                                                readVideo.video_id ===
+                                                                filteredVideo.id
+                                                        );
 
-                                                            {/* Display Check Icon if Status is 1 or if the video is in readVideos */}
-                                                            {(filteredVideo.status ===
-                                                                1 ||
-                                                                readVideos.some(
-                                                                    (video) =>
-                                                                        video.section_id ===
-                                                                            filteredVideo.section_id &&
-                                                                        video.video_id ===
-                                                                            filteredVideo.id
-                                                                )) && (
-                                                                <Check
-                                                                    className={`w-5 h-5 ${
-                                                                        selectedVideoId?.sectionId ===
-                                                                            filteredVideo.section_id &&
-                                                                        selectedVideoId?.videoId ===
-                                                                            filteredVideo.id
-                                                                            ? "bg-white text-maroon p-1"
-                                                                            : "bg-maroon text-white p-1"
-                                                                    } rounded-full`}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    </li>
-                                                )
+                                                    return (
+                                                        <li
+                                                            key={videoIndex}
+                                                            className="flex flex-row items-center w-full px-2 py-3 gap-x-2"
+                                                        >
+                                                            <div
+                                                                onClick={() =>
+                                                                    handleVideoClick(
+                                                                        filteredVideo
+                                                                            .url
+                                                                            .embed_url,
+                                                                        filteredVideo.title,
+                                                                        filteredVideo.section_id,
+                                                                        filteredVideo.id,
+                                                                        filteredVideo
+                                                                            .section
+                                                                            .title
+                                                                    )
+                                                                }
+                                                                className={`flex flex-col md:flex-row group items-center justify-between w-full px-5 py-3 font-medium text-white transition-all duration-200 rounded-2xl cursor-pointer ${
+                                                                    selectedVideoId?.sectionId ===
+                                                                        filteredVideo.section_id &&
+                                                                    selectedVideoId?.videoId ===
+                                                                        filteredVideo.id
+                                                                        ? "bg-maroon"
+                                                                        : "bg-gray-200 hover:bg-maroon"
+                                                                } gap-x-2`}
+                                                            >
+                                                                <div className="flex flex-col items-start gap-1.5 text-black group-hover:text-white">
+                                                                    <span
+                                                                        className={`${
+                                                                            selectedVideoId?.sectionId ===
+                                                                                filteredVideo.section_id &&
+                                                                            selectedVideoId?.videoId ===
+                                                                                filteredVideo.id
+                                                                                ? "text-white"
+                                                                                : "text-gray-500 group-hover:text-white"
+                                                                        }`}
+                                                                    >
+                                                                        {videoIndex +
+                                                                            1}
+                                                                        .{" "}
+                                                                        {
+                                                                            filteredVideo.title
+                                                                        }
+                                                                    </span>
+                                                                    <span
+                                                                        className={`flex flex-row items-center gap-1 text-sm text-black ${
+                                                                            selectedVideoId?.sectionId ===
+                                                                                filteredVideo.section_id &&
+                                                                            selectedVideoId?.videoId ===
+                                                                                filteredVideo.id
+                                                                                ? "text-white"
+                                                                                : "text-gray-500 group-hover:text-white"
+                                                                        }`}
+                                                                    >
+                                                                        <Clock className="w-3.5 h-3.5" />{" "}
+                                                                        {
+                                                                            filteredVideo.duration
+                                                                        }
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* Tampilkan ikon checklist jika video sudah dibaca */}
+                                                                {isVideoRead && (
+                                                                    <Check
+                                                                        className={`w-5 h-5 ${
+                                                                            selectedVideoId?.sectionId ===
+                                                                                filteredVideo.section_id &&
+                                                                            selectedVideoId?.videoId ===
+                                                                                filteredVideo.id
+                                                                                ? "bg-white text-maroon p-1"
+                                                                                : "bg-maroon text-white p-1"
+                                                                        } rounded-full`}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </li>
+                                                    );
+                                                }
                                             )}
                                     </ul>
                                 </div>

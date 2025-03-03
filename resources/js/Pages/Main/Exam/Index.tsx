@@ -49,6 +49,7 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
 
         const answers = quiz.map((item) => ({
             quiz_id: item.id,
+            kelas_id: item.kelas_id,
             quiz_answer_id: selectedAnswers[item.id] || null,
             point: selectedAnswers[item.id]
                 ? calculatePoints(selectedAnswers[item.id])

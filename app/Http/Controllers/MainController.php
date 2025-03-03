@@ -14,6 +14,7 @@ use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\Section;
 use App\Models\Setting;
+use App\Models\TemplateSertifikat;
 use App\Models\Testimoni;
 use App\Models\Transaction;
 use App\Models\Type;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
+use setasign\Fpdi\Fpdi;
 
 class MainController extends Controller
 {
@@ -260,6 +262,7 @@ class MainController extends Controller
     public function kelassaya()
     {
         $user_id = Auth::id();
+
         $data = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'),
@@ -275,26 +278,43 @@ class MainController extends Controller
             ->orderByDesc('total_transaksi')
             ->get();
 
+        // Ambil ID kelas yang sudah dikelompokkan
         $kelasIds = $data->pluck('id');
-        $videoreadGrouped = VideoReader::whereHas('section', function ($query) use ($kelasIds) {
-            $query->whereIn('kelas_id', $kelasIds);
-        })->whereHas('video', function ($query) {
-            $query->where('status', 1);
-        })
+
+        // Mengambil data video yang sudah dibaca
+        $videoreadGrouped = VideoReader::where('user_id', Auth::user()->id)
+            ->whereHas('section', function ($query) use ($kelasIds) {
+                $query->whereIn('kelas_id', $kelasIds);
+            })
+            ->whereHas('video', function ($query) {
+                $query->where('status', 1);  // Pastikan video sudah aktif
+            })
             ->where('status', 1)
             ->get()
             ->groupBy('section.kelas_id');
 
+        // Menghitung progres untuk masing-masing kelas
         $kelasWithProgress = $data->map(function ($kelas) use ($videoreadGrouped) {
-            $totalVideos = VideoReader::whereHas('section', function ($query) use ($kelas) {
+            // Menghitung total video dalam kelas
+            $totalVideos = Video::whereHas('section', function ($query) use ($kelas) {
+                // Mengakses section yang memiliki kelas_id sesuai dengan kelas yang sedang diproses
                 $query->where('kelas_id', $kelas->id);
             })->count();
+
+
+            // Menghitung video yang sudah dibaca oleh user
             $videosRead = $videoreadGrouped->get($kelas->id, collect())->count();
+
+            // Menghitung progres berdasarkan video yang sudah dibaca
             $progress = $totalVideos > 0 ? ($videosRead / $totalVideos) * 100 : 0;
+
+            // Menambahkan progres ke dalam objek kelas
             $kelas->progress = round($progress, 2);
+
             return $kelas;
         });
 
+        // Hasil akhir dengan progres
         $setting = Setting::first();
         $auth = User::findOrFail(Auth::user()->id);
         return Inertia::render('Main/Kelas/KelasSaya', ['setting' => $setting, 'auth' => $auth, 'kelas' => $kelasWithProgress, 'videoread' => $videoreadGrouped]);
@@ -307,6 +327,10 @@ class MainController extends Controller
             ->withCount('videos') // Menghitung jumlah video pada setiap section
             ->get();
         $videos = Video::whereIn('section_id', $sections->pluck('id'))->get();
+        $videoRead = VideoReader::where('user_id', Auth::user()->id)
+            ->whereIn('video_id', $videos->pluck('id'))
+            ->get();
+
         $testimoni = Testimoni::where('kelas_id', $kelas->id)->get();
         $setting = Setting::first();
         $diskusi = Diskusi::where('kelas_id', $kelas->id)->get();
@@ -350,7 +374,8 @@ class MainController extends Controller
             'averageRating' => $averageRating,
             'totalulasan' => $totalulasan,
             'totalsiswa' => $totalsiswa,
-            'totalkelasmentor' => $totalkelasmentor
+            'totalkelasmentor' => $totalkelasmentor,
+            'videoRead' => $videoRead
         ]);
     }
 
@@ -380,14 +405,6 @@ class MainController extends Controller
         $video = Video::find($request->video_id);
         $video->status = 1;
         $video->save();
-        // $previousVideos = Video::where('section_id', $request->section_id)
-        //     ->where('id', '<', $request->video_id)
-        //     ->get();
-
-        // foreach ($previousVideos as $previousVideo) {
-        //     $previousVideo->status = 1;
-        //     $previousVideo->save();
-        // }
     }
 
     public function sendTestimonial(Request $request)
@@ -447,12 +464,8 @@ class MainController extends Controller
         $exam = Quiz::where('kelas_id', $kelas->id)->get();
         $examanswer = QuizAnswer::whereIn('quiz_id', $exam->pluck('id'))->get();
         $data = UserAnswer::where('user_id', Auth::user()->id)->get();
-
-        // Membuat array yang berisi jawaban yang sudah dipilih oleh user
         $userAnswers = $data->pluck('answer_id', 'quiz_id')->toArray();
-
         $totalPoint = $data->sum('point');
-
         return Inertia::render('Main/Exam/Selesai', [
             'setting' => $setting,
             'data' => $data,
@@ -473,6 +486,7 @@ class MainController extends Controller
             'answers.*.quiz_answer_id' => 'required|integer',
             'answers.*.point' => 'required|integer',
         ]);
+        $randomNumber = rand(1000, 9999);
 
         foreach ($request->answers as $answer) {
             // Cek apakah sudah ada jawaban yang disimpan untuk user dan quiz_id tertentu
@@ -497,7 +511,9 @@ class MainController extends Controller
                 // Jika belum ada jawaban, buat jawaban baru
                 $q = new UserAnswer();
                 $q->user_id = Auth::user()->id;
+                $q->kelas_id = $answer['kelas_id'];
                 $q->quiz_id = $answer['quiz_id'];
+                $q->no_sertifikat = $randomNumber;
                 $q->quiz_answer_id = $answer['quiz_answer_id'];
                 $q->point = $answer['point'];
                 $q->edit_count = 1;  // Pengisian pertama
@@ -509,12 +525,100 @@ class MainController extends Controller
     }
 
 
+
+
     public function sertifikat()
     {
         $setting = Setting::first();
         $auth = User::findOrFail(Auth::user()->id);
-        return Inertia::render('Main/Sertifikat/Index', ['setting' => $setting, 'auth' => $auth]);
+
+        $userAnswers = UserAnswer::where('user_id', Auth::user()->id)
+            ->groupBy('kelas_id')
+            ->selectRaw('*, SUM(point) as total_point')
+            ->havingRaw('SUM(point) >= 80') // Hanya menampilkan jika total_point >= 80
+            ->get();
+
+        $totalPoint = $userAnswers->sum('point');
+
+        return Inertia::render('Main/Sertifikat/Index', [
+            'setting' => $setting,
+            'auth' => $auth,
+            'userAnswers' => $userAnswers,
+            'totalPoint' => $totalPoint
+        ]);
     }
+
+
+    public function generateSertifikat($id)
+    {
+        // Ambil data user answers dan total points
+        $data = UserAnswer::where('id', $id)
+            ->groupBy('kelas_id')
+            ->selectRaw('*, sum(point) as total_point')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+        $template = TemplateSertifikat::where('status', 1)->first();
+        $backgroundPdf = public_path('storage/' . $template->file); // Template sertifikat
+        $folderPath = storage_path('app/public/sertifikat'); // Folder penyimpanan
+
+        // Cek apakah folder ada, jika tidak buat foldernya
+        if (!file_exists($folderPath)) {
+            mkdir($folderPath, 0777, true);
+        }
+
+        // Lokasi penyimpanan file PDF
+        $outputPdf = $folderPath . "/sertifikat-{$data->user->name}.pdf";
+
+        // Pastikan file background tersedia
+        if (!file_exists($backgroundPdf)) {
+            return response()->json(['error' => 'Template sertifikat tidak ditemukan'], 404);
+        }
+
+        $pdf = new Fpdi();
+        $pdf->setSourceFile($backgroundPdf);
+        $tplId = $pdf->importPage(1);
+        $size = $pdf->getTemplateSize($tplId);
+
+        // Buat halaman dengan ukuran sesuai template
+        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $pdf->useTemplate($tplId, 0, 0, $size['width'], $size['height']);
+
+        // **Gunakan Arial sebagai font default**
+        $pdf->SetFont('Arial', 'B', 18); // Arial Bold untuk judul
+
+        // **Nomor Sertifikat**
+        $pdf->SetXY(85, 64);
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 10, "AC-999862" . $data->no_sertifikat . "-" . date('Y'), 0, 1, 'L');
+
+        // **Nama Peserta (Merah)**
+        $pdf->SetTextColor(255, 0, 0);
+        $pdf->SetXY(46, 98);
+        $pdf->SetFont('Arial', 'B', 26);
+        $pdf->Cell(0, 10, $data->user->name, 0, 1, 'L');
+
+        // **Nama Kursus**
+        $pdf->SetXY(46, 127);
+        $pdf->SetFont('Arial', 'B', 30);
+        $pdf->Cell(0, 10, $data->kelas->title, 0, 1, 'L');
+
+        // **Tanggal Sertifikat**
+        $tanggal = Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y');
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetXY(73, 168);
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Cell(0, 10, $tanggal, 0, 1, 'L');
+
+        // Simpan file PDF
+        $pdf->Output($outputPdf, 'F');
+
+        // **Kembalikan response untuk mengunduh PDF**
+        return response()->download($outputPdf, "sertifikat-{$data->user->name}.pdf");
+    }
+
 
     public function profile()
     {

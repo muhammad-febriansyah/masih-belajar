@@ -26,9 +26,12 @@ Route::get('/searchKelas', [HomeController::class, 'searchKelas'])->name('search
 Route::get('/detailkelas/{slug}', [HomeController::class, 'detailkelas'])->name('detailkelas');
 Route::get('/masuk', [HomeController::class, 'login'])->name('masuk');
 Route::get('/daftar', [HomeController::class, 'register'])->name('daftar');
+Route::get('/cek-sertifikat', [HomeController::class, 'ceksertifikat'])->name('ceksertifikat');
 Route::post('/checklogin', [HomeController::class, 'checklogin'])->name('checklogin');
 Route::post('/saveregister', [HomeController::class, 'saveregister'])->name('saveregister');
 Route::get('/send-email', [EmailSending::class, 'sendEmail'])->name('sendEmail');
+Route::post('/ceksertifikat/search', [HomeController::class, 'searchSertifikat'])->name('ceksertifikat.search');
+Route::get('/generateSertifikat/{id}', [HomeController::class, 'generateSertifikat'])->name('generateSertifikat');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
@@ -49,6 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/videoRead', [MainController::class, 'videoRead'])->name('dashboard.videoRead');
     Route::get('/dashboard/getReadVideos', [MainController::class, 'getReadVideos'])->name('dashboard.getReadVideos');
     Route::get('/dashboard/list-sertifikat', [MainController::class, 'sertifikat'])->name('dashboard.sertifikat');
+    Route::get('/dashboard/generateSertifikat/{id}', [MainController::class, 'generateSertifikat'])->name('dashboard.generateSertifikat');
     Route::get('/dashboard/examEnd/{slug}', [MainController::class, 'examEnd'])->name('dashboard.examEnd');
     Route::post('/dashboard/updateprofile', [MainController::class, 'updateprofile'])->name('dashboard.updateprofile');
     Route::post('/dashboard/sendTestimonial', [MainController::class, 'sendTestimonial'])->name('dashboard.sendTestimonial');

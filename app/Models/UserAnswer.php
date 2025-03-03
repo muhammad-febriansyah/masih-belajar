@@ -9,7 +9,7 @@ class UserAnswer extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    protected $with = ['quiz', 'quizAnswer', 'user'];
+    protected $with = ['quiz', 'quizAnswer', 'user', 'kelas'];
 
     public function quiz()
     {
@@ -24,5 +24,10 @@ class UserAnswer extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
     }
 }

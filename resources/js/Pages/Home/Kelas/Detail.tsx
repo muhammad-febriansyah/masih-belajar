@@ -365,7 +365,7 @@ export default function Detail({
                                             </dl>
                                         </div>
                                     </div> */}
-                                    <p
+                                    <div
                                         className="mt-5 text-sm leading-relaxed text-gray-700"
                                         dangerouslySetInnerHTML={{
                                             __html: kelas.body,

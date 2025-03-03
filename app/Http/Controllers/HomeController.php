@@ -7,19 +7,25 @@ use App\Models\Category;
 use App\Models\Faq;
 use App\Models\Kelas;
 use App\Models\Level;
+use App\Models\PromoCode;
 use App\Models\Section;
 use App\Models\Setting;
+use App\Models\TemplateSertifikat;
 use App\Models\Testimoni;
 use App\Models\Transaction;
 use App\Models\Type;
 use App\Models\User;
+use App\Models\UserAnswer;
 use App\Models\Video;
 use Carbon\Carbon;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Inertia\Response;
+use setasign\Fpdi\Fpdi;
 
 class HomeController extends Controller
 {
@@ -32,6 +38,7 @@ class HomeController extends Controller
         $totalstar = Testimoni::sum('rating');
         $totalkelas = Kelas::where('status', 'disetujui')->count();
         $testimoni = Testimoni::latest()->get();
+        $promo = PromoCode::where('status', 'active')->first();
         $kelaspopuler = Kelas::select(
             'kelas.*',
             DB::raw('COUNT(transactions.id) as total_transaksi'), // Menghitung jumlah transaksi
@@ -52,6 +59,7 @@ class HomeController extends Controller
             'totalkelas' => $totalkelas,
             'faq' => $faq,
             'kelaspopuler' => $kelaspopuler,
+            'promo' => $promo,
             'testimoni' => $testimoni
         ]);
     }
@@ -213,6 +221,116 @@ class HomeController extends Controller
         $q->role = "student";
         $q->status = 1;
         $q->save();
+        Notification::make()
+            ->success()
+            ->title("Student $q->name berhasil mendaftar")
+            ->sendToDatabase(User::where('role', 'admin')->get());
+
         return to_route('masuk');
+    }
+
+    public function ceksertifikat(Request $request)
+    {
+        $setting = Setting::first();
+        return Inertia::render('Home/Sertifikat/Index', [
+            'setting' => $setting,
+            'userAnswers' => [],
+            'totalPoint' => 0,
+            'search' => ''
+        ]);
+    }
+
+    public function searchSertifikat(Request $request)
+    {
+        $search = $request->input('search'); // Ambil nilai search dari body request
+
+        $userAnswers = UserAnswer::whereHas('user', function ($query) use ($search) {
+            if (!empty($search)) {
+                $query->where('name', 'like', "%{$search}%");
+            }
+        })
+            ->whereNotNull('kelas_id') // Pastikan kelas_id tidak null
+            ->groupBy('kelas_id')
+            ->selectRaw('*, SUM(point) as total_point')
+            ->havingRaw('SUM(point) >= 80')
+            ->get();
+
+        $totalPoint = $userAnswers->sum('total_point');
+
+        return response()->json([
+            'userAnswers' => $userAnswers,
+            'totalPoint' => $totalPoint
+        ]);
+    }
+
+    public function generateSertifikat($id)
+    {
+        // Ambil data user answers dan total points
+        $data = UserAnswer::where('id', $id)
+            ->groupBy('kelas_id')
+            ->selectRaw('*, sum(point) as total_point')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $template = TemplateSertifikat::where('status', 1)->first();
+        $backgroundPdf = public_path('storage/' . $template->file); // Template sertifikat
+        $folderPath = storage_path('app/public/sertifikat'); // Folder penyimpanan
+
+        // Cek apakah folder ada, jika tidak buat foldernya
+        if (!file_exists($folderPath)) {
+            mkdir($folderPath, 0777, true);
+        }
+
+        // Lokasi penyimpanan file PDF
+        $outputPdf = $folderPath . "/sertifikat-{$data->user->name}.pdf";
+
+        // Pastikan file background tersedia
+        if (!file_exists($backgroundPdf)) {
+            return response()->json(['error' => 'Template sertifikat tidak ditemukan'], 404);
+        }
+
+        $pdf = new Fpdi();
+        $pdf->setSourceFile($backgroundPdf);
+        $tplId = $pdf->importPage(1);
+        $size = $pdf->getTemplateSize($tplId);
+
+        // Buat halaman dengan ukuran sesuai template
+        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $pdf->useTemplate($tplId, 0, 0, $size['width'], $size['height']);
+
+        // **Gunakan Arial sebagai font default**
+        $pdf->SetFont('Arial', 'B', 18); // Arial Bold untuk judul
+
+        // **Nomor Sertifikat**
+        $pdf->SetXY(85, 64);
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 10, "AC-999862" . $data->no_sertifikat . "-" . date('Y'), 0, 1, 'L');
+
+        // **Nama Peserta (Merah)**
+        $pdf->SetTextColor(255, 0, 0);
+        $pdf->SetXY(46, 98);
+        $pdf->SetFont('Arial', 'B', 26);
+        $pdf->Cell(0, 10, $data->user->name, 0, 1, 'L');
+
+        // **Nama Kursus**
+        $pdf->SetXY(46, 127);
+        $pdf->SetFont('Arial', 'B', 30);
+        $pdf->Cell(0, 10, $data->kelas->title, 0, 1, 'L');
+
+        // **Tanggal Sertifikat**
+        $tanggal = Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y');
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetXY(73, 168);
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Cell(0, 10, $tanggal, 0, 1, 'L');
+
+        // Simpan file PDF
+        $pdf->Output($outputPdf, 'F');
+
+        // **Kembalikan response untuk mengunduh PDF**
+        return response()->download($outputPdf, "sertifikat-{$data->user->name}.pdf");
     }
 }

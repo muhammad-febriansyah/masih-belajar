@@ -90,7 +90,9 @@ class PaymentController extends Controller
             // Menyimpan snapToken ke transaksi
             $trx->payment_url = $snapResponse->redirect_url;
             $trx->save();
-
+            Notification::make()
+                ->title('Success')
+                ->getDatabaseMessage();
             // Redirect user ke halaman Midtrans
             return response()->json(['redirect_url' => $trx->payment_url]);
         } catch (\Exception $e) {

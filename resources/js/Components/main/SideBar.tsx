@@ -11,7 +11,7 @@ export default function SideBar() {
     const { url } = usePage();
     return (
         <>
-            <div className="hidden md:block bg-white w-full lg:w-[25%] rounded-2xl p-5">
+            <div className="hidden md:block bg-white w-full h-min lg:w-[25%] rounded-2xl p-5">
                 <div className="flex flex-col gap-y-5">
                     {auth.image ? (
                         <div className="relative flex items-center gap-2 cursor-pointer">

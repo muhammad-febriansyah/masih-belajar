@@ -62,4 +62,9 @@ class Kelas extends Model
     {
         return $this->hasMany(Diskusi::class);
     }
+
+    public function userAnswer(): HasMany
+    {
+        return $this->hasMany(UserAnswer::class);
+    }
 }

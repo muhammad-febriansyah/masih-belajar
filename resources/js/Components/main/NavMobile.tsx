@@ -82,7 +82,7 @@ export default function NavMobile() {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
+                            className="inline-block transition-all duration-300  border border-maroon bg-maroon px-12 py-2 rounded-full text-base font-medium text-white hover:bg-transparent hover:text-maroon focus:ring-3 focus:outline-hidden"
                         >
                             Keluar
                         </button>

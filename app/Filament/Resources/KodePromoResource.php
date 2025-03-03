@@ -7,6 +7,7 @@ use App\Filament\Resources\KodePromoResource\RelationManagers;
 use App\Models\KodePromo;
 use App\Models\PromoCode;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
@@ -14,10 +15,12 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\RawJs;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\File;
 
 class KodePromoResource extends Resource
 {
@@ -50,6 +53,23 @@ class KodePromoResource extends Resource
                                 'inactive' => 'danger',
                                 'active' => 'info',
                             ])->inline()->label('Status'),
+                        FileUpload::make('image')
+                            ->disk('public')
+                            ->directory('image-upload-server')
+                            ->label('Thumbnail')
+                            ->maxSize(3072)
+                            ->image()
+                            ->deletable(true)
+                            ->deleteUploadedFileUsing(function ($record, $file) {
+                                if (isset($record->image)) {
+                                    if ($record->image == $file) {
+                                        if (File::exists(public_path('storage\\' . $record->image))) {
+                                            File::delete(public_path('storage\\' . $record->image));
+                                        }
+                                    }
+                                }
+                            })
+                            ->required(),
                     ])->columns(['lg' => 2]),
             ]);
     }
@@ -59,6 +79,7 @@ class KodePromoResource extends Resource
         return $table
             ->columns([
                 TextColumn::make("No")->rowIndex(),
+                ImageColumn::make("image")->width("50%")->height("50%")->label('Thumbnail'),
                 TextColumn::make("code")->label('Kode Promo')->searchable(),
                 TextColumn::make("discount")->label('Potongan Harga')->money('idr')->sortable(),
                 TextColumn::make("status")->label('Status')->formatStateUsing(fn($record) => match ($record->status) {
