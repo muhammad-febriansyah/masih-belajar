@@ -68,14 +68,20 @@ class KelasTerjualResource extends Resource
                         'pending' => 'warning',
                         'paid' => 'success',
                         'failed' => 'danger',
+                        'free' => 'info',
+                        default => 'gray',
                     };
                 })->icon(function (string $state): string {
                     return match ($state) {
                         'pending' => 'heroicon-s-clock',
                         'paid' => 'heroicon-s-check-circle',
                         'failed' => 'heroicon-s-x-circle',
+                        'free' => 'heroicon-s-check-badge', // Nama ikon yang benar dalam Heroicons
+                        default => 'heroicon-s-question-mark-circle',
                     };
                 }),
+
+
                 TextColumn::make('created_at')->label('Tgl Transaksi')->dateTime()->sortable(),
             ])
             ->filters([
@@ -101,14 +107,19 @@ class KelasTerjualResource extends Resource
                                 'pending' => 'warning',
                                 'paid' => 'success',
                                 'failed' => 'danger',
+                                'free' => 'info',
+                                default => 'gray', // Default untuk status yang tidak dikenali
                             };
                         })->icon(function (string $state): string {
                             return match ($state) {
                                 'pending' => 'heroicon-s-clock',
                                 'paid' => 'heroicon-s-check-circle',
                                 'failed' => 'heroicon-s-x-circle',
+                                'free' => 'heroicon-s-check-badge',
+                                default => 'heroicon-s-question-mark-circle', // Default ikon
                             };
                         }),
+
                         TextEntry::make('payment_method')->label('Jenis Pembayaran'),
                         TextEntry::make('created_at')->label('Tgl Transaksi')->badge()->color('info')->dateTime(),
                     ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 2, 'md' => 1, 'sm' => 1]),

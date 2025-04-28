@@ -1255,9 +1255,10 @@ export default function Index({
                                                                                             }
                                                                                             className="p-5 mx-3 mt-5 bg-white border-2 border-maroon rounded-2xl"
                                                                                         >
-                                                                                            {disk
+                                                                                            {balasan
                                                                                                 .user
-                                                                                                .image ? (
+                                                                                                .image !==
+                                                                                            null ? (
                                                                                                 <div className="flex items-center gap-2 mb-5 cursor-pointer group">
                                                                                                     <img
                                                                                                         src={`/storage/${balasan.user.image}`}
@@ -1279,13 +1280,22 @@ export default function Index({
                                                                                                         className="rounded-full size-10"
                                                                                                         alt=""
                                                                                                     />
-                                                                                                    <span className="text-sm font-medium text-black">
-                                                                                                        {
-                                                                                                            balasan
-                                                                                                                .user
-                                                                                                                .name
-                                                                                                        }
-                                                                                                    </span>
+                                                                                                    <div className="flex flex-col gap-2">
+                                                                                                        <span className="text-sm font-medium text-black">
+                                                                                                            {
+                                                                                                                balasan
+                                                                                                                    .user
+                                                                                                                    .name
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                        <span className="text-sm font-medium text-white bg-maroon px-3 py-1.5  rounded-full">
+                                                                                                            {
+                                                                                                                balasan
+                                                                                                                    .user
+                                                                                                                    .role
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             )}
                                                                                             <p className="text-sm leading-relaxed text-black">

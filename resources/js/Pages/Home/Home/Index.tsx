@@ -528,28 +528,29 @@ export default function Index({
                     </Accordion>
                 </div>
             </section>
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="mb-5 font-semibold text-xl">
-                            Diskon Spesial 🔥
-                        </DialogTitle>
-                        <DialogDescription className="items-center justify-center">
-                            <a
-                                href={`https://wa.me/${setting.phone}`}
-                                target="_blank"
-                            >
-                                <img
-                                    src={`/storage/${promo.image}`}
-                                    className="object-contain items-center justify-center w-full"
-                                    alt=""
-                                />
-                            </a>
-                        </DialogDescription>
-                    </DialogHeader>
-                    {/* <Button onClick={() => setOpen(false)}>Tutup</Button> */}
-                </DialogContent>
-            </Dialog>
+            {promo && (
+                <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogContent className="rounded-2xl p-5 sm:p-8 sm:max-w-lg w-[90%] sm:w-auto mx-auto">
+                        <DialogHeader>
+                            <DialogTitle className="mb-5 font-semibold text-xl text-center">
+                                Diskon Spesial 🔥
+                            </DialogTitle>
+                            <DialogDescription className="flex flex-col items-center justify-center">
+                                <a
+                                    href={`https://wa.me/${setting.phone}`}
+                                    target="_blank"
+                                >
+                                    <img
+                                        src={`/storage/${promo.image}`}
+                                        className="object-contain w-full max-h-60 sm:max-h-none rounded-lg"
+                                        alt=""
+                                    />
+                                </a>
+                            </DialogDescription>
+                        </DialogHeader>
+                    </DialogContent>
+                </Dialog>
+            )}
         </HomeLayout>
     );
 }

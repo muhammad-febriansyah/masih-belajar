@@ -118,22 +118,22 @@ class KelasResource extends Resource
                         ->columns(3)
                         ->completedIcon('heroicon-m-check-badge')
                         ->schema([
-                            Repeater::make('section')->label('Section')->collapsed()->cloneable()->relationship('section')
+                            Repeater::make('section')->label('Section')->cloneable()->relationship('section')
                                 ->schema([
-                                    TextInput::make('title')->label('Judul')->placeholder('Judul Section')->required(),
+                                    TextInput::make('title')->label('Judul')->placeholder('Judul Section')->required()->live(onBlur: true),
                                     TextInput::make('total_video')->label('Total Video')->placeholder('Total Video')->required()->numeric()->suffix('Video'),
                                     TextInput::make('total_duration')->label('Total Durasi Video')->placeholder('Total Durasi Video')->required(),
                                     Repeater::make('videos')->label('Video')->collapsed()->cloneable()->relationship('videos')
                                         ->schema([
-                                            TextInput::make('title')->label('Judul')->placeholder('Judul Video')->required()->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1]),
+                                            TextInput::make('title')->label('Judul')->placeholder('Judul Video')->required()->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1])->live(onBlur: true),
                                             TextInput::make('duration')->label('Durasi')->placeholder('Durasi Video')->required(),
                                             Matinee::make('url')
                                                 ->required()
                                                 ->label('Url Video')
                                                 ->showPreview()->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1]),
                                         ])
-                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])
-                                ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1]),
+                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->itemLabel(fn(array $state): ?string => $state['title'] ?? null)
+                                ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1])->itemLabel(fn(array $state): ?string => $state['title'] ?? null)->collapsed(),
                         ]),
                     Wizard\Step::make('Quiz')
                         ->columns(3)
@@ -141,14 +141,14 @@ class KelasResource extends Resource
                         ->schema([
                             Repeater::make('quiz')->label('Quiz')->collapsed()->cloneable()->relationship('quiz')
                                 ->schema([
-                                    TextInput::make('question')->label('Pertanyaan')->placeholder('Pertanyaan')->required()->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1]),
+                                    TextInput::make('question')->label('Pertanyaan')->placeholder('Pertanyaan')->required()->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->live(onBlur: true),
                                     Repeater::make('quizAnswer')->label('Jawaban')->collapsed()->cloneable()->relationship('quizAnswer')
                                         ->schema([
-                                            TextInput::make('answer')->label('Jawaban Quiz')->placeholder('Jawaban Quiz')->required()->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1]),
+                                            TextInput::make('answer')->label('Jawaban Quiz')->placeholder('Jawaban Quiz')->required()->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1])->live(onBlur: true),
                                             TextInput::make('point')->label('Point Quiz')->placeholder('Point')->required()->numeric(),
                                         ])
-                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])
-                                ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1]),
+                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->itemLabel(fn(array $state): ?string => $state['answer'] ?? null),
+                                ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1])->itemLabel(fn(array $state): ?string => $state['question'] ?? null)->collapsed(),
                         ]),
                 ])->skippable()
             ])->columns(1);
