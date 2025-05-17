@@ -39,8 +39,8 @@ export default function SideBar() {
                             href="/dashboard/kelas-saya"
                             className={
                                 url.startsWith("/dashboard/kelas-saya")
-                                    ? "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group bg-red-500"
-                                    : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-red-200"
+                                    ? "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group bg-maroon"
+                                    : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-maroon/50"
                             } // Menentukan kelas berdasarkan apakah link aktif
                         >
                             <svg
@@ -77,8 +77,8 @@ export default function SideBar() {
                             href="/dashboard/list-sertifikat"
                             className={
                                 url.startsWith("/dashboard/list-sertifikat")
-                                    ? "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group bg-red-500"
-                                    : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-red-200"
+                                    ? "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group bg-maroon"
+                                    : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-maroon/50"
                             } // Menentukan kelas berdasarkan apakah link aktif
                         >
                             <svg
@@ -114,8 +114,8 @@ export default function SideBar() {
                             href="/dashboard/my-profile"
                             className={
                                 url.startsWith("/dashboard/my-profile")
-                                    ? "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group bg-red-500"
-                                    : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-red-200"
+                                    ? "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group bg-maroon"
+                                    : "flex flex-row items-center px-3 py-3.5 transition-all duration-200 rounded-2xl gap-x-2 group hover:bg-maroon/50"
                             } // Menentukan kelas berdasarkan apakah link aktif
                         >
                             <svg
@@ -155,8 +155,8 @@ export default function SideBar() {
                     href="/dashboard/kelas-saya"
                     className={`flex flex-col items-center gap-x-2 px-3 py-1.5 rounded-2xl transition-all duration-200 group ${
                         url.startsWith("/dashboard/kelas-saya")
-                            ? "bg-red-500 text-white"
-                            : "hover:bg-red-200 text-gray-500 group-hover:text-white"
+                            ? "bg-maroon text-white"
+                            : "hover:bg-maroon/50 text-gray-500 group-hover:text-white"
                     }`}
                 >
                     <svg
@@ -192,8 +192,8 @@ export default function SideBar() {
                     href="/dashboard/list-sertifikat"
                     className={`flex flex-col items-center gap-x-2 px-3 py-1.5 rounded-2xl transition-all duration-200 group ${
                         url.startsWith("/dashboard/list-sertifikat")
-                            ? "bg-red-500 text-white"
-                            : "hover:bg-red-200 text-gray-500 group-hover:text-white"
+                            ? "bg-maroon text-white"
+                            : "hover:bg-maroon/50 text-gray-500 group-hover:text-white"
                     }`}
                 >
                     <svg
@@ -227,8 +227,8 @@ export default function SideBar() {
                     href="/dashboard/my-profile"
                     className={`flex flex-col items-center gap-x-2 px-3 py-1.5 rounded-2xl transition-all duration-200 group ${
                         url.startsWith("/dashboard/my-profile")
-                            ? "bg-red-500 text-white"
-                            : "hover:bg-red-200 text-gray-500 group-hover:text-white"
+                            ? "bg-maroon text-white"
+                            : "hover:bg-maroon/50 text-gray-500 group-hover:text-white"
                     }`}
                 >
                     <svg

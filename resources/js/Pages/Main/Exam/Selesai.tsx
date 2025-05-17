@@ -59,14 +59,14 @@ export default function Selesai({
             </Head>
             <section className="container pt-10">
                 <div className="flex flex-col justify-between gap-5 lg:flex-row">
-                    <div className="bg-red-200 w-full lg:w-[70%] p-5 rounded-2xl">
+                    <div className="bg-maroon/20 w-full lg:w-[70%] p-5 rounded-2xl">
                         <div className="flex items-center gap-2">
                             <img
                                 src="/icon-exam/29.svg"
                                 className="size-10"
                                 alt=""
                             />
-                            <span className="text-lg font-bold text-red-700 lg:text-2xl">
+                            <span className="text-lg font-bold text-maroon/70 lg:text-2xl">
                                 Final Exam
                             </span>
                         </div>
@@ -74,28 +74,28 @@ export default function Selesai({
                             className="pl-16"
                             style={{ listStyleType: "circle" }}
                         >
-                            <li className="text-xs text-red-700 lg:text-sm">
+                            <li className="text-xs text-maroon/70 lg:text-sm">
                                 Kamu diberikan kesempatan untuk mengulang
                                 assignment apabila tidak mencapai nilai minimal
                                 yang ditentukan sebanyak 3 kali (setiap 24 jam)
                             </li>
-                            <li className="text-xs text-red-700 lg:text-sm">
+                            <li className="text-xs text-maroon/70 lg:text-sm">
                                 Nilai yang ditampilkan adalah Nilai tertinggi
                                 yang berhasil kamu peroleh dari semua
                                 pengulangan.
                             </li>
                         </ul>
                     </div>
-                    <div className="bg-red-200 p-5 w-full lg:w-[30%] rounded-2xl flex flex-col items-center justify-center gap-5">
-                        <h1 className="text-4xl font-bold text-red-600">
+                    <div className="bg-maroon/20 p-5 w-full lg:w-[30%] rounded-2xl flex flex-col items-center justify-center gap-5">
+                        <h1 className="text-4xl font-bold text-maroon/70">
                             Nilai Kamu
                         </h1>
-                        <h1 className="text-3xl font-bold text-red-600">
+                        <h1 className="text-3xl font-bold text-maroon/70">
                             {totalPoint}
                         </h1>
                     </div>
                 </div>
-                <div className="flex flex-col items-center justify-between gap-5 p-5 my-10 bg-red-400 lg:flex-row rounded-2xl">
+                <div className="flex flex-col items-center justify-between gap-5 p-5 my-10 bg-maroon/40 lg:flex-row rounded-2xl">
                     <div className="flex items-center gap-5">
                         <img
                             src="/icon-exam/30.svg"
@@ -106,14 +106,14 @@ export default function Selesai({
                             <h3 className="text-base font-semibold text-white lg:text-xl">
                                 Selamat, kamu telah menyelesaikan kuis
                             </h3>
-                            <p className="text-xs text-red-700 lg:text-sm">
+                            <p className="text-xs text-maroon/70 lg:text-sm">
                                 untuk lulus, minimal mendapatkan nilai 80 dari
                                 100
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-col items-center gap-2">
-                        <h3 className="text-2xl font-semibold text-red-700">
+                        <h3 className="text-2xl font-semibold text-maroon/70">
                             Nilai Kamu
                         </h3>
                         <span className="text-2xl font-bold text-white">
@@ -132,7 +132,7 @@ export default function Selesai({
                         <Link href={route("dashboard.exam", kelas.slug)}>
                             <Button
                                 type="button"
-                                className="bg-red-700 rounded-2xl"
+                                className="bg-maroon/70 rounded-2xl"
                             >
                                 Ulangi Exam
                             </Button>
@@ -142,9 +142,9 @@ export default function Selesai({
             </section>
             <section id="exam" className="pb-10">
                 <div className="container ">
-                    <div className="p-5 mt-5 bg-red-200 rounded-2xl">
-                        <div className="p-4 bg-red-300 rounded-2xl">
-                            <span className="text-sm font-semibold text-red-700">
+                    <div className="p-5 mt-5 bg-maroon/20 rounded-2xl">
+                        <div className="p-4 bg-white rounded-2xl">
+                            <span className="text-sm font-semibold text-maroon/70">
                                 Kerjakan soal dengan teliti! Jika soal memiliki
                                 gambar, gambar dapat diklik untuk diperbesar dan
                                 dibaca dengan lebih jelas.
@@ -155,7 +155,7 @@ export default function Selesai({
                             <ul className="mt-5 space-y-5">
                                 {quiz.map((item, index) => (
                                     <li key={index}>
-                                        <span className="text-base font-medium text-red-700">
+                                        <span className="text-base font-medium text-maroon/70">
                                             {index + 1}. {item.question}
                                         </span>
                                         <ul className="pl-4">
@@ -189,7 +189,7 @@ export default function Selesai({
                                                                             filteredAnswer.id
                                                                         }
                                                                         id={filteredAnswer.id.toString()}
-                                                                        className="text-red-700 border-gray-300"
+                                                                        className="text-maroon/70 border-gray-300"
                                                                         checked={
                                                                             selectedAnswers[
                                                                                 item

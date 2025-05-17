@@ -117,7 +117,7 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
                     <h1 className="text-xl font-semibold text-center lg:text-5xl text-maroon">
                         Exam {kelas.title}
                     </h1>
-                    <p className="text-base font-medium text-center text-red-600 lg:font-semibold lg:text-xl">
+                    <p className="text-base font-medium text-center text-maroon/70 lg:font-semibold lg:text-xl">
                         Selesaikan Exam dengan nilai minimum 80 untuk dapatkan
                         Sertifikat Kelas ini.
                     </p>
@@ -141,14 +141,14 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
             <section id="exam" className="py-10 mt-20">
                 <div className="container ">
                     <div className="flex flex-col justify-between gap-5 lg:flex-row">
-                        <div className="w-full p-5 bg-red-200 rounded-2xl">
+                        <div className="w-full p-5 bg-maroon/20 rounded-2xl">
                             <div className="flex items-center gap-2">
                                 <img
                                     src="/icon-exam/29.svg"
                                     className="size-10"
                                     alt=""
                                 />
-                                <span className="text-2xl font-bold text-red-700">
+                                <span className="text-2xl font-bold text-maroon/80">
                                     Final Exam
                                 </span>
                             </div>
@@ -156,13 +156,13 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
                                 className="pl-16"
                                 style={{ listStyleType: "circle" }}
                             >
-                                <li className="text-sm text-red-700">
+                                <li className="text-sm text-maroon/80">
                                     Kamu diberikan kesempatan untuk mengulang
                                     assignment apabila tidak mencapai nilai
                                     minimal yang ditentukan sebanyak 3 kali
                                     (setiap 24 jam)
                                 </li>
-                                <li className="text-sm text-red-700">
+                                <li className="text-sm text-maroon/80">
                                     Nilai yang ditampilkan adalah Nilai
                                     tertinggi yang berhasil kamu peroleh dari
                                     semua pengulangan.
@@ -170,9 +170,9 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
                             </ul>
                         </div>
                     </div>
-                    <div className="p-5 mt-5 bg-red-200 rounded-2xl">
-                        <div className="p-4 bg-red-300 rounded-2xl">
-                            <span className="text-sm font-semibold text-red-700">
+                    <div className="p-5 mt-5 bg-maroon/20 rounded-2xl">
+                        <div className="p-4 bg-white rounded-2xl">
+                            <span className="text-sm font-semibold text-maroon/80">
                                 Kerjakan soal dengan teliti! Jika soal memiliki
                                 gambar, gambar dapat diklik untuk diperbesar dan
                                 dibaca dengan lebih jelas.
@@ -183,7 +183,7 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
                             <ul className="mt-5 space-y-5">
                                 {quiz.map((item, index) => (
                                     <li key={index}>
-                                        <span className="text-base font-medium text-red-700">
+                                        <span className="text-base font-medium text-maroon/80">
                                             {index + 1}. {item.question}
                                         </span>
                                         <ul className="pl-4">
@@ -217,7 +217,7 @@ export default function Index({ setting, kelas, quiz, examanswer }: Props) {
                                                                             filteredAnswer.id
                                                                         }
                                                                         id={filteredAnswer.id.toString()}
-                                                                        className="text-red-700 border-gray-300"
+                                                                        className="text-maroon/80 border-gray-300"
                                                                         checked={
                                                                             selectedAnswers[
                                                                                 item

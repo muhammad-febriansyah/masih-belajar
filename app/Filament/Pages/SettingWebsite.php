@@ -85,7 +85,7 @@ class SettingWebsite extends Page implements HasForms
                         FileUpload::make('thumbnail')->label('Thumbnail Website')->disk('public')
                             ->directory('image-upload-server')
                             ->label('Thumbnail Website')
-                            ->maxSize(3072)
+                            ->maxSize(6072)
                             ->image()
                             ->deletable(true)
                             ->deleteUploadedFileUsing(function ($record, $file) {

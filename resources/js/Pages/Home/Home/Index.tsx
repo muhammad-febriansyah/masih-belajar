@@ -296,7 +296,9 @@ export default function Index({
                 <div className="container">
                     <h1 className="pb-5 text-2xl font-semibold text-center text-black lg:text-3xl">
                         Kenapa belajar bersama{" "}
-                        <span className="text-maroon">Ananta Course ?</span>
+                        <span className="text-maroon">
+                            {setting.site_name} ?
+                        </span>
                     </h1>
                     <div className="grid grid-cols-2 gap-5 mt-10 lg:grid-cols-3">
                         {about.map((about, index) => (
@@ -306,6 +308,7 @@ export default function Index({
                                         {" "}
                                         <img
                                             src={`/storage/${about.image}`}
+                                            className="w-20 h-20 mb-3"
                                             alt=""
                                         />
                                         <h3 className="font-semibold text-center text-black lg:text-2xl sm:text-sm lg:font-semibold group-hover:text-white">
