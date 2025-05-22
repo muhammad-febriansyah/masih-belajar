@@ -185,15 +185,21 @@ export default function Index({
                                                                 <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
                                                             </span>
                                                         )}
-                                                        <span className="text-base font-medium text-black">
-                                                            Rp.{" "}
-                                                            {Number(
-                                                                kel.price -
-                                                                    kel.discount
-                                                            ).toLocaleString(
-                                                                "id-ID"
-                                                            )}
-                                                        </span>
+                                                        {kel.type.id === 1 ? (
+                                                            <span className="text-base font-medium text-black">
+                                                                Rp.{" "}
+                                                                {Number(
+                                                                    kel.price -
+                                                                        kel.discount
+                                                                ).toLocaleString(
+                                                                    "id-ID"
+                                                                )}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-base font-medium text-black">
+                                                                Rp.0
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div className="flex items-center justify-between pt-3">
                                                         <div className="flex items-center">

@@ -21,12 +21,16 @@ import {
 import { SettingType } from "@/types/setting";
 import { Link, useForm } from "@inertiajs/react";
 import { Loader2 } from "lucide-react";
-import { FormEventHandler } from "react";
+import { FormEventHandler, useRef } from "react";
 import { toast } from "sonner";
+import ReCAPTCHA from "react-google-recaptcha";
+import Checkbox from "@/components/Checkbox";
+
 interface Props {
     setting: SettingType;
 }
 export default function Index({ setting }: Props) {
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
         email: "",
@@ -35,11 +39,19 @@ export default function Index({ setting }: Props) {
         tanggal_lahir: "",
         jk: "",
         phone: "",
+        "g-recaptcha-response": "",
     });
 
     const handleSubmit: FormEventHandler = async (e) => {
         e.preventDefault();
         try {
+            if (!data["g-recaptcha-response"]) {
+                toast.error("Harap selesaikan reCAPTCHA.", {
+                    position: "top-right",
+                    richColors: true,
+                });
+                return;
+            }
             post(route("saveregister"), {
                 preserveScroll: true,
                 onSuccess: () => {
@@ -48,11 +60,28 @@ export default function Index({ setting }: Props) {
                         richColors: true,
                     });
                 },
-                onError: () => {
-                    toast.error("Email ini sudah terdaftar.", {
-                        position: "top-right",
-                        richColors: true,
-                    });
+                onError: (errors) => {
+                    if (errors.email) {
+                        toast.error(errors.email, {
+                            position: "top-right",
+                            richColors: true,
+                        });
+                    } else if (errors.password) {
+                        toast.error(errors.password, {
+                            position: "top-right",
+                            richColors: true,
+                        });
+                    } else if (errors.password_confirmation) {
+                        toast.error(errors.password_confirmation, {
+                            position: "top-right",
+                            richColors: true,
+                        });
+                    } else {
+                        toast.error("Ada kesalahan dalam data yang dikirim.", {
+                            position: "top-right",
+                            richColors: true,
+                        });
+                    }
                 },
             });
         } catch (error) {
@@ -73,7 +102,10 @@ export default function Index({ setting }: Props) {
                                 untuk mendaftar ke {setting.site_name}.
                             </p>
                         </div>
-                        <form onSubmit={handleSubmit}>
+                        <form
+                            onSubmit={handleSubmit}
+                            className="flex flex-col gap-2 lg:gap-3"
+                        >
                             <div className="grid items-center w-full gap-2 mb-5">
                                 <Label htmlFor="name">Nama</Label>
                                 <Input
@@ -199,16 +231,37 @@ export default function Index({ setting }: Props) {
                                     />
                                 </div>
                             </div>
-                            <p className="mb-3 text-sm text-gray-500 sm:mt-0">
-                                Sudah punya akun?{" "}
-                                <Link
-                                    href={route("masuk")}
-                                    className="text-gray-700 underline"
-                                >
-                                    Log in
+                            <ReCAPTCHA
+                                sitekey={
+                                    import.meta.env
+                                        .VITE_RECAPTCHA_SITE_KEY as string
+                                }
+                                className="overflow-auto"
+                                onChange={(token) =>
+                                    setData("g-recaptcha-response", token ?? "")
+                                }
+                            />
+
+                            {errors["g-recaptcha-response"] && (
+                                <p className="text-red-500">
+                                    {errors["g-recaptcha-response"]}
+                                </p>
+                            )}
+                            <div className="flex items-center space-x-3">
+                                <Checkbox id="terms" required />
+                                <Link href="/term-condition">
+                                    <label
+                                        htmlFor="terms"
+                                        className="text-xs md:text-sm cursor-pointer leading-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                        Dengan mendaftar, kamu setuju dengan
+                                        Syarat dan Ketentuan yang ada di{" "}
+                                        <strong className="text-biru">
+                                            {setting.site_name}
+                                        </strong>
+                                    </label>
                                 </Link>
-                                .
-                            </p>
+                            </div>
                             <div className="flex items-center space-x-2">
                                 {processing ? (
                                     <Button
@@ -227,6 +280,15 @@ export default function Index({ setting }: Props) {
                                     </PulsatingButton>
                                 )}
                             </div>
+                            <span className="text-sm text-center">
+                                Sudah punya akun?
+                                <Link
+                                    href="/masuk"
+                                    className="font-bold text-biru ml-1.5"
+                                >
+                                    Masuk
+                                </Link>
+                            </span>
                         </form>
                     </div>
                     <div className="flex items-center col-span-1">

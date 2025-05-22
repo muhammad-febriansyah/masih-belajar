@@ -27,7 +27,7 @@ export default function HomeLayout({ children }: Props) {
                     href={`/storage/${setting.logo}`}
                 />
             </Head>
-            <div className="overflow-x-hidden">
+            <div className="overflow-x-hidden" id="home">
                 <ScrollProgress />
                 <Navbar setting={setting} dataKelas={[]} />
                 {children}

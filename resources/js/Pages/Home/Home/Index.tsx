@@ -160,7 +160,7 @@ export default function Index({
             <section className="pt-20 pb-0 lg:pt-10 mt-14 bg-maroon">
                 <div className="container grid items-center grid-cols-1 gap-4 px-5 lg:grid-cols-2">
                     <div className="max-w-md mx-auto space-y-5 lg:mx-0 ">
-                        <h1 className="text-3xl font-bold text-center text-white lg:text-start md:leading-relaxed md:text-5xl">
+                        <h1 className="text-3xl font-bold text-center text-white lg:text-start md:leading-relaxed md:text-4xl">
                             {setting.heading}
                         </h1>
                         <p className="text-base leading-normal text-center text-gray-300 lg:text-start">
@@ -260,7 +260,7 @@ export default function Index({
                     </div>
                 </div>
             </section>
-            <section className="py-10">
+            <section className="py-20">
                 <div className="container">
                     <div className="grid items-center grid-cols-1 gap-5 lg:grid-cols-2">
                         <div className="order-1 mt-10 space-y-5 lg:mt-0 lg:order-1">
@@ -269,12 +269,14 @@ export default function Index({
                                 <span className="text-maroon">Expert</span>
                             </h1>
                             <p className="text-sm leading-relaxed text-gray-500 g:text-base">
-                                Tingkatkan keterampilan IT Anda yang sesuai
-                                dengan tuntutan industri terkini, dengan
-                                pelatihan yang dirancang khusus untuk memenuhi
-                                kebutuhan profesional di bidang teknologi, dan
-                                semuanya tersedia dengan harga yang sangat
-                                terjangkau.
+                                Jadikan diri Anda lebih unggul di dunia digital
+                                dengan meningkatkan keterampilan IT melalui
+                                pelatihan profesional yang dikembangkan sesuai
+                                standar industri terkini—dirancang untuk
+                                menjawab tantangan nyata di lapangan, dibimbing
+                                oleh instruktur berpengalaman, dan ditawarkan
+                                dengan harga yang terjangkau agar setiap orang
+                                memiliki kesempatan untuk berkembang.
                             </p>
                             <Link href={route("kelas")}>
                                 <PulsatingButton className="mt-5">
@@ -284,7 +286,7 @@ export default function Index({
                         </div>
                         <div className="order-1 lg:order-2">
                             <img
-                                src="/course.png"
+                                src="/about.png"
                                 className="object-cover"
                                 alt=""
                             />
@@ -377,21 +379,34 @@ export default function Index({
                                             </div>
                                         </div>
                                         <div className="flex flex-row items-center pt-5 space-x-2">
-                                            {kel.discount > 0 && (
-                                                <span className="relative text-base font-medium text-red-600">
-                                                    Rp.{" "}
-                                                    {Number(
-                                                        kel.price
-                                                    ).toLocaleString("id-ID")}
-                                                    <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
+                                            {kel.type.id === 1 ? (
+                                                <>
+                                                    {kel.discount > 0 && (
+                                                        <span className="relative text-base font-medium text-red-600">
+                                                            Rp.{" "}
+                                                            {Number(
+                                                                kel.price
+                                                            ).toLocaleString(
+                                                                "id-ID"
+                                                            )}
+                                                            <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
+                                                        </span>
+                                                    )}
+                                                    <span className="text-base font-medium text-black">
+                                                        Rp.{" "}
+                                                        {Number(
+                                                            kel.price -
+                                                                kel.discount
+                                                        ).toLocaleString(
+                                                            "id-ID"
+                                                        )}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-base font-medium text-black">
+                                                    Rp.0
                                                 </span>
                                             )}
-                                            <span className="text-base font-medium text-black">
-                                                Rp.{" "}
-                                                {Number(
-                                                    kel.price - kel.discount
-                                                ).toLocaleString("id-ID")}
-                                            </span>
                                         </div>
                                         <div className="flex items-center justify-between pt-3">
                                             <div className="flex items-center">
@@ -478,7 +493,7 @@ export default function Index({
             </section>
             <section className="container py-10">
                 <h1 className="mb-10 text-xl font-semibold text-center lg:text-4xl">
-                    Apa kata mereka ?
+                    Testimoni dari Mereka yang Sudah Mencoba
                 </h1>
                 <Marquee pauseOnHover className="[--duration:20s]">
                     {firstRow.map((review) => (
@@ -524,7 +539,12 @@ export default function Index({
                                     {item.question}
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    {item.answer}
+                                    <p
+                                        className="prose"
+                                        dangerouslySetInnerHTML={{
+                                            __html: item.answer,
+                                        }}
+                                    />
                                 </AccordionContent>
                             </AccordionItem>
                         ))}

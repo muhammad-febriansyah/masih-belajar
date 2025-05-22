@@ -524,9 +524,6 @@ class MainController extends Controller
         return response()->json(['message' => 'Answers saved successfully.']);
     }
 
-
-
-
     public function sertifikat()
     {
         $setting = Setting::first();
@@ -535,7 +532,6 @@ class MainController extends Controller
         $userAnswers = UserAnswer::where('user_id', Auth::user()->id)
             ->groupBy('kelas_id')
             ->selectRaw('*, SUM(point) as total_point')
-            ->havingRaw('SUM(point) >= 80') // Hanya menampilkan jika total_point >= 80
             ->get();
 
         $totalPoint = $userAnswers->sum('point');

@@ -6,7 +6,9 @@ use App\Filament\Resources\FaqResource\Pages;
 use App\Filament\Resources\FaqResource\RelationManagers;
 use App\Models\Faq;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -31,9 +33,9 @@ class FaqResource extends Resource
                 Section::make()
                     ->schema([
                         TextInput::make('question')->required()->label('Pertanyaan')->placeholder('Pertanyaan'),
-                        TextInput::make('answer')->required()->label('Jawaban')->placeholder('Jawaban'),
-                    ])->columns(['lg' => 2, 'md' => 1, 'sm' => 1]),
-            ])->columns(['lg' => 2, 'md' => 1, 'sm' => 1]);
+                        RichEditor::make('answer')->required()->label('Jawaban')->placeholder('Jawaban'),
+                    ]),
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -42,7 +44,6 @@ class FaqResource extends Resource
             ->columns([
                 TextColumn::make('No')->rowIndex(),
                 TextColumn::make('question')->label('Pertanyaan')->searchable()->sortable(),
-                TextColumn::make('answer')->label('Jawaban')->searchable()->sortable(),
             ])
             ->filters([
                 //
@@ -50,6 +51,7 @@ class FaqResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make()->label('Edit')->icon('heroicon-s-pencil')->button()->color('success'),
                 Tables\Actions\DeleteAction::make()->label('Hapus')->icon('heroicon-s-trash')->button()->color('danger'),
+                Tables\Actions\ViewAction::make()->label('Detail')->icon('heroicon-s-eye')->button()->color('info'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -29,9 +29,7 @@ export default function Index({ userAnswers, totalPoint }: Props) {
                                         <span className="font-semibold">
                                             Nomor Sertifikat
                                         </span>
-                                        <span>{`AC-999862${
-                                            answer.no_sertifikat
-                                        }-${new Date().getFullYear()}`}</span>
+                                        <span>{`${answer.no_sertifikat}`}</span>
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <span className="font-semibold">

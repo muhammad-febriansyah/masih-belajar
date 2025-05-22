@@ -13,15 +13,27 @@ import PulsatingButton from "@/components/ui/pulsating-button";
 import HomeLayout from "@/Layouts/HomeLayout";
 import { Link, useForm } from "@inertiajs/react";
 import { Loader2 } from "lucide-react";
-import { FormEventHandler } from "react";
+import { FormEventHandler, useRef } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "sonner";
 export default function Index() {
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
     const { data, setData, post, processing, errors, reset } = useForm({
         email: "",
         password: "",
+        "g-recaptcha-response": "",
     });
     const handleSubmit: FormEventHandler = async (e) => {
         e.preventDefault();
+
+        if (!data["g-recaptcha-response"]) {
+            toast.error("Harap selesaikan reCAPTCHA.", {
+                position: "top-right",
+                richColors: true,
+            });
+            return;
+        }
+
         post(route("checklogin"), {
             onError: () => {
                 toast.error("Email atau password yang anda masukkan salah.", {
@@ -45,11 +57,12 @@ export default function Index() {
                                 ke halaman berikutnya.
                             </p>
                         </div>
-                        <form onSubmit={handleSubmit}>
+                        <form
+                            onSubmit={handleSubmit}
+                            className=" justify-center flex flex-col gap-2"
+                        >
                             <div className="grid items-center w-full gap-2 mb-5">
-                                <Label htmlFor="subject" className="mb-3">
-                                    Email
-                                </Label>
+                                <Label htmlFor="subject">Email</Label>
                                 <Input
                                     type="email"
                                     id="email"
@@ -68,9 +81,7 @@ export default function Index() {
                                 )}
                             </div>
                             <div className="grid items-center w-full gap-2 mb-5">
-                                <Label htmlFor="password" className="mb-3">
-                                    Password
-                                </Label>
+                                <Label htmlFor="password">Password</Label>
                                 <Input
                                     type="password"
                                     id="password"
@@ -83,17 +94,22 @@ export default function Index() {
                                     name="password"
                                 />
                             </div>
+                            <ReCAPTCHA
+                                sitekey={
+                                    import.meta.env
+                                        .VITE_RECAPTCHA_SITE_KEY as string
+                                }
+                                onChange={(token) =>
+                                    setData("g-recaptcha-response", token ?? "")
+                                }
+                            />
 
-                            <p className="mb-3 text-sm text-gray-500 sm:mt-0">
-                                Belum punya akun?{" "}
-                                <Link
-                                    href={route("daftar")}
-                                    className="text-gray-700 underline"
-                                >
-                                    Daftar Sekarang
-                                </Link>
-                                .
-                            </p>
+                            {errors["g-recaptcha-response"] && (
+                                <p className="text-red-500">
+                                    {errors["g-recaptcha-response"]}
+                                </p>
+                            )}
+
                             <div className="flex items-center space-x-2">
                                 {processing ? (
                                     <Button
@@ -112,6 +128,15 @@ export default function Index() {
                                     </PulsatingButton>
                                 )}
                             </div>
+                            <span className="text-sm text-center block md:flex items-center justify-center">
+                                Belum punya akun?
+                                <Link
+                                    href="/daftar"
+                                    className="font-bold text-biru ml-1.5"
+                                >
+                                    Daftar Sekarang
+                                </Link>
+                            </span>
                         </form>
                     </div>
                     <div className="col-span-1">

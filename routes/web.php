@@ -26,6 +26,7 @@ Route::get('/searchKelas', [HomeController::class, 'searchKelas'])->name('search
 Route::get('/detailkelas/{slug}', [HomeController::class, 'detailkelas'])->name('detailkelas');
 Route::get('/masuk', [HomeController::class, 'login'])->name('masuk');
 Route::get('/daftar', [HomeController::class, 'register'])->name('daftar');
+Route::get('/term-condition', [HomeController::class, 'termcondition'])->name('termcondition');
 Route::get('/cek-sertifikat', [HomeController::class, 'ceksertifikat'])->name('ceksertifikat');
 Route::post('/checklogin', [HomeController::class, 'checklogin'])->name('checklogin');
 Route::post('/saveregister', [HomeController::class, 'saveregister'])->name('saveregister');

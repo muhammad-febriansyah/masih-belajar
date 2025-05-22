@@ -908,7 +908,7 @@ export default function Index({
                                 className="p-5 bg-white rounded-2xl"
                             >
                                 <p
-                                    className="text-sm text-black"
+                                    className="text-sm prose text-black"
                                     dangerouslySetInnerHTML={{
                                         __html: kelas.body,
                                     }}

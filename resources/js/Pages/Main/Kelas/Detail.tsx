@@ -19,7 +19,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { LockIcon, Star } from "lucide-react";
+import { Check, CheckCircle, LockIcon, Star } from "lucide-react";
 import PulsatingButton from "@/components/ui/pulsating-button";
 import { route } from "ziggy-js";
 import MainLayout from "@/Layouts/MainLayout";
@@ -93,14 +93,15 @@ export default function Detail({
     return (
         <MainLayout>
             <section className="relative h-80 bg-maroon ">
-                <div className="flex flex-col items-center justify-center gap-10 px-4 mt-20 text-center py-14">
-                    <h1 className="text-2xl font-bold text-white lg:text-4xl">
+                <div className="flex flex-col items-center justify-center gap-10 px-4 mt-20 text-center pt-14 pb-20">
+                    <h1 className="text-2xl w-full font-bold text-white lg:text-4xl max-w-6xl">
                         {kelas.title}
                     </h1>
-                    <p className="max-w-lg text-sm text-gray-200">
+                    <p className="max-w-xl hidden md:block w-full text-sm text-gray-200">
                         {kelas.description}.
                     </p>
                 </div>
+
                 <div className="bg-white  md:hidden flex items-center justify-between z-[88] px-5 rounded-t-2xl left-0 right-0 w-full h-14  bottom-0 fixed">
                     <div className="flex flex-col">
                         {kelas.type.name === "Gratis" ? (
@@ -291,7 +292,7 @@ export default function Detail({
                                         </div>
                                     </div> */}
                                     <div
-                                        className="mt-5 text-sm leading-relaxed text-gray-700"
+                                        className="mt-5 prose text-sm leading-relaxed text-gray-700"
                                         dangerouslySetInnerHTML={{
                                             __html: kelas.body,
                                         }}
@@ -495,7 +496,7 @@ export default function Detail({
                                                 className="overflow-hidden transition bg-white rounded-2xl grid grid-rows-[auto_1fr_auto]"
                                             >
                                                 <Link
-                                                    href={`/student/detailkelas/${kel.slug}`}
+                                                    href={`/dashboard/detailkelas/${kel.slug}`}
                                                     className="relative block"
                                                 >
                                                     <span className="absolute px-5 py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
@@ -542,27 +543,38 @@ export default function Detail({
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-row items-center pt-5 space-x-2">
-                                                            {kel.discount >
-                                                                0 && (
-                                                                <span className="relative text-base font-medium text-red-600">
-                                                                    Rp.{" "}
-                                                                    {Number(
-                                                                        kel.price
-                                                                    ).toLocaleString(
-                                                                        "id-ID"
+                                                            {kel?.type?.id ===
+                                                            1 ? (
+                                                                <>
+                                                                    {kel?.discount >
+                                                                        0 && (
+                                                                        <span className="relative text-base font-medium text-red-600">
+                                                                            Rp.{" "}
+                                                                            {Number(
+                                                                                kel.price
+                                                                            ).toLocaleString(
+                                                                                "id-ID"
+                                                                            )}
+                                                                            <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
+                                                                        </span>
                                                                     )}
-                                                                    <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
+                                                                    <span className="text-base font-medium text-black">
+                                                                        Rp.{" "}
+                                                                        {Number(
+                                                                            (kel.price ||
+                                                                                0) -
+                                                                                (kel.discount ||
+                                                                                    0)
+                                                                        ).toLocaleString(
+                                                                            "id-ID"
+                                                                        )}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-base font-medium text-black">
+                                                                    Rp.0
                                                                 </span>
                                                             )}
-                                                            <span className="text-base font-medium text-black">
-                                                                Rp.{" "}
-                                                                {Number(
-                                                                    kel.price -
-                                                                        kel.discount
-                                                                ).toLocaleString(
-                                                                    "id-ID"
-                                                                )}
-                                                            </span>
                                                         </div>
                                                         <div className="flex pt-3">
                                                             {Array.from(
@@ -690,65 +702,65 @@ export default function Detail({
                         </div>
                     </div>
                     <div className="px-5 py-5 bg-white lg:col-span-1 rounded-2xl max-h-min">
-                        <div className="grid grid-cols-3 gap-y-5">
-                            <div className="flex flex-col items-center">
+                        <div className="grid order-2 grid-cols-3 gap-5">
+                            <div className="flex flex-col items-center bg-gray-100 hover:shadow-lg hover:shadow-maroon p-3 rounded-2xl hover:-translate-y-2 transition-all duration-200 hover:bg-maroon/50">
                                 <img
                                     src={`/storage/${kelas.level.image}`}
                                     alt=""
-                                    className="object-cover w-12 h-12"
+                                    className="object-cover w-10 h-10"
                                 />
-                                <span className="font-semibold ">
+                                <span className="font-medium text-sm ">
                                     {kelas.level.name}
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center bg-gray-100 hover:shadow-lg hover:shadow-maroon p-3 rounded-2xl hover:-translate-y-2 transition-all duration-200 hover:bg-maroon/50">
                                 <img
                                     src="/8.svg"
                                     alt=""
                                     className="w-12 h-12"
                                 />
-                                <span className="font-semibold ">
+                                <span className="font-medium text-sm ">
                                     Sertifikat
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center bg-gray-100 hover:shadow-lg hover:shadow-maroon p-3 rounded-2xl hover:-translate-y-2 transition-all duration-200 hover:bg-maroon/50">
                                 <img
                                     src="/9.svg"
                                     alt=""
                                     className="w-12 h-12"
                                 />
-                                <span className="font-semibold ">
+                                <span className="font-medium text-sm ">
                                     {studentjoin > 0 ? studentjoin : "0"} Siswa
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center bg-gray-100 hover:shadow-lg hover:shadow-maroon p-3 rounded-2xl hover:-translate-y-2 transition-all duration-200 hover:bg-maroon/50">
                                 <img
                                     src="/4.svg"
                                     alt=""
                                     className="w-12 h-12"
                                 />
-                                <span className="text-base font-semibold text-center">
+                                <span className="font-medium text-sm text-center">
                                     Unlimited <br /> access
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center bg-gray-100 hover:shadow-lg hover:shadow-maroon p-3 rounded-2xl hover:-translate-y-2 transition-all duration-200 hover:bg-maroon/50">
                                 <img
                                     src="/12.svg"
                                     alt=""
                                     className="w-12 h-12"
                                 />
-                                <span className="font-semibold ">
+                                <span className="font-medium text-sm ">
                                     {totalvideo > 0 ? totalvideo : "0"} Video
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center bg-gray-100 hover:shadow-lg hover:shadow-maroon p-3 rounded-2xl hover:-translate-y-2 transition-all duration-200 hover:bg-maroon/50">
                                 <Star className="text-red-600 w-11 h-11" />
-                                <span className="font-semibold ">
+                                <span className="font-medium text-sm ">
                                     {Number(totalstar).toFixed(1)}
                                 </span>
                             </div>
                         </div>
-                        <div className="flex items-center p-3 mt-10 space-x-3 transition-all duration-200 bg-white border border-maroon rounded-2xl group hover:bg-maroon">
+                        <div className="flex items-center p-3 mt-10 hover:shadow-lg hover:shadow-maroon space-x-3 transition-all duration-200 bg-white border border-maroon rounded-2xl group hover:bg-maroon">
                             <img
                                 src={`/storage/${kelas.category.image}`}
                                 alt="User Avatar"
@@ -760,45 +772,74 @@ export default function Detail({
                                 </h1>
                             </div>
                         </div>
-                        <div className="flex flex-col pt-5">
-                            {kelas.discount > 0 && (
-                                <span className="relative text-2xl font-medium text-red-600">
-                                    Rp.{" "}
-                                    {Number(kelas.price).toLocaleString(
-                                        "id-ID"
-                                    )}
-                                    <span className="absolute left-0 right-[12rem] bottom-4 font-semibold border-b-2 border-red-700"></span>
-                                </span>
-                            )}
-                            <span className="text-2xl font-bold text-black">
-                                Rp.{" "}
-                                {Number(
-                                    kelas.price - kelas.discount
-                                ).toLocaleString("id-ID")}
+                        <div className="flex flex-col pt-5 bg-gray-100 mt-10 p-5 rounded-2xl">
+                            <span className="text-sm mb-3 text-gray-500">
+                                Harga Kelas
                             </span>
-                        </div>
-                        <br />
-                        <br />
-                        {kelas.total_bergabung > 0 ? (
-                            <Badge className="bg-maroon">Sudah bergabung</Badge>
-                        ) : kelas.type.name === "Premium" ? (
-                            <Link
-                                href={route("dashboard.checkout", kelas.slug)}
-                                className="mt-5"
-                            >
-                                <PulsatingButton className="w-full bg-maroon">
-                                    Beli Kelas
+                            {kelas.type.id === 2 ? (
+                                <span className="text-2xl font-bold text-black">
+                                    Rp. 0
+                                </span>
+                            ) : (
+                                <>
+                                    {kelas.discount > 0 && (
+                                        <span className="relative text-2xl font-medium text-red-600">
+                                            Rp.{" "}
+                                            {Number(kelas.price).toLocaleString(
+                                                "id-ID"
+                                            )}
+                                            <span className="absolute left-0 right-[12rem] bottom-4 font-semibold border-b-2 border-red-700"></span>
+                                        </span>
+                                    )}
+                                    <span className="text-2xl font-bold text-black">
+                                        Rp.{" "}
+                                        {Number(
+                                            kelas.price - kelas.discount
+                                        ).toLocaleString("id-ID")}
+                                    </span>
+                                </>
+                            )}
+                            <br />
+                            <ul className="prose">
+                                <li className="flex items-center gap-2">
+                                    <Check size={15} /> Akses selamanya
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <Check size={15} />
+                                    Pelatihan Berkelanjutan
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <Check size={15} />
+                                    Fleksibilitas Waktu
+                                </li>
+                            </ul>
+                            <br />
+                            {kelas.total_bergabung > 0 ? (
+                                <Badge className="bg-maroon text-center flex items-center gap-2">
+                                    <CheckCircle size={15} /> Sudah bergabung
+                                </Badge>
+                            ) : kelas.type.id === 1 ? (
+                                <Link
+                                    href={route(
+                                        "dashboard.checkout",
+                                        kelas.slug
+                                    )}
+                                    className="mt-5"
+                                >
+                                    <PulsatingButton className="w-full bg-maroon">
+                                        Beli Kelas
+                                    </PulsatingButton>
+                                </Link>
+                            ) : kelas.type.id === 2 ? (
+                                <PulsatingButton
+                                    type="button"
+                                    onClick={joinFreeClass}
+                                    className="w-full bg-maroon"
+                                >
+                                    Gabung Kelas
                                 </PulsatingButton>
-                            </Link>
-                        ) : kelas.type.name === "Gratis" ? (
-                            <PulsatingButton
-                                type="button"
-                                onClick={joinFreeClass}
-                                className="w-full bg-maroon"
-                            >
-                                Gabung Kelas
-                            </PulsatingButton>
-                        ) : null}
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             </section>

@@ -91,7 +91,7 @@ class KelasResource extends Resource
                                     ->disk('public')
                                     ->directory('image-upload-server')
                                     ->label('Thumbnail')
-                                    ->maxSize(3072)
+                                    ->maxSize(4072)
                                     ->image()
                                     ->deletable(true)
                                     ->deleteUploadedFileUsing(function ($record, $file) {

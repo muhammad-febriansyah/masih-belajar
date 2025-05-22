@@ -11,6 +11,7 @@ use App\Models\PromoCode;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\TemplateSertifikat;
+use App\Models\TermCondition;
 use App\Models\Testimoni;
 use App\Models\Transaction;
 use App\Models\Type;
@@ -182,6 +183,16 @@ class HomeController extends Controller
             return to_route('dashboard.home');
         }
         return to_route('masuk')->withErrors(['email' => 'Email ini tidak terdaftar.']);
+    }
+
+    public function termcondition()
+    {
+        $setting = Setting::first();
+        $term = TermCondition::first();
+        return Inertia::render('Home/Terms/Index', [
+            'setting' => $setting,
+            'term' => $term
+        ]);
     }
 
     public function register()

@@ -27,6 +27,10 @@ class TypeResource extends Resource
     protected static ?string $navigationLabel = 'Tipe Kelas';
     protected static ?int $navigationSort = 8;
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     public static function form(Form $form): Form
     {

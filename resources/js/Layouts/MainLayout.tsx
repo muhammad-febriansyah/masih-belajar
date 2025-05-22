@@ -30,7 +30,7 @@ export default function MainLayout({ children }: Props) {
                     href={`/storage/${setting.logo}`}
                 />
             </Head>
-            <div className="overflow-x-hidden">
+            <div className="overflow-x-hidden" id="home">
                 <ScrollProgress />
                 <Navbar setting={setting} auth={auth} dataKelas={[]} />
                 {children}
