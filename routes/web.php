@@ -24,6 +24,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kelas', [HomeController::class, 'kelas'])->name('kelas');
 Route::get('/searchKelas', [HomeController::class, 'searchKelas'])->name('searchKelas');
 Route::get('/detailkelas/{slug}', [HomeController::class, 'detailkelas'])->name('detailkelas');
+Route::get('/event', [HomeController::class, 'event'])->name('event');
+Route::get('/detailevent/{slug}', [HomeController::class, 'detailevent'])->name('detailevent');
 Route::get('/masuk', [HomeController::class, 'login'])->name('masuk');
 Route::get('/daftar', [HomeController::class, 'register'])->name('daftar');
 Route::get('/term-condition', [HomeController::class, 'termcondition'])->name('termcondition');

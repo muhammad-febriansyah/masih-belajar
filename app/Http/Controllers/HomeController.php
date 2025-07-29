@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\About;
 use App\Models\Category;
+use App\Models\Event;
 use App\Models\Faq;
 use App\Models\Kelas;
 use App\Models\Level;
@@ -62,6 +63,28 @@ class HomeController extends Controller
             'kelaspopuler' => $kelaspopuler,
             'promo' => $promo,
             'testimoni' => $testimoni
+        ]);
+    }
+
+    public function event()
+    {
+        $setting = Setting::first();
+        $data = Event::latest()->get();
+        return Inertia::render('Home/Agenda/Index', [
+            'setting' => $setting,
+            'data' => $data,
+        ]);
+    }
+
+    public function detailevent($slug)
+    {
+        $setting = Setting::first();
+        $data = Event::where('slug', $slug)->first();
+        $data->views = $data->views + 1;
+        $data->save();
+        return Inertia::render('Home/Agenda/Detail', [
+            'setting' => $setting,
+            'data' => $data,
         ]);
     }
 

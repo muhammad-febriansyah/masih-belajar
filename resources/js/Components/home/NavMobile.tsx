@@ -61,6 +61,14 @@ export default function NavMobile() {
                     </li>
                     <li>
                         <Link
+                            className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
+                            href={route("kelas")}
+                        >
+                            Event/Agenda
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
                             className="inline-block rounded-full border border-maroon px-12 py-2 text-base font-medium text-maroon hover:bg-maroon hover:text-white focus:ring-3 focus:outline-hidden"
                             href={route("masuk")}
                         >
