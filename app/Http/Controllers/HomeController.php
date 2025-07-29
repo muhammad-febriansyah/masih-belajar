@@ -263,7 +263,6 @@ class HomeController extends Controller
             ->whereNotNull('kelas_id') // Pastikan kelas_id tidak null
             ->groupBy('kelas_id')
             ->selectRaw('*, SUM(point) as total_point')
-            ->havingRaw('SUM(point) >= 80')
             ->get();
 
         $totalPoint = $userAnswers->sum('total_point');
@@ -316,27 +315,32 @@ class HomeController extends Controller
         $pdf->SetFont('Arial', 'B', 18); // Arial Bold untuk judul
 
         // **Nomor Sertifikat**
-        $pdf->SetXY(85, 64);
-        $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 10, "AC-999862" . $data->no_sertifikat . "-" . date('Y'), 0, 1, 'L');
+        // $pdf->SetXY(85, 64);
+        // $pdf->SetFont('Arial', 'B', 14);
+        // $pdf->Cell(0, 10, "AC-999862" . $data->no_sertifikat . "-" . date('Y'), 0, 1, 'L');
 
-        // **Nama Peserta (Merah)**
-        $pdf->SetTextColor(255, 0, 0);
-        $pdf->SetXY(46, 98);
-        $pdf->SetFont('Arial', 'B', 26);
+        // // **Nama Peserta (Merah)**
+        // $pdf->SetTextColor(255, 0, 0);
+        // $pdf->SetXY(46, 98);
+        // $pdf->SetFont('Arial', 'B', 26);
+        // $pdf->Cell(0, 10, $data->user->name, 0, 1, 'L');
+
+        // // **Nama Kursus**
+        // $pdf->SetXY(46, 127);
+        // $pdf->SetFont('Arial', 'B', 30);
+        // $pdf->Cell(0, 10, $data->kelas->title, 0, 1, 'L');
+
+        // // **Tanggal Sertifikat**
+        // $tanggal = Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y');
+        // $pdf->SetTextColor(0, 0, 0);
+        // $pdf->SetXY(73, 168);
+        // $pdf->SetFont('Arial', '', 12);
+        // $pdf->Cell(0, 10, $tanggal, 0, 1, 'L');
+        $pdf->SetTextColor(32, 122, 54);
+        $pdf->SetXY(45, 168);
+        $pdf->SetFont('Arial', 'B', 28);
         $pdf->Cell(0, 10, $data->user->name, 0, 1, 'L');
 
-        // **Nama Kursus**
-        $pdf->SetXY(46, 127);
-        $pdf->SetFont('Arial', 'B', 30);
-        $pdf->Cell(0, 10, $data->kelas->title, 0, 1, 'L');
-
-        // **Tanggal Sertifikat**
-        $tanggal = Carbon::parse($data->created_at)->locale('id')->translatedFormat('d F Y');
-        $pdf->SetTextColor(0, 0, 0);
-        $pdf->SetXY(73, 168);
-        $pdf->SetFont('Arial', '', 12);
-        $pdf->Cell(0, 10, $tanggal, 0, 1, 'L');
 
         // Simpan file PDF
         $pdf->Output($outputPdf, 'F');

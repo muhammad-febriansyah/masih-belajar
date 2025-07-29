@@ -51,18 +51,17 @@ export default function Index({ userAnswers, totalPoint }: Props) {
                                             })}
                                         </span>
                                     </div>
-                                    {answer.total_point >= 80 && (
-                                        <div className="flex flex-col gap-2">
-                                            <a
-                                                target="_blank"
-                                                href={`/dashboard/generateSertifikat/${answer.id}`}
-                                            >
-                                                <Button className="bg-maroon rounded-2xl">
-                                                    Download
-                                                </Button>
-                                            </a>
-                                        </div>
-                                    )}
+
+                                    <div className="flex flex-col gap-2">
+                                        <a
+                                            target="_blank"
+                                            href={`/dashboard/generateSertifikat/${answer.id}`}
+                                        >
+                                            <Button className="bg-maroon rounded-2xl">
+                                                Download
+                                            </Button>
+                                        </a>
+                                    </div>
                                 </div>
                             ))
                         ) : (

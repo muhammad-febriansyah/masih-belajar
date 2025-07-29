@@ -13,7 +13,7 @@ class Video extends Model
     protected $with = ['section'];
 
     protected $casts = [
-        'url' => 'array', // or 'json'
+        'url' => 'array',
     ];
 
     public function section(): BelongsTo

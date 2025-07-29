@@ -88,9 +88,7 @@ export default function Index() {
                                     <span className="font-semibold">
                                         Nomor Sertifikat
                                     </span>
-                                    <span>{`AC-999862${
-                                        answer.no_sertifikat
-                                    }-${new Date().getFullYear()}`}</span>
+                                    <span>{answer.no_sertifikat}</span>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <span className="font-semibold">Nilai</span>
@@ -110,18 +108,17 @@ export default function Index() {
                                         })}
                                     </span>
                                 </div>
-                                {answer.total_point >= 80 && (
-                                    <div className="flex flex-col gap-2">
-                                        <a
-                                            target="_blank"
-                                            href={`/generateSertifikat/${answer.id}`}
-                                        >
-                                            <Button className="bg-maroon rounded-2xl">
-                                                Download
-                                            </Button>
-                                        </a>
-                                    </div>
-                                )}
+
+                                <div className="flex flex-col gap-2">
+                                    <a
+                                        target="_blank"
+                                        href={`/generateSertifikat/${answer.id}`}
+                                    >
+                                        <Button className="bg-maroon rounded-2xl">
+                                            Download
+                                        </Button>
+                                    </a>
+                                </div>
                             </div>
                         ))
                     ) : (

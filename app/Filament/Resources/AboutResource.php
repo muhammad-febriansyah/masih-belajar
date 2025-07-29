@@ -62,8 +62,8 @@ class AboutResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('No')->rowIndex(),
-                TextColumn::make('title')->label('Judul')->searchable()->sortable(),
-                TextColumn::make('description')->label('Deskripsi')->sortable(),
+                TextColumn::make('title')->label('Judul')->searchable()->sortable()->wrap(),
+                TextColumn::make('description')->label('Deskripsi')->sortable()->wrap(),
                 ImageColumn::make('image')->label('Foto/gambar')->width(50)->height(50),
             ])
             ->filters([

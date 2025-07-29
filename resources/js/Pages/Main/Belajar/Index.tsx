@@ -10,13 +10,30 @@ import {
     Check,
     CheckCheck,
     Clock,
+    Eye,
     File,
     Loader2,
     Pencil,
     PlayCircleIcon,
     Plus,
+    Star,
+    Users,
+    BookOpen,
+    Trophy,
+    MessageCircle,
+    User,
+    ChevronDown,
+    ChevronUp,
+    Award,
+    Calendar,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+    useEffect,
+    useRef,
+    useState,
+    useCallback,
+    useMemo,
+} from "react";
 import { toast } from "sonner";
 import { route } from "ziggy-js";
 import {
@@ -30,7 +47,6 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -42,6 +58,9 @@ import { Input } from "@/components/ui/input";
 import { DiskusiType } from "@/types/diskusi";
 import { BalasDiskusiType } from "@/types/balas_diskusi";
 import { VideoReaderType } from "@/types/video_reader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Props {
     setting: SettingType;
@@ -57,6 +76,7 @@ interface Props {
     totalkelasmentor: number;
     totalsiswa: number;
 }
+
 export default function Index({
     setting,
     kelas,
@@ -74,18 +94,19 @@ export default function Index({
     const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(
         null
     );
+    const [selectedVideo, setSelectedVideo] = useState<VideoType | null>(null);
     const [selectedVideoId, setSelectedVideoId] = useState<{
         sectionId: number;
         videoId: number;
-    } | null>(null); // State untuk video aktif
+    } | null>(null);
     const [selectedVideoTitle, setSelectedVideoTitle] = useState<string | null>(
         null
     );
-    const [activeSection, setActiveSection] = useState<string | null>(null); // State untuk menentukan section yang aktif
-    const [sectionTitle, setSectionTitle] = useState<string | null>(null); // State untuk judul section
-    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false); // Dialog open state
-    const [rating, setRating] = useState<number>(0); // To store the rating value (1 to 5)
-    const [testimonial, setTestimonial] = useState<string>(""); // To store the testimonial text
+    const [activeSection, setActiveSection] = useState<string | null>(null);
+    const [sectionTitle, setSectionTitle] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+    const [rating, setRating] = useState<number>(0);
+    const [testimonial, setTestimonial] = useState<string>("");
     const [isLastVideo, setIsLastVideo] = useState<boolean>(false);
     const [readVideos, setReadVideos] = useState<
         { section_id: number; video_id: number }[]
@@ -98,75 +119,210 @@ export default function Index({
     const [title, setTitle] = useState<string | null>(null);
     const [body, setBody] = useState<string>("");
     const [balas, setBalas] = useState<string>("");
-    const diskusiIdRef = useRef<HTMLInputElement>(null); // Membuat ref untuk input hidden
+    const [expandedSections, setExpandedSections] = useState<Set<number>>(
+        new Set()
+    );
+    const diskusiIdRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const kelasId = kelas.id;
-    const [selectedItem, setSelectedItem] = useState<Number | null>(null); // Menyimpan ID item yang sedang terbuka
+    const [selectedItem, setSelectedItem] = useState<Number | null>(null);
     const [watchedVideos, setWatchedVideos] = useState<number[]>([]);
-    const [videoStatus, setVideoStatus] = useState<number[]>([]); // Array untuk menyimpan ID video yang sudah dibaca
+    const [videoStatus, setVideoStatus] = useState<number[]>([]);
+
+    const processingRef = useRef<Set<string>>(new Set());
+    const lastClickRef = useRef<{ videoId: number; timestamp: number } | null>(
+        null
+    );
+
     const { data, setData, post, processing, errors, reset } = useForm({
         rating: rating,
-        kelasId: kelasId, // Misalnya kelasId adalah 1
+        kelasId: kelasId,
         testimonial: "",
     });
-    const markAsWatched = (videoId: number) => {
-        setWatchedVideos((prevWatchedVideos) => {
-            if (!prevWatchedVideos.includes(videoId)) {
-                return [...prevWatchedVideos, videoId];
-            }
-            return prevWatchedVideos;
-        });
+
+    const toggleSection = (sectionId: number) => {
+        const newExpanded = new Set(expandedSections);
+        if (newExpanded.has(sectionId)) {
+            newExpanded.delete(sectionId);
+        } else {
+            newExpanded.add(sectionId);
+        }
+        setExpandedSections(newExpanded);
     };
 
-    const handleVideoClick = (
-        videoUrl: string,
-        videoTitle: string,
-        sectionId: number,
-        videoId: number,
-        sectionTitle: string
-    ) => {
-        setSelectedVideoUrl(videoUrl);
-        setSelectedVideoTitle(videoTitle);
-        setSelectedVideoId({ sectionId, videoId });
-        setSectionTitle(sectionTitle);
+    const calculateProgress = () => {
+        if (video.length === 0) return 0;
+        return Math.round((readVideos.length / video.length) * 100);
+    };
 
-        // Optimistic update: langsung menandai video sebagai sudah dibaca
-        setReadVideos((prevReadVideos) => {
-            const videoAlreadyRead = prevReadVideos.some(
-                (readVideo) => readVideo.video_id === videoId
-            );
-            if (!videoAlreadyRead) {
-                return [
-                    ...prevReadVideos,
+    const isVideoRead = useCallback(
+        (videoId: number): boolean => {
+            return readVideos.some((read) => read.video_id === videoId);
+        },
+        [readVideos]
+    );
+
+    const updateVideoProgress = useCallback(
+        async (clickedVideo: VideoType) => {
+            const videoKey = `${clickedVideo.section_id}-${clickedVideo.id}`;
+
+            if (isVideoRead(clickedVideo.id)) {
+                return { success: true, alreadyWatched: true };
+            }
+
+            if (processingRef.current.has(videoKey)) {
+                return { success: false, message: "Video sedang diproses" };
+            }
+
+            processingRef.current.add(videoKey);
+            setIsProcessing(true);
+
+            try {
+                const response = await axios.post(
+                    route("dashboard.videoRead"),
                     {
-                        section_id: sectionId,
-                        video_id: videoId,
-                    },
-                ];
+                        section_id: clickedVideo.section_id,
+                        video_id: clickedVideo.id,
+                    }
+                );
+
+                if (response.data.success) {
+                    if (!response.data.already_watched) {
+                        setReadVideos((prev) => {
+                            const exists = prev.some(
+                                (read) => read.video_id === clickedVideo.id
+                            );
+                            if (!exists) {
+                                return [
+                                    ...prev,
+                                    {
+                                        section_id: clickedVideo.section_id,
+                                        video_id: clickedVideo.id,
+                                    },
+                                ];
+                            }
+                            return prev;
+                        });
+
+                        toast.success(
+                            `Video "${clickedVideo.title}" ditandai selesai!`,
+                            {
+                                position: "top-right",
+                                duration: 2000,
+                            }
+                        );
+                    }
+                    return {
+                        success: true,
+                        alreadyWatched: response.data.already_watched,
+                    };
+                }
+
+                return { success: false, message: response.data.message };
+            } catch (error) {
+                console.error("Error updating video progress:", error);
+                toast.error("Gagal menyimpan progress video", {
+                    position: "top-right",
+                });
+                return { success: false, message: "Network error" };
+            } finally {
+                processingRef.current.delete(videoKey);
+                setIsProcessing(false);
             }
-            return prevReadVideos;
-        });
+        },
+        [isVideoRead]
+    );
 
-        // Tandai video ini sebagai sudah ditonton
-        markAsWatched(videoId);
+    const handleVideoClick = useCallback(
+        async (clickedVideo: VideoType) => {
+            const currentTime = Date.now();
+            const DEBOUNCE_DELAY = 500;
 
-        // Logika untuk video terakhir
-        const lastVideo = video.reduce(
-            (prev, current) => (current.id > prev.id ? current : prev),
-            video[0]
-        );
-        setIsLastVideo(videoId === lastVideo.id);
+            if (
+                lastClickRef.current &&
+                lastClickRef.current.videoId === clickedVideo.id &&
+                currentTime - lastClickRef.current.timestamp < DEBOUNCE_DELAY
+            ) {
+                return;
+            }
 
-        // Update status to "read" in the database after optimistic update
-        axios
-            .post(route("dashboard.videoRead"), {
-                section_id: sectionId,
-                video_id: videoId,
-            })
-            .catch((error) => {
-                console.error("Error updating video read status:", error);
+            lastClickRef.current = {
+                videoId: clickedVideo.id,
+                timestamp: currentTime,
+            };
+
+            setSelectedVideo(clickedVideo);
+            setSelectedVideoId({
+                sectionId: clickedVideo.section_id,
+                videoId: clickedVideo.id,
             });
-    };
+
+            const lastVideoInList = video[video.length - 1];
+            setIsLastVideo(clickedVideo.id === lastVideoInList?.id);
+
+            await updateVideoProgress(clickedVideo);
+        },
+        [updateVideoProgress, video]
+    );
+
+    useEffect(() => {
+        const initialReadVideos = videoRead.map((read) => ({
+            section_id: Number(read.section_id),
+            video_id: Number(read.video_id),
+        }));
+
+        const uniqueReadVideos = initialReadVideos.filter(
+            (video, index, self) =>
+                index ===
+                self.findIndex(
+                    (v) =>
+                        v.section_id === video.section_id &&
+                        v.video_id === video.video_id
+                )
+        );
+
+        setReadVideos(uniqueReadVideos);
+
+        if (video.length > 0 && !selectedVideo) {
+            setSelectedVideo(video[0]);
+            setSelectedVideoId({
+                sectionId: video[0].section_id,
+                videoId: video[0].id,
+            });
+        }
+
+        if (sectionData.length > 0) {
+            setExpandedSections(new Set([sectionData[0].id]));
+        }
+    }, [video, videoRead, selectedVideo, sectionData]);
+
+    useEffect(() => {
+        setProgress(calculateProgress());
+    }, [readVideos, video]);
+
+    const handleNextVideo = useCallback(() => {
+        if (!selectedVideo) return;
+        const currentIndex = video.findIndex((v) => v.id === selectedVideo.id);
+        if (currentIndex < video.length - 1) {
+            handleVideoClick(video[currentIndex + 1]);
+        }
+    }, [selectedVideo, video, handleVideoClick]);
+
+    const handlePreviousVideo = useCallback(() => {
+        if (!selectedVideo) return;
+        const currentIndex = video.findIndex((v) => v.id === selectedVideo.id);
+        if (currentIndex > 0) {
+            handleVideoClick(video[currentIndex - 1]);
+        }
+    }, [selectedVideo, video, handleVideoClick]);
+
+    const allVideosWatched = useMemo(() => {
+        return (
+            video.length > 0 &&
+            video.every((videoItem) => isVideoRead(videoItem.id))
+        );
+    }, [video, isVideoRead]);
 
     const handleRatingClick = (value: number) => {
         setRating(value);
@@ -199,194 +355,6 @@ export default function Index({
         }
     };
 
-    const handleNextVideo = () => {
-        if (selectedVideoId) {
-            const currentSectionId = selectedVideoId.sectionId;
-            const currentVideoId = selectedVideoId.videoId;
-
-            // Menemukan video berikutnya
-            const nextVideoIndex = video.findIndex((vid) => {
-                return (
-                    (vid.section_id === currentSectionId &&
-                        vid.id === currentVideoId + 1) ||
-                    vid.section_id > currentSectionId // Jika itu video di section berikutnya
-                );
-            });
-
-            if (nextVideoIndex !== -1) {
-                const nextVideo = video[nextVideoIndex];
-
-                // Update video terpilih
-                setSelectedVideoUrl(nextVideo.url.embed_url);
-                setSelectedVideoTitle(nextVideo.title);
-                setSelectedVideoId({
-                    sectionId: nextVideo.section_id,
-                    videoId: nextVideo.id,
-                });
-                setActiveSection(nextVideo.section_id.toString());
-
-                // Optimistic update status video sudah dibaca
-                setReadVideos((prevReadVideos) => {
-                    const videoAlreadyRead = prevReadVideos.some(
-                        (video) =>
-                            video.section_id === nextVideo.section_id &&
-                            video.video_id === nextVideo.id
-                    );
-                    if (!videoAlreadyRead) {
-                        return [
-                            ...prevReadVideos,
-                            {
-                                section_id: nextVideo.section_id,
-                                video_id: nextVideo.id,
-                            },
-                        ];
-                    }
-                    return prevReadVideos;
-                });
-
-                // Update status di server setelah optimistik update
-                axios
-                    .post(route("dashboard.videoRead"), {
-                        section_id: nextVideo.section_id,
-                        video_id: nextVideo.id,
-                    })
-                    .catch((error) => {
-                        console.error(
-                            "Error updating video read status:",
-                            error
-                        );
-                    });
-
-                // Periksa jika video berikutnya adalah video terakhir
-                const lastVideo = video.reduce((prev, current) => {
-                    return current.id > prev.id ? current : prev;
-                }, video[0]);
-
-                setIsLastVideo(nextVideo.id === lastVideo.id);
-            }
-        }
-    };
-
-    const handlePreviousVideo = () => {
-        if (selectedVideoId) {
-            const currentSectionId = selectedVideoId.sectionId;
-            const currentVideoId = selectedVideoId.videoId;
-
-            // Cari video sebelumnya dalam section yang sama
-            const previousVideoInSameSection = video
-                .filter((vid) => vid.section_id === currentSectionId)
-                .sort((a, b) => a.id - b.id) // Urutkan video berdasarkan ID (ascending)
-                .reverse() // Balik urutan (descending) untuk mencari video sebelumnya
-                .find((vid) => vid.id < currentVideoId); // Temukan video dengan ID lebih kecil
-
-            // Jika video sebelumnya ditemukan, perbarui video yang diputar
-            if (previousVideoInSameSection) {
-                setSelectedVideoUrl(previousVideoInSameSection.url.embed_url);
-                setSelectedVideoTitle(previousVideoInSameSection.title);
-                setSelectedVideoId({
-                    sectionId: previousVideoInSameSection.section_id,
-                    videoId: previousVideoInSameSection.id,
-                });
-                setActiveSection(
-                    previousVideoInSameSection.section_id.toString()
-                );
-
-                // Update status video yang dibaca di server
-                axios
-                    .post(route("dashboard.videoRead"), {
-                        section_id: previousVideoInSameSection.section_id,
-                        video_id: previousVideoInSameSection.id,
-                    })
-                    .then(() => {
-                        setReadVideos((prevReadVideos) => {
-                            const videoAlreadyRead = prevReadVideos.some(
-                                (video) =>
-                                    video.section_id ===
-                                        previousVideoInSameSection.section_id &&
-                                    video.video_id ===
-                                        previousVideoInSameSection.id
-                            );
-                            if (!videoAlreadyRead) {
-                                return [
-                                    ...prevReadVideos,
-                                    {
-                                        section_id:
-                                            previousVideoInSameSection.section_id,
-                                        video_id: previousVideoInSameSection.id,
-                                    },
-                                ];
-                            }
-                            return prevReadVideos;
-                        });
-                    })
-                    .catch((error) => {
-                        console.error(
-                            "Error updating video read status:",
-                            error
-                        );
-                    });
-
-                // Cek apakah video sebelumnya adalah video terakhir
-                const lastVideoInSection = video
-                    .filter(
-                        (vid) =>
-                            vid.section_id ===
-                            previousVideoInSameSection.section_id
-                    )
-                    .sort((a, b) => a.id - b.id)
-                    .pop(); // Ambil video terakhir dari section yang sama
-
-                // Pastikan lastVideoInSection tidak undefined sebelum mengakses id-nya
-                if (
-                    lastVideoInSection &&
-                    previousVideoInSameSection.id === lastVideoInSection.id
-                ) {
-                    setIsLastVideo(true); // Jika video sebelumnya adalah video terakhir
-                } else {
-                    setIsLastVideo(false);
-                }
-            } else {
-                // Jika tidak ada video sebelumnya di section yang sama, cari video pertama di section sebelumnya
-                const previousSectionVideo = video
-                    .filter((vid) => vid.section_id < currentSectionId)
-                    .sort((a, b) => a.section_id - b.section_id) // Urutkan berdasarkan section_id
-                    .reverse() // Balik urutan section untuk mencari section sebelumnya
-                    .find((vid) => vid.section_id < currentSectionId);
-
-                if (previousSectionVideo) {
-                    setSelectedVideoUrl(previousSectionVideo.url.embed_url);
-                    setSelectedVideoTitle(previousSectionVideo.title);
-                    setSelectedVideoId({
-                        sectionId: previousSectionVideo.section_id,
-                        videoId: previousSectionVideo.id,
-                    });
-                    setActiveSection(
-                        previousSectionVideo.section_id.toString()
-                    );
-                    const lastVideoInPreviousSection = video
-                        .filter(
-                            (vid) =>
-                                vid.section_id ===
-                                previousSectionVideo.section_id
-                        )
-                        .sort((a, b) => a.id - b.id)
-                        .pop(); // Ambil video terakhir di section yang lebih rendah
-
-                    // Pastikan lastVideoInPreviousSection tidak undefined sebelum mengakses id-nya
-                    if (
-                        lastVideoInPreviousSection &&
-                        previousSectionVideo.id ===
-                            lastVideoInPreviousSection.id
-                    ) {
-                        setIsLastVideo(true); // Jika video sebelumnya adalah video terakhir
-                    } else {
-                        setIsLastVideo(false);
-                    }
-                }
-            }
-        }
-    };
-
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -404,11 +372,11 @@ export default function Index({
         setLoading(true);
 
         const formData = new FormData();
-        if (image) formData.append("image", image); // Kirim file image
+        if (image) formData.append("image", image);
         formData.append("subject", subject || "");
         formData.append("title", title || "");
         formData.append("body", body);
-        formData.append("kelasId", kelas.id.toString()); // Ganti dengan id kelas yang sesuai
+        formData.append("kelasId", kelas.id.toString());
 
         try {
             await Inertia.post(route("dashboard.sendDiskusi"), formData, {
@@ -425,9 +393,10 @@ export default function Index({
             setLoading(false);
         }
     };
+
     const sendBalasdiskusi = async (e: React.FormEvent) => {
         e.preventDefault();
-        const diskusiId = diskusiIdRef.current?.value; // Mengambil nilai dari ref
+        const diskusiId = diskusiIdRef.current?.value;
         if (!diskusiId) {
             return;
         }
@@ -451,83 +420,6 @@ export default function Index({
         }
     };
 
-    const allVideosWatched = video.every(
-        (filteredVideo) =>
-            filteredVideo.status === 1 ||
-            readVideos.some(
-                (readVideo) =>
-                    readVideo.section_id === filteredVideo.section_id &&
-                    readVideo.video_id === filteredVideo.id
-            )
-    );
-
-    useEffect(() => {
-        const readVideosData = videoRead.map((readVideo) => ({
-            section_id: readVideo.section_id,
-            video_id: readVideo.video_id,
-        }));
-        setReadVideos(readVideosData);
-    }, [videoRead]);
-
-    useEffect(() => {
-        axios
-            .get(route("dashboard.getReadVideos"))
-            .then((response) => {
-                const readVideosFromServer = response.data; // asumsikan response.data berisi video yang sudah dibaca
-                setReadVideos(readVideosFromServer); // Update state `readVideos`
-            })
-            .catch((error) => {
-                console.error("Error fetching read videos:", error);
-            });
-    }, []); // Hanya dijalankan sekali ketika halaman pertama kali dimuat
-
-    // Update video yang dipilih berdasarkan indeks
-    const currentVideo = video[currentVideoIndex];
-
-    useEffect(() => {
-        if (currentVideo) {
-            setSelectedVideoUrl(currentVideo.url.embed_url);
-            setSelectedVideoTitle(currentVideo.title);
-            setSectionTitle(currentVideo.section.title);
-            setSelectedVideoId({
-                sectionId: currentVideo.section_id,
-                videoId: currentVideo.id,
-            });
-            setActiveSection(currentVideo.section_id.toString());
-
-            // Update status video yang diputar ke server
-            axios
-                .post(route("dashboard.videoRead"), {
-                    section_id: currentVideo.section_id,
-                    video_id: currentVideo.id,
-                })
-                .then((response) => {
-                    setReadVideos((prevReadVideos) => {
-                        const videoAlreadyRead = prevReadVideos.some(
-                            (video) =>
-                                video.section_id === currentVideo.section_id &&
-                                video.video_id === currentVideo.id
-                        );
-                        if (!videoAlreadyRead) {
-                            return [
-                                ...prevReadVideos,
-                                {
-                                    section_id: currentVideo.section_id,
-                                    video_id: currentVideo.id,
-                                },
-                            ];
-                        }
-                        return prevReadVideos;
-                    });
-                })
-                .catch((error) => {
-                    console.error("Error updating video read status:", error);
-                });
-        }
-    }, [currentVideo]); // Update saat video yang dipilih berubah
-
-    // Menghitung progress berdasarkan `readVideos`
-
     return (
         <>
             <Head>
@@ -543,262 +435,186 @@ export default function Index({
                     href={`/storage/${setting.logo}`}
                 />
             </Head>
-            <section className="">
-                <div className="flex flex-col justify-between h-screen gap-5 lg:flex-row">
-                    <div className="w-full hidden lg:block lg:w-[25%] px-2 py-5 bg-white rounded-2xl fixed top-0 left-0  ">
-                        <Link
-                            href={route("dashboard.kelassaya")}
-                            className="flex items-center ml-2"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                            <span className="ml-2">Kembali</span>
-                        </Link>
 
-                        <ScrollArea className="overflow-y-auto h-screen pt-5 pb-16 px-2.5">
-                            {sectionData.map((section, index) => (
-                                <div key={index} className="mt-5">
-                                    <h3 className="font-medium">
-                                        {section.title} ({section.videos_count})
-                                    </h3>
-                                    <ul>
-                                        {video
-                                            .filter(
-                                                (vid) =>
-                                                    vid.section_id ===
-                                                    section.id
-                                            )
-                                            .map(
-                                                (filteredVideo, videoIndex) => {
-                                                    // Cek apakah video sudah dibaca
-                                                    const isVideoRead =
-                                                        readVideos.some(
-                                                            (readVideo) =>
-                                                                readVideo.video_id ===
-                                                                filteredVideo.id
-                                                        );
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+                <div className="flex h-screen">
+                    <div className="hidden lg:block w-80 bg-white shadow-xl border-r border-gray-200 fixed left-0 top-0 h-full">
+                        <div className="p-6 border-b border-gray-100">
+                            <Link
+                                href={route("dashboard.kelassaya")}
+                                className="flex items-center text-gray-600 hover:text-maroon transition-colors group"
+                            >
+                                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                                <span className="ml-2 font-medium">
+                                    Kembali ke Kelas
+                                </span>
+                            </Link>
+                        </div>
 
-                                                    return (
-                                                        <li
-                                                            key={videoIndex}
-                                                            className="flex flex-row items-center w-full px-2 py-3 gap-x-2"
-                                                        >
-                                                            <div
-                                                                onClick={() =>
-                                                                    handleVideoClick(
-                                                                        filteredVideo
-                                                                            .url
-                                                                            .embed_url,
-                                                                        filteredVideo.title,
-                                                                        filteredVideo.section_id,
-                                                                        filteredVideo.id,
-                                                                        filteredVideo
-                                                                            .section
-                                                                            .title
-                                                                    )
-                                                                }
-                                                                className={`flex flex-col md:flex-row group items-center justify-between w-full px-5 py-3 font-medium text-white transition-all duration-200 rounded-2xl cursor-pointer ${
-                                                                    selectedVideoId?.sectionId ===
-                                                                        filteredVideo.section_id &&
-                                                                    selectedVideoId?.videoId ===
-                                                                        filteredVideo.id
-                                                                        ? "bg-maroon"
-                                                                        : "bg-gray-200 hover:bg-maroon"
-                                                                } gap-x-2`}
-                                                            >
-                                                                <div className="flex flex-col items-start gap-1.5 text-black group-hover:text-white">
-                                                                    <span
-                                                                        className={`${
-                                                                            selectedVideoId?.sectionId ===
-                                                                                filteredVideo.section_id &&
-                                                                            selectedVideoId?.videoId ===
-                                                                                filteredVideo.id
-                                                                                ? "text-white"
-                                                                                : "text-gray-500 group-hover:text-white"
-                                                                        }`}
-                                                                    >
-                                                                        {videoIndex +
-                                                                            1}
-                                                                        .{" "}
-                                                                        {
-                                                                            filteredVideo.title
-                                                                        }
-                                                                    </span>
-                                                                    <span
-                                                                        className={`flex flex-row items-center gap-1 text-sm text-black ${
-                                                                            selectedVideoId?.sectionId ===
-                                                                                filteredVideo.section_id &&
-                                                                            selectedVideoId?.videoId ===
-                                                                                filteredVideo.id
-                                                                                ? "text-white"
-                                                                                : "text-gray-500 group-hover:text-white"
-                                                                        }`}
-                                                                    >
-                                                                        <Clock className="w-3.5 h-3.5" />{" "}
-                                                                        {
-                                                                            filteredVideo.duration
-                                                                        }
-                                                                    </span>
-                                                                </div>
-
-                                                                {/* Tampilkan ikon checklist jika video sudah dibaca */}
-                                                                {isVideoRead && (
-                                                                    <Check
-                                                                        className={`w-5 h-5 ${
-                                                                            selectedVideoId?.sectionId ===
-                                                                                filteredVideo.section_id &&
-                                                                            selectedVideoId?.videoId ===
-                                                                                filteredVideo.id
-                                                                                ? "bg-white text-maroon p-1"
-                                                                                : "bg-maroon text-white p-1"
-                                                                        } rounded-full`}
-                                                                    />
-                                                                )}
-                                                            </div>
-                                                        </li>
-                                                    );
-                                                }
-                                            )}
-                                    </ul>
-                                </div>
-                            ))}
-                            {allVideosWatched && (
-                                <Link
-                                    href={route("dashboard.exam", kelas.slug)}
-                                    className="flex items-center gap-3 px-4 py-5 mt-5 text-white transition-all duration-300 bg-gray-500 rounded-2xl hover:bg-maroon"
+                        <div className="p-6 bg-gradient-to-r from-maroon to-red-600 text-white">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold">
+                                    Progress Belajar
+                                </h3>
+                                <Badge
+                                    variant="secondary"
+                                    className="bg-white/20 text-white"
                                 >
-                                    <File className="w-5 h-5" />{" "}
-                                    <span className="font-semibold">Exam</span>
-                                </Link>
+                                    {progress}%
+                                </Badge>
+                            </div>
+                            <Progress
+                                value={progress}
+                                className="h-2 bg-white/20"
+                            />
+                            <p className="text-sm mt-2 text-white/90">
+                                {readVideos.length} dari {video.length} video
+                                selesai
+                            </p>
+                            {isProcessing && (
+                                <p className="text-xs mt-1 text-white/80 flex items-center">
+                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                    Menyimpan progress...
+                                </p>
                             )}
-                        </ScrollArea>
-                    </div>
+                        </div>
 
-                    {/* Konten utama */}
-                    <div className="w-full lg:w-[75%] px-4 py-2 lg:px-8 lg:py-5  lg:ml-[26%]">
-                        <div className="flex flex-col items-start gap-3 mt-10 mb-5 lg:justify-between lg:items-center lg:flex-row">
-                            <h1 className="text-xl font-bold text-black lg:text-3xl">
-                                {kelas.title}
-                            </h1>
-                            <div className="flex items-center gap-2">
-                                <Dialog
-                                    open={isDialogOpen}
-                                    onOpenChange={(open) =>
-                                        setIsDialogOpen(open)
-                                    }
-                                >
-                                    <DialogTrigger>
-                                        <Button
-                                            type="button"
-                                            className="rounded-full bg-maroon"
+                        <ScrollArea className="h-[calc(100vh-280px)] px-4 py-4">
+                            <div className="space-y-4">
+                                {sectionData.map((section, index) => (
+                                    <Card
+                                        key={section.id}
+                                        className="border border-gray-200 shadow-sm"
+                                    >
+                                        <CardHeader
+                                            className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                                            onClick={() =>
+                                                toggleSection(section.id)
+                                            }
                                         >
-                                            <Pencil /> Beri Ulasan
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Berikan Rating seberapa bagus
-                                                kelas ini 😊
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                <form onSubmit={handleSubmit}>
-                                                    <div className="my-5 space-y-5">
-                                                        <div className="grid flex-1 gap-2">
-                                                            <Label
-                                                                htmlFor="link"
-                                                                className="text-black"
-                                                            >
-                                                                Rating
-                                                            </Label>
-                                                            <div className="flex gap-2">
-                                                                {[
-                                                                    1, 2, 3, 4,
-                                                                    5,
-                                                                ].map(
-                                                                    (star) => (
-                                                                        <svg
-                                                                            key={
-                                                                                star
-                                                                            }
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                            viewBox="0 0 576 512"
-                                                                            className={`w-5 h-5 cursor-pointer ${
-                                                                                rating >=
-                                                                                star
-                                                                                    ? "text-yellow-400"
-                                                                                    : "text-gray-300"
-                                                                            }`}
-                                                                            fill="currentColor"
-                                                                            onClick={() =>
-                                                                                handleRatingClick(
-                                                                                    star
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                                        </svg>
-                                                                    )
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="mb-4">
-                                                            <label
-                                                                htmlFor="testimonial"
-                                                                className="block text-sm font-semibold text-gray-700"
-                                                            >
-                                                                Review
-                                                            </label>
-                                                            <Textarea
-                                                                id="testimonial"
-                                                                value={
-                                                                    data.testimonial
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setData(
-                                                                        "testimonial",
-                                                                        e.target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                className="w-full p-2 mt-2 border border-gray-300 rounded-md"
-                                                                placeholder="Write your testimonial here..."
-                                                            />
-                                                        </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-8 h-8 bg-maroon text-white rounded-lg flex items-center justify-center text-sm font-semibold">
+                                                        {index + 1}
                                                     </div>
+                                                    <div>
+                                                        <h4 className="font-semibold text-gray-900 text-sm">
+                                                            {section.title}
+                                                        </h4>
+                                                        <p className="text-xs text-gray-500">
+                                                            {
+                                                                section.videos_count
+                                                            }{" "}
+                                                            video
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {expandedSections.has(
+                                                    section.id
+                                                ) ? (
+                                                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                                                ) : (
+                                                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                                                )}
+                                            </div>
+                                        </CardHeader>
 
-                                                    {/* Submit Button */}
-                                                    <div className="flex justify-end gap-2">
-                                                        {processing ? (
-                                                            <Button
-                                                                disabled
-                                                                className="rounded-full bg-maroon"
-                                                            >
-                                                                <Loader2 className="animate-spin" />
-                                                                Tunggu
-                                                                Sebentar...
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                type="submit"
-                                                                className="rounded-full bg-maroon"
-                                                            >
-                                                                Kirim Review
-                                                            </Button>
-                                                        )}
-                                                        <DialogClose asChild>
-                                                            <Button
-                                                                type="button"
-                                                                className="text-white bg-gray-500 rounded-full"
-                                                            >
-                                                                Batal
-                                                            </Button>
-                                                        </DialogClose>
-                                                    </div>
-                                                </form>
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                    </DialogContent>
-                                </Dialog>
+                                        {expandedSections.has(section.id) && (
+                                            <CardContent className="pt-0 space-y-2">
+                                                {video
+                                                    .filter(
+                                                        (vid) =>
+                                                            vid.section_id ===
+                                                            section.id
+                                                    )
+                                                    .map(
+                                                        (
+                                                            filteredVideo,
+                                                            videoIndex
+                                                        ) => {
+                                                            const videoIsRead =
+                                                                isVideoRead(
+                                                                    filteredVideo.id
+                                                                );
+                                                            const isActive =
+                                                                selectedVideoId?.sectionId ===
+                                                                    filteredVideo.section_id &&
+                                                                selectedVideoId?.videoId ===
+                                                                    filteredVideo.id;
+
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        filteredVideo.id
+                                                                    }
+                                                                    onClick={() =>
+                                                                        handleVideoClick(
+                                                                            filteredVideo
+                                                                        )
+                                                                    }
+                                                                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 group ${
+                                                                        isActive
+                                                                            ? "bg-maroon text-white shadow-md"
+                                                                            : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <h5
+                                                                                className={`text-sm font-medium truncate ${
+                                                                                    isActive
+                                                                                        ? "text-white"
+                                                                                        : "text-gray-900"
+                                                                                }`}
+                                                                            >
+                                                                                {videoIndex +
+                                                                                    1}
+
+                                                                                .{" "}
+                                                                                {
+                                                                                    filteredVideo.title
+                                                                                }
+                                                                            </h5>
+                                                                            <div
+                                                                                className={`flex items-center mt-1 text-xs ${
+                                                                                    isActive
+                                                                                        ? "text-white/80"
+                                                                                        : "text-gray-500"
+                                                                                }`}
+                                                                            >
+                                                                                <Clock className="w-3 h-3 mr-1" />
+                                                                                {
+                                                                                    filteredVideo.duration
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                        {videoIsRead && (
+                                                                            <div
+                                                                                className={`ml-2 p-1 rounded-full ${
+                                                                                    isActive
+                                                                                        ? "bg-white/20"
+                                                                                        : "bg-green-100"
+                                                                                }`}
+                                                                            >
+                                                                                <Check
+                                                                                    className={`w-3 h-3 ${
+                                                                                        isActive
+                                                                                            ? "text-white"
+                                                                                            : "text-green-600"
+                                                                                    }`}
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                    )}
+                                            </CardContent>
+                                        )}
+                                    </Card>
+                                ))}
+
                                 {allVideosWatched && (
                                     <Link
                                         href={route(
@@ -806,427 +622,701 @@ export default function Index({
                                             kelas.slug
                                         )}
                                     >
-                                        <Button
-                                            type="button"
-                                            className="rounded-full bg-maroon"
+                                        <Card className="border-2 border-maroon bg-gradient-to-r from-maroon to-red-600 text-white cursor-pointer hover:shadow-lg transition-all duration-200">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center space-x-3">
+                                                    <Award className="w-6 h-6" />
+                                                    <div>
+                                                        <h4 className="font-semibold">
+                                                            Ujian Final
+                                                        </h4>
+                                                        <p className="text-sm text-white/80">
+                                                            Kerjakan ujian untuk
+                                                            menyelesaikan kursus
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </div>
+
+                    <div className="flex-1 lg:ml-80 p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 bg-white rounded-2xl p-6 shadow-sm">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                    {kelas.title}
+                                </h1>
+                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                    <div className="flex items-center">
+                                        <Users className="w-4 h-4 mr-1" />
+                                        {totalsiswa} siswa
+                                    </div>
+                                    <div className="flex items-center">
+                                        <Star className="w-4 h-4 mr-1 text-yellow-500" />
+                                        {averageRating} rating
+                                    </div>
+                                    <div className="flex items-center">
+                                        <BookOpen className="w-4 h-4 mr-1" />
+                                        {video.length} video
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-4 lg:mt-0">
+                                <Dialog
+                                    open={isDialogOpen}
+                                    onOpenChange={setIsDialogOpen}
+                                >
+                                    <DialogTrigger asChild>
+                                        <Button className="bg-gradient-to-r from-maroon to-red-600 hover:from-red-600 hover:to-maroon text-white shadow-lg">
+                                            <Star className="w-4 h-4 mr-2" />
+                                            Beri Ulasan
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[500px]">
+                                        <DialogHeader>
+                                            <DialogTitle className="flex items-center">
+                                                <Star className="w-5 h-5 mr-2 text-yellow-500" />
+                                                Berikan Rating & Ulasan
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                Bagikan pengalaman belajar Anda
+                                                dengan memberikan rating dan
+                                                ulasan
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form
+                                            onSubmit={handleSubmit}
+                                            className="space-y-6"
                                         >
-                                            <File /> Exam
+                                            <div>
+                                                <Label className="text-sm font-semibold text-gray-700 mb-3 block">
+                                                    Rating Kursus
+                                                </Label>
+                                                <div className="flex gap-2">
+                                                    {[1, 2, 3, 4, 5].map(
+                                                        (star) => (
+                                                            <Star
+                                                                key={star}
+                                                                className={`w-8 h-8 cursor-pointer transition-colors ${
+                                                                    rating >=
+                                                                    star
+                                                                        ? "text-yellow-400 fill-yellow-400"
+                                                                        : "text-gray-300 hover:text-yellow-300"
+                                                                }`}
+                                                                onClick={() =>
+                                                                    handleRatingClick(
+                                                                        star
+                                                                    )
+                                                                }
+                                                            />
+                                                        )
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <Label
+                                                    htmlFor="testimonial"
+                                                    className="text-sm font-semibold text-gray-700"
+                                                >
+                                                    Ulasan Anda
+                                                </Label>
+                                                <Textarea
+                                                    id="testimonial"
+                                                    value={data.testimonial}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            "testimonial",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="mt-2 min-h-[120px]"
+                                                    placeholder="Ceritakan pengalaman belajar Anda di kursus ini..."
+                                                />
+                                            </div>
+
+                                            <div className="flex justify-end gap-3 pt-4">
+                                                <DialogClose asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        type="button"
+                                                    >
+                                                        Batal
+                                                    </Button>
+                                                </DialogClose>
+                                                <Button
+                                                    type="submit"
+                                                    disabled={processing}
+                                                    className="bg-gradient-to-r from-maroon to-red-600"
+                                                >
+                                                    {processing ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                            Mengirim...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Star className="w-4 h-4 mr-2" />
+                                                            Kirim Ulasan
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+
+                                {allVideosWatched && (
+                                    <Link
+                                        href={route(
+                                            "dashboard.exam",
+                                            kelas.slug
+                                        )}
+                                    >
+                                        <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg">
+                                            <Trophy className="w-4 h-4 mr-2" />
+                                            Mulai Ujian
                                         </Button>
                                     </Link>
                                 )}
                             </div>
                         </div>
-                        {/* <span className="text-lg font-semibold text-black">
-                            Progress Kelas
-                        </span> */}
-                        {/* <div className="mt-5 mb-10">
-                            <span id="ProgressLabel" className="sr-only">
-                                Loading
-                            </span>
 
-                            <span
-                                role="progressbar"
-                                aria-labelledby="ProgressLabel"
-                                aria-valuenow={progress} // Gunakan progress sebagai nilai
-                                className="relative block bg-gray-200 rounded-full"
-                            >
-                                <span className="absolute inset-0 flex items-center justify-center text-base">
-                                    <span className="font-bold text-white">
-                                        {Math.min(progress, 100)}%{" "}
-                                    </span>
-                                </span>
-
-                                <span
-                                    className="block text-center rounded-full bg-maroon h-7"
-                                    style={{
-                                        width: `${Math.min(progress, 100)}%`,
-                                    }}
-                                />
-                            </span>
-                        </div> */}
-
-                        <div className="w-full p-5 bg-white rounded-2xl">
-                            {selectedVideoUrl ? (
-                                <>
-                                    <div className="overflow-y-auto max-h-[500px]">
-                                        <iframe
-                                            className="w-full h-[300px] lg:h-[500px]  rounded-2xl"
-                                            src={selectedVideoUrl}
-                                            title="YouTube video player"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                            referrerPolicy="strict-origin-when-cross-origin"
-                                            allowFullScreen
-                                        ></iframe>
-                                    </div>
-
-                                    {/* Konten di bawah iframe */}
-                                    <div className="flex flex-col items-start justify-between gap-5 mt-5 lg:items-center lg:flex-row">
-                                        <div className="flex flex-col gap-3">
-                                            <h1 className="text-2xl font-semibold text-black">
-                                                {selectedVideoTitle}
-                                            </h1>
-                                            <p className="text-sm text-gray-400">
-                                                {kelas.title}
-                                            </p>
+                        <Card className="mb-8 shadow-lg overflow-hidden">
+                            <CardContent className="p-0">
+                                {selectedVideo ? (
+                                    <>
+                                        <div className="relative w-full h-[400px] lg:h-[500px] bg-black rounded-t-xl overflow-hidden">
+                                            {selectedVideo.type === "youtube" &&
+                                                selectedVideo.url
+                                                    ?.embed_url && (
+                                                    <iframe
+                                                        width="100%"
+                                                        height="100%"
+                                                        src={
+                                                            selectedVideo.url
+                                                                .embed_url
+                                                        }
+                                                        title="YouTube video player"
+                                                        frameBorder="0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                        referrerPolicy="strict-origin-when-cross-origin"
+                                                        allowFullScreen
+                                                    />
+                                                )}
+                                            {selectedVideo.type ===
+                                                "google_drive" &&
+                                                selectedVideo.url_drive && (
+                                                    <div className="flex items-center justify-center h-full">
+                                                        <a
+                                                            href={
+                                                                selectedVideo.url_drive
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="group"
+                                                        >
+                                                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center group-hover:bg-white/20 transition-all">
+                                                                <Eye className="w-12 h-12 text-white mx-auto mb-4" />
+                                                                <h3 className="text-white text-xl font-semibold mb-2">
+                                                                    Buka Materi
+                                                                </h3>
+                                                                <p className="text-white/80">
+                                                                    Klik untuk
+                                                                    membuka di
+                                                                    Google Drive
+                                                                </p>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            {selectedVideo.type === "file" &&
+                                                selectedVideo.file && (
+                                                    <iframe
+                                                        width="100%"
+                                                        height="100%"
+                                                        src={`/storage/${selectedVideo.file}`}
+                                                        title="PDF preview"
+                                                    />
+                                                )}
                                         </div>
-                                        <div className="flex gap-3">
-                                            <Button
-                                                onClick={handlePreviousVideo}
-                                                className="rounded-full bg-maroon"
-                                            >
-                                                <ArrowLeft /> Sebelumnya
-                                            </Button>
-                                            {!isLastVideo && (
-                                                <Button
-                                                    onClick={handleNextVideo}
-                                                    className="rounded-full bg-maroon"
-                                                >
-                                                    Lanjut <ArrowRight />
-                                                </Button>
-                                            )}
+
+                                        <div className="p-6 bg-white">
+                                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                                <div>
+                                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                                        {selectedVideo.title}
+                                                    </h2>
+                                                    <div className="flex items-center text-sm text-gray-600">
+                                                        <Clock className="w-4 h-4 mr-1" />
+                                                        {selectedVideo.duration}
+                                                        <span className="mx-2">
+                                                            •
+                                                        </span>
+                                                        <BookOpen className="w-4 h-4 mr-1" />
+                                                        {kelas.title}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3">
+                                                    <Button
+                                                        onClick={
+                                                            handlePreviousVideo
+                                                        }
+                                                        variant="outline"
+                                                        disabled={
+                                                            video.findIndex(
+                                                                (v) =>
+                                                                    v.id ===
+                                                                    selectedVideo.id
+                                                            ) === 0
+                                                        }
+                                                        className="flex items-center"
+                                                    >
+                                                        <ArrowLeft className="w-4 h-4 mr-2" />
+                                                        Sebelumnya
+                                                    </Button>
+                                                    {!isLastVideo && (
+                                                        <Button
+                                                            onClick={
+                                                                handleNextVideo
+                                                            }
+                                                            className="bg-gradient-to-r from-maroon to-red-600 hover:from-red-600 hover:to-maroon"
+                                                        >
+                                                            Lanjut
+                                                            <ArrowRight className="w-4 h-4 ml-2" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-[500px] text-gray-500">
+                                        <PlayCircleIcon className="w-24 h-24 mb-4 text-gray-300" />
+                                        <h3 className="text-xl font-semibold mb-2">
+                                            Pilih Video untuk Mulai Belajar
+                                        </h3>
+                                        <p>
+                                            Klik pada daftar materi di sidebar
+                                            untuk memulai pembelajaran
+                                        </p>
                                     </div>
-                                </>
-                            ) : (
-                                <p>Pilih video untuk menampilkan di sini.</p>
-                            )}
-                        </div>
-                        <Tabs
-                            defaultValue="about"
-                            className="items-start py-10"
-                        >
-                            <TabsList className="flex py-10 mb-5 space-x-2 overflow-x-auto overflow-y-hidden bg-transparent">
-                                <TabsTrigger value="about">Tentang</TabsTrigger>
-                                <TabsTrigger value="diskusi">
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Tabs defaultValue="about" className="space-y-6">
+                            <TabsList className="space-x-2 rounded-xl ">
+                                <TabsTrigger
+                                    value="about"
+                                    className="flex items-center gap-2 data-[state=active]:bg-maroon data-[state=active]:text-white"
+                                >
+                                    <BookOpen className="w-4 h-4" />
+                                    Tentang
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="diskusi"
+                                    className="flex items-center gap-2 data-[state=active]:bg-maroon data-[state=active]:text-white"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
                                     Diskusi
                                 </TabsTrigger>
-                                <TabsTrigger value="mentor">Mentor</TabsTrigger>
-                                <TabsTrigger value="ulasan">Ulasan</TabsTrigger>
+                                <TabsTrigger
+                                    value="mentor"
+                                    className="flex items-center gap-2 data-[state=active]:bg-maroon data-[state=active]:text-white"
+                                >
+                                    <User className="w-4 h-4" />
+                                    Mentor
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="ulasan"
+                                    className="flex items-center gap-2 data-[state=active]:bg-maroon data-[state=active]:text-white"
+                                >
+                                    <Star className="w-4 h-4" />
+                                    Ulasan
+                                </TabsTrigger>
                             </TabsList>
-                            <TabsContent
-                                value="about"
-                                className="p-5 bg-white rounded-2xl"
-                            >
-                                <p
-                                    className="text-sm prose text-black"
-                                    dangerouslySetInnerHTML={{
-                                        __html: kelas.body,
-                                    }}
-                                />
-                            </TabsContent>
-                            <TabsContent value="diskusi">
-                                <h3 className="text-xl font-bold">Diskusi</h3>
-                                <Dialog>
-                                    <DialogTrigger>
-                                        <Button className="mt-5 mb-5 rounded-full bg-maroon">
-                                            <Plus /> Form Diskusi
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="max-h-[90vh] overflow-y-auto">
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Form Diskusi
-                                            </DialogTitle>
-                                            <DialogDescription className="overflow-y-auto">
-                                                <form onSubmit={sendDiskusi}>
-                                                    <div className="my-5 space-y-5">
-                                                        <div className="grid items-center w-full gap-3">
-                                                            <label
-                                                                htmlFor="judul"
-                                                                className="block text-sm font-semibold text-gray-700"
-                                                            >
-                                                                Judul
-                                                            </label>
-                                                            <Input
-                                                                value={
-                                                                    title || ""
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setTitle(
-                                                                        e.target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                required
-                                                                placeholder="Masukkan judul diskusi"
-                                                            />
-                                                        </div>
-                                                        <div className="mb-4">
-                                                            <label
-                                                                htmlFor="subject"
-                                                                className="block text-sm font-semibold text-gray-700"
-                                                            >
-                                                                Subject
-                                                            </label>
-                                                            <Input
-                                                                required
-                                                                value={
-                                                                    subject ||
-                                                                    ""
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setSubject(
-                                                                        e.target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                className="w-full p-2 mt-2 border border-gray-300 rounded-md"
-                                                                placeholder="Masukkan subject diskusi"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label
-                                                                htmlFor="body"
-                                                                className="block text-sm font-semibold text-gray-700"
-                                                            >
-                                                                Keterangan
-                                                            </label>
-                                                            <Textarea
-                                                                id="testimonial"
-                                                                value={
-                                                                    body || ""
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setBody(
-                                                                        e.target
-                                                                            .value
-                                                                    )
-                                                                }
-                                                                className="w-full p-2 mt-2 border border-gray-300 rounded-md"
-                                                                placeholder="Masukkan keterangan diskusi"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label
-                                                                htmlFor="image"
-                                                                className="block mb-5 text-sm font-semibold text-gray-700"
-                                                            >
-                                                                Upload
-                                                                Foto/Gambar
-                                                                (Optional)
-                                                            </label>
-                                                            {imagePreview && (
-                                                                <div className="flex justify-center mt-3 mb-5">
-                                                                    <img
-                                                                        src={
-                                                                            imagePreview
-                                                                        }
-                                                                        alt="Image Preview"
-                                                                        className="object-cover w-72 h-52 rounded-2xl" // Customize the size and styling as needed
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            <div className="flex justify-center">
-                                                                <Input
-                                                                    type="file"
-                                                                    id="image"
-                                                                    accept="image/*"
-                                                                    onChange={
-                                                                        handleFileChange
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
 
-                                                    {/* Submit Button */}
-                                                    <div className="flex justify-end gap-2">
-                                                        {loading ? (
-                                                            <Button
-                                                                disabled
-                                                                className="rounded-full bg-maroon"
-                                                            >
-                                                                <Loader2 className="animate-spin" />
-                                                                Tunggu
-                                                                Sebentar...
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                type="submit"
-                                                                className="rounded-full bg-maroon"
-                                                            >
-                                                                Kirim Pertanyaan
-                                                            </Button>
-                                                        )}
-                                                        <DialogClose asChild>
-                                                            <Button
-                                                                type="button"
-                                                                className="text-white bg-gray-500 rounded-full"
-                                                            >
-                                                                Batal
-                                                            </Button>
-                                                        </DialogClose>
-                                                    </div>
-                                                </form>
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                    </DialogContent>
-                                </Dialog>
-                                {diskusi.length > 0 ? (
-                                    <div className="flex flex-col gap-5 mt-10">
-                                        {diskusi.map((disk) => (
-                                            <div
-                                                key={disk.id}
-                                                className="flex flex-col items-start gap-5 p-8 bg-white rounded-2xl"
+                            <TabsContent value="about">
+                                <Card className="shadow-lg">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center">
+                                            <BookOpen className="w-5 h-5 mr-2 text-maroon" />
+                                            Tentang Kursus
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div
+                                            className="prose prose-gray max-w-none"
+                                            dangerouslySetInnerHTML={{
+                                                __html: kelas.body,
+                                            }}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            <TabsContent value="diskusi" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-900">
+                                            Forum Diskusi
+                                        </h3>
+                                        <p className="text-gray-600 mt-1">
+                                            Ajukan pertanyaan dan diskusikan
+                                            materi dengan mentor dan siswa lain
+                                        </p>
+                                    </div>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button className="bg-gradient-to-r from-maroon to-red-600 hover:from-red-600 hover:to-maroon shadow-lg">
+                                                <Plus className="w-4 h-4 mr-2" />
+                                                Buat Diskusi
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                            <DialogHeader>
+                                                <DialogTitle className="flex items-center">
+                                                    <MessageCircle className="w-5 h-5 mr-2 text-maroon" />
+                                                    Buat Diskusi Baru
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                    Ajukan pertanyaan atau mulai
+                                                    diskusi tentang materi
+                                                    kursus
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <form
+                                                onSubmit={sendDiskusi}
+                                                className="space-y-6"
                                             >
-                                                {disk.image && (
-                                                    <Dialog>
-                                                        <DialogTrigger>
+                                                <div>
+                                                    <Label
+                                                        htmlFor="title"
+                                                        className="text-sm font-semibold text-gray-700"
+                                                    >
+                                                        Judul Diskusi
+                                                    </Label>
+                                                    <Input
+                                                        id="title"
+                                                        value={title || ""}
+                                                        onChange={(e) =>
+                                                            setTitle(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="Masukkan judul diskusi yang menarik"
+                                                        className="mt-2"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label
+                                                        htmlFor="subject"
+                                                        className="text-sm font-semibold text-gray-700"
+                                                    >
+                                                        Subjek
+                                                    </Label>
+                                                    <Input
+                                                        id="subject"
+                                                        value={subject || ""}
+                                                        onChange={(e) =>
+                                                            setSubject(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="Kategori atau topik diskusi"
+                                                        className="mt-2"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label
+                                                        htmlFor="body"
+                                                        className="text-sm font-semibold text-gray-700"
+                                                    >
+                                                        Deskripsi
+                                                    </Label>
+                                                    <Textarea
+                                                        id="body"
+                                                        value={body}
+                                                        onChange={(e) =>
+                                                            setBody(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="Jelaskan pertanyaan atau topik diskusi Anda dengan detail"
+                                                        className="mt-2 min-h-[120px]"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label className="text-sm font-semibold text-gray-700 block mb-3">
+                                                        Lampiran Gambar
+                                                        (Opsional)
+                                                    </Label>
+                                                    {imagePreview && (
+                                                        <div className="mb-4">
                                                             <img
-                                                                src={`/storage/${disk.image}`}
-                                                                alt=""
-                                                                className="object-cover w-64 h-40 rounded-2xl"
+                                                                src={
+                                                                    imagePreview
+                                                                }
+                                                                alt="Preview"
+                                                                className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-200"
                                                             />
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogDescription>
-                                                                    <img
-                                                                        src={`/storage/${disk.image}`}
-                                                                        alt=""
-                                                                        className="object-cover size-full rounded-2xl"
-                                                                    />
-                                                                </DialogDescription>
-                                                            </DialogHeader>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                )}
-                                                <h5 className="text-xl font-medium text-black">
-                                                    {disk.title}
-                                                </h5>
-                                                <p className="text-sm leading-relaxed text-gray-500 ">
-                                                    {disk.body}
-                                                </p>
-                                                <div className="flex flex-col items-center justify-between w-full gap-5 md:flex-row">
-                                                    {disk.user.image ? (
-                                                        <div className="relative flex items-center gap-2 cursor-pointer group">
-                                                            <img
-                                                                src={`/storage/${disk.user.image}`}
-                                                                className="rounded-full size-10"
-                                                                alt=""
-                                                            />
-                                                            <span className="text-sm font-medium text-black ">
-                                                                {disk.user.name}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="relative flex items-center gap-2 cursor-pointer group">
-                                                            <img
-                                                                src="/default-avatar.svg"
-                                                                className="rounded-full size-10"
-                                                                alt=""
-                                                            />
-                                                            <span className="text-sm font-medium text-black ">
-                                                                {disk.user.name}
-                                                            </span>
                                                         </div>
                                                     )}
-                                                    <div className="flex flex-row items-center gap-5">
-                                                        <Dialog>
-                                                            <DialogTrigger>
-                                                                <span className="text-base font-semibold cursor-pointer text-maroon hover:underline">
-                                                                    Balas
-                                                                </span>
-                                                            </DialogTrigger>
-                                                            <DialogContent>
-                                                                <DialogHeader>
-                                                                    <DialogTitle>
-                                                                        Balas
-                                                                        Pertanyaan
-                                                                    </DialogTitle>
-                                                                    <DialogDescription>
-                                                                        <form
-                                                                            onSubmit={
-                                                                                sendBalasdiskusi
-                                                                            }
-                                                                        >
-                                                                            <div className="my-10">
-                                                                                <label
-                                                                                    htmlFor="balasan"
-                                                                                    className="block text-sm font-semibold text-gray-700"
-                                                                                >
-                                                                                    Balasan
-                                                                                </label>
-                                                                                <input
-                                                                                    type="hidden"
-                                                                                    ref={
-                                                                                        diskusiIdRef
-                                                                                    }
-                                                                                    value={
-                                                                                        disk.id
-                                                                                    } // Memastikan nilai disk.id
-                                                                                />
+                                                    <Input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={
+                                                            handleFileChange
+                                                        }
+                                                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-maroon file:text-white hover:file:bg-red-600"
+                                                    />
+                                                </div>
 
-                                                                                <Textarea
-                                                                                    id="balasan"
-                                                                                    value={
-                                                                                        balas ||
-                                                                                        ""
-                                                                                    }
-                                                                                    onChange={(
-                                                                                        e
-                                                                                    ) =>
-                                                                                        setBalas(
-                                                                                            e
-                                                                                                .target
-                                                                                                .value
-                                                                                        )
-                                                                                    }
-                                                                                    className="w-full p-2 mt-2 border border-gray-300 rounded-md"
-                                                                                    placeholder="Ketikkan balasan disini..."
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex justify-end gap-2">
-                                                                                {loading ? (
-                                                                                    <Button
-                                                                                        disabled
-                                                                                        className="rounded-full bg-maroon"
-                                                                                    >
-                                                                                        <Loader2 className="animate-spin" />
-                                                                                        Tunggu
-                                                                                        Sebentar...
-                                                                                    </Button>
-                                                                                ) : (
-                                                                                    <Button
-                                                                                        type="submit"
-                                                                                        className="rounded-full bg-maroon"
-                                                                                    >
-                                                                                        Kirim
-                                                                                        Pertanyaan
-                                                                                    </Button>
-                                                                                )}
-                                                                                <DialogClose
-                                                                                    asChild
-                                                                                >
-                                                                                    <Button
-                                                                                        type="button"
-                                                                                        className="text-white bg-gray-500 rounded-full"
-                                                                                    >
-                                                                                        Batal
-                                                                                    </Button>
-                                                                                </DialogClose>
-                                                                            </div>
-                                                                        </form>
-                                                                    </DialogDescription>
-                                                                </DialogHeader>
+                                                <div className="flex justify-end gap-3 pt-4">
+                                                    <DialogClose asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            type="button"
+                                                        >
+                                                            Batal
+                                                        </Button>
+                                                    </DialogClose>
+                                                    <Button
+                                                        type="submit"
+                                                        disabled={loading}
+                                                        className="bg-gradient-to-r from-maroon to-red-600"
+                                                    >
+                                                        {loading ? (
+                                                            <>
+                                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                                Mengirim...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <MessageCircle className="w-4 h-4 mr-2" />
+                                                                Kirim Diskusi
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+
+                                {diskusi.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {diskusi.map((disk) => (
+                                            <Card
+                                                key={disk.id}
+                                                className="shadow-lg hover:shadow-xl transition-shadow"
+                                            >
+                                                <CardContent className="p-6">
+                                                    {disk.image && (
+                                                        <Dialog>
+                                                            <DialogTrigger
+                                                                asChild
+                                                            >
+                                                                <img
+                                                                    src={`/storage/${disk.image}`}
+                                                                    alt="Diskusi attachment"
+                                                                    className="w-full max-w-md h-48 object-cover rounded-xl mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+                                                                />
+                                                            </DialogTrigger>
+                                                            <DialogContent className="max-w-4xl">
+                                                                <img
+                                                                    src={`/storage/${disk.image}`}
+                                                                    alt="Diskusi attachment"
+                                                                    className="w-full h-auto rounded-xl"
+                                                                />
                                                             </DialogContent>
                                                         </Dialog>
+                                                    )}
 
-                                                        <Dialog>
-                                                            <DialogTrigger>
-                                                                <span className="text-base font-semibold cursor-pointer text-maroon hover:underline">
-                                                                    Lihat
-                                                                    Balasan
-                                                                </span>
-                                                            </DialogTrigger>
-                                                            <DialogContent>
-                                                                <DialogHeader>
-                                                                    <DialogTitle>
-                                                                        Jawaban
-                                                                    </DialogTitle>
-                                                                    <DialogDescription
-                                                                        className="space-y-5 overflow-y-auto max-h-96" // Menambahkan scroll pada konten
+                                                    <h4 className="text-xl font-bold text-gray-900 mb-3">
+                                                        {disk.title}
+                                                    </h4>
+                                                    <p className="text-gray-700 leading-relaxed mb-6">
+                                                        {disk.body}
+                                                    </p>
+
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                                                        <div className="flex items-center space-x-3">
+                                                            <Avatar className="h-10 w-10">
+                                                                <AvatarImage
+                                                                    src={
+                                                                        disk
+                                                                            .user
+                                                                            .image
+                                                                            ? `/storage/${disk.user.image}`
+                                                                            : undefined
+                                                                    }
+                                                                />
+                                                                <AvatarFallback className="bg-maroon text-white">
+                                                                    {disk.user.name
+                                                                        .charAt(
+                                                                            0
+                                                                        )
+                                                                        .toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                                <p className="font-semibold text-gray-900">
+                                                                    {
+                                                                        disk
+                                                                            .user
+                                                                            .name
+                                                                    }
+                                                                </p>
+                                                                <p className="text-sm text-gray-500">
+                                                                    Siswa
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex gap-3">
+                                                            <Dialog>
+                                                                <DialogTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
                                                                     >
+                                                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                                                        Balas
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent>
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>
+                                                                            Balas
+                                                                            Diskusi
+                                                                        </DialogTitle>
+                                                                        <DialogDescription>
+                                                                            Berikan
+                                                                            tanggapan
+                                                                            atau
+                                                                            jawaban
+                                                                            untuk
+                                                                            diskusi
+                                                                            ini
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+                                                                    <form
+                                                                        onSubmit={
+                                                                            sendBalasdiskusi
+                                                                        }
+                                                                        className="space-y-4"
+                                                                    >
+                                                                        <input
+                                                                            type="hidden"
+                                                                            ref={
+                                                                                diskusiIdRef
+                                                                            }
+                                                                            value={
+                                                                                disk.id
+                                                                            }
+                                                                        />
+                                                                        <div>
+                                                                            <Label htmlFor="balas">
+                                                                                Balasan
+                                                                                Anda
+                                                                            </Label>
+                                                                            <Textarea
+                                                                                id="balas"
+                                                                                value={
+                                                                                    balas
+                                                                                }
+                                                                                onChange={(
+                                                                                    e
+                                                                                ) =>
+                                                                                    setBalas(
+                                                                                        e
+                                                                                            .target
+                                                                                            .value
+                                                                                    )
+                                                                                }
+                                                                                placeholder="Tulis balasan Anda di sini..."
+                                                                                className="mt-2 min-h-[100px]"
+                                                                                required
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex justify-end gap-3">
+                                                                            <DialogClose
+                                                                                asChild
+                                                                            >
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    type="button"
+                                                                                >
+                                                                                    Batal
+                                                                                </Button>
+                                                                            </DialogClose>
+                                                                            <Button
+                                                                                type="submit"
+                                                                                disabled={
+                                                                                    loading
+                                                                                }
+                                                                                className="bg-maroon hover:bg-red-600"
+                                                                            >
+                                                                                {loading ? (
+                                                                                    <>
+                                                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                                                        Mengirim...
+                                                                                    </>
+                                                                                ) : (
+                                                                                    "Kirim Balasan"
+                                                                                )}
+                                                                            </Button>
+                                                                        </div>
+                                                                    </form>
+                                                                </DialogContent>
+                                                            </Dialog>
+
+                                                            <Dialog>
+                                                                <DialogTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                    >
+                                                                        <Eye className="w-4 h-4 mr-2" />
+                                                                        Lihat
+                                                                        Balasan
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-3xl">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>
+                                                                            Balasan
+                                                                            Diskusi
+                                                                        </DialogTitle>
+                                                                        <DialogDescription>
+                                                                            Semua
+                                                                            tanggapan
+                                                                            untuk:
+                                                                            "
+                                                                            {
+                                                                                disk.title
+                                                                            }
+                                                                            "
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+                                                                    <ScrollArea className="max-h-96 pr-4">
                                                                         {balasDiskusi.filter(
                                                                             (
                                                                                 balasan
@@ -1236,265 +1326,345 @@ export default function Index({
                                                                         )
                                                                             .length >
                                                                         0 ? (
-                                                                            balasDiskusi
-                                                                                .filter(
-                                                                                    (
-                                                                                        balasan
-                                                                                    ) =>
-                                                                                        balasan.diskusi_id ===
-                                                                                        disk.id
-                                                                                )
-                                                                                .map(
-                                                                                    (
-                                                                                        balasan,
-                                                                                        index
-                                                                                    ) => (
-                                                                                        <div
-                                                                                            key={
-                                                                                                index
-                                                                                            }
-                                                                                            className="p-5 mx-3 mt-5 bg-white border-2 border-maroon rounded-2xl"
-                                                                                        >
-                                                                                            {balasan
-                                                                                                .user
-                                                                                                .image !==
-                                                                                            null ? (
-                                                                                                <div className="flex items-center gap-2 mb-5 cursor-pointer group">
-                                                                                                    <img
-                                                                                                        src={`/storage/${balasan.user.image}`}
-                                                                                                        className="rounded-full size-10"
-                                                                                                        alt=""
-                                                                                                    />
-                                                                                                    <span className="text-sm font-medium text-black">
-                                                                                                        {
-                                                                                                            balasan
-                                                                                                                .user
-                                                                                                                .name
-                                                                                                        }
-                                                                                                    </span>
-                                                                                                </div>
-                                                                                            ) : (
-                                                                                                <div className="flex items-center gap-2 mb-5 cursor-pointer group">
-                                                                                                    <img
-                                                                                                        src="/default-avatar.svg"
-                                                                                                        className="rounded-full size-10"
-                                                                                                        alt=""
-                                                                                                    />
-                                                                                                    <div className="flex flex-col gap-2">
-                                                                                                        <span className="text-sm font-medium text-black">
-                                                                                                            {
-                                                                                                                balasan
-                                                                                                                    .user
-                                                                                                                    .name
-                                                                                                            }
-                                                                                                        </span>
-                                                                                                        <span className="text-sm font-medium text-white bg-maroon px-3 py-1.5  rounded-full">
-                                                                                                            {
-                                                                                                                balasan
-                                                                                                                    .user
-                                                                                                                    .role
-                                                                                                            }
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            )}
-                                                                                            <p className="text-sm leading-relaxed text-black">
-                                                                                                {
-                                                                                                    balasan.body
-                                                                                                }
-                                                                                            </p>
-                                                                                        </div>
+                                                                            <div className="space-y-4">
+                                                                                {balasDiskusi
+                                                                                    .filter(
+                                                                                        (
+                                                                                            balasan
+                                                                                        ) =>
+                                                                                            balasan.diskusi_id ===
+                                                                                            disk.id
                                                                                     )
-                                                                                )
+                                                                                    .map(
+                                                                                        (
+                                                                                            balasan,
+                                                                                            index
+                                                                                        ) => (
+                                                                                            <Card
+                                                                                                key={
+                                                                                                    index
+                                                                                                }
+                                                                                                className="border border-maroon/20"
+                                                                                            >
+                                                                                                <CardContent className="p-4">
+                                                                                                    <div className="flex items-start space-x-3 mb-3">
+                                                                                                        <Avatar className="h-8 w-8">
+                                                                                                            <AvatarImage
+                                                                                                                src={
+                                                                                                                    balasan
+                                                                                                                        .user
+                                                                                                                        .image
+                                                                                                                        ? `/storage/${balasan.user.image}`
+                                                                                                                        : undefined
+                                                                                                                }
+                                                                                                            />
+                                                                                                            <AvatarFallback className="bg-maroon text-white text-sm">
+                                                                                                                {balasan.user.name
+                                                                                                                    .charAt(
+                                                                                                                        0
+                                                                                                                    )
+                                                                                                                    .toUpperCase()}
+                                                                                                            </AvatarFallback>
+                                                                                                        </Avatar>
+                                                                                                        <div className="flex-1">
+                                                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                                                <p className="font-semibold text-gray-900 text-sm">
+                                                                                                                    {
+                                                                                                                        balasan
+                                                                                                                            .user
+                                                                                                                            .name
+                                                                                                                    }
+                                                                                                                </p>
+                                                                                                                <Badge
+                                                                                                                    variant="secondary"
+                                                                                                                    className="bg-maroon text-white text-xs"
+                                                                                                                >
+                                                                                                                    {
+                                                                                                                        balasan
+                                                                                                                            .user
+                                                                                                                            .role
+                                                                                                                    }
+                                                                                                                </Badge>
+                                                                                                            </div>
+                                                                                                            <p className="text-gray-700 text-sm leading-relaxed">
+                                                                                                                {
+                                                                                                                    balasan.body
+                                                                                                                }
+                                                                                                            </p>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </CardContent>
+                                                                                            </Card>
+                                                                                        )
+                                                                                    )}
+                                                                            </div>
                                                                         ) : (
-                                                                            <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
-                                                                                <img
-                                                                                    src="/nodata.svg"
-                                                                                    className="object-cover size-32"
-                                                                                    alt=""
-                                                                                />
-                                                                                <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
+                                                                            <div className="text-center py-8">
+                                                                                <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                                                                <p className="text-gray-500">
                                                                                     Belum
                                                                                     ada
-                                                                                    jawaban.
-                                                                                </span>
+                                                                                    balasan
+                                                                                    untuk
+                                                                                    diskusi
+                                                                                    ini
+                                                                                </p>
                                                                             </div>
                                                                         )}
-                                                                    </DialogDescription>
-                                                                </DialogHeader>
-                                                            </DialogContent>
-                                                        </Dialog>
+                                                                    </ScrollArea>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div>
+                                                </CardContent>
+                                            </Card>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
-                                        <img
-                                            src="/nodata.svg"
-                                            className="object-cover size-32"
-                                            alt=""
-                                        />
-                                        <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
-                                            Belum ada diskusi...
-                                        </span>
-                                    </div>
+                                    <Card className="shadow-lg">
+                                        <CardContent className="text-center py-16">
+                                            <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                                Belum Ada Diskusi
+                                            </h3>
+                                            <p className="text-gray-600 mb-6">
+                                                Jadilah yang pertama memulai
+                                                diskusi di kursus ini
+                                            </p>
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button className="bg-gradient-to-r from-maroon to-red-600">
+                                                        <Plus className="w-4 h-4 mr-2" />
+                                                        Mulai Diskusi
+                                                    </Button>
+                                                </DialogTrigger>
+                                            </Dialog>
+                                        </CardContent>
+                                    </Card>
                                 )}
                             </TabsContent>
+
                             <TabsContent value="mentor">
-                                <div className="p-5 mt-10 space-y-5 bg-white rounded-2xl">
-                                    <div className="flex flex-col items-center justify-center gap-5 md:justify-start md:items-start md:flex-row">
-                                        {kelas.user.image ? (
-                                            <img
-                                                src={`/storage/${kelas.user.image}`}
-                                                alt="User Avatar"
-                                                className="object-cover w-16 h-16 rounded-full"
-                                            />
-                                        ) : (
-                                            <img
-                                                src="/default-avatar.svg"
-                                                className="object-cover w-20 h-20 rounded-full"
-                                                alt="Laki-laki Avatar"
-                                            />
-                                        )}
-                                        <div className="flex flex-col">
-                                            <h1 className="text-xl font-bold text-black lg:text-2xl">
-                                                {kelas.user.name}
-                                            </h1>
-                                            <div className="flex flex-col mt-3">
-                                                <div className="flex items-center gap-2">
-                                                    <img
-                                                        src="/icon-mentor/23.svg"
-                                                        alt=""
-                                                        className="w-5 h-5"
+                                <Card className="shadow-lg">
+                                    <CardContent className="p-8">
+                                        <div className="flex flex-col md:flex-row gap-8">
+                                            <div className="flex-shrink-0">
+                                                <Avatar className="h-24 w-24">
+                                                    <AvatarImage
+                                                        src={
+                                                            kelas.user.image
+                                                                ? `/storage/${kelas.user.image}`
+                                                                : undefined
+                                                        }
                                                     />
-                                                    <span className="text-base font-medium text-black">
-                                                        {averageRating} Rating
-                                                        Mentor
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <img
-                                                        src="/icon-mentor/24.svg"
-                                                        alt=""
-                                                        className="w-5 h-5"
-                                                    />
-                                                    <span className="text-base font-medium text-black">
-                                                        {totalulasan} Ulasan
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <img
-                                                        src="/icon-mentor/25.svg"
-                                                        alt=""
-                                                        className="w-5 h-5"
-                                                    />
-                                                    <span className="text-base font-medium text-black">
-                                                        {totalsiswa} Siswa
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <img
-                                                        src="/icon-mentor/26.svg"
-                                                        alt=""
-                                                        className="w-5 h-5"
-                                                    />
-                                                    <span className="text-base font-medium text-black">
-                                                        {totalkelasmentor} Kusus
-                                                    </span>
-                                                </div>
+                                                    <AvatarFallback className="bg-maroon text-white text-2xl">
+                                                        {kelas.user.name
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </AvatarFallback>
+                                                </Avatar>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <p
-                                        className="hidden text-sm leading-relaxed text-gray-500 md:block "
-                                        dangerouslySetInnerHTML={{
-                                            __html: kelas.user.bio,
-                                        }}
-                                    />
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="ulasan">
-                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                    {testimoni.length > 0 ? (
-                                        testimoni.map((testimoni, index) => (
-                                            <div
-                                                className="p-5 bg-white rounded-2xl"
-                                                key={index}
-                                            >
-                                                <div className="flex items-center space-x-3">
-                                                    {testimoni.user.image !=
-                                                    null ? (
-                                                        <img
-                                                            src={`/storage/${testimoni.user.image}`}
-                                                            className="object-cover w-16 h-16 rounded-full"
-                                                            alt=""
-                                                        />
-                                                    ) : (
-                                                        <img
-                                                            src="/default-avatar.svg"
-                                                            className="object-cover w-16 h-16 rounded-full"
-                                                            alt=""
-                                                        />
-                                                    )}
-                                                    <div className="flex flex-col mt-2 gap-y-1">
-                                                        <h1 className="text-lg font-semibold text-black line-clamp-2">
-                                                            {
-                                                                testimoni.user
-                                                                    .name
-                                                            }
-                                                        </h1>
-                                                        <span className="text-sm text-gray-500 underline">
-                                                            Student
-                                                        </span>
+
+                                            <div className="flex-1">
+                                                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                                                    {kelas.user.name}
+                                                </h2>
+
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                                    <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-xl text-center">
+                                                        <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+                                                        <p className="text-2xl font-bold text-yellow-700">
+                                                            {averageRating}
+                                                        </p>
+                                                        <p className="text-sm text-yellow-600">
+                                                            Rating
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl text-center">
+                                                        <MessageCircle className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                                                        <p className="text-2xl font-bold text-blue-700">
+                                                            {totalulasan}
+                                                        </p>
+                                                        <p className="text-sm text-blue-600">
+                                                            Ulasan
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl text-center">
+                                                        <Users className="w-6 h-6 text-green-500 mx-auto mb-2" />
+                                                        <p className="text-2xl font-bold text-green-700">
+                                                            {totalsiswa}
+                                                        </p>
+                                                        <p className="text-sm text-green-600">
+                                                            Siswa
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl text-center">
+                                                        <BookOpen className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                                                        <p className="text-2xl font-bold text-purple-700">
+                                                            {totalkelasmentor}
+                                                        </p>
+                                                        <p className="text-sm text-purple-600">
+                                                            Kursus
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <p className="mt-5 text-base text-black">
-                                                    {testimoni.body}
-                                                </p>
-                                                <div className="flex items-center justify-start mt-10 bg-white">
-                                                    {Array.from(
-                                                        { length: 5 },
-                                                        (_, index) => (
-                                                            <svg
-                                                                key={index}
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                viewBox="0 0 576 512"
-                                                                fill="currentColor"
-                                                                className={`w-5 h-5 ${
-                                                                    Number(
-                                                                        testimoni.rating
-                                                                    ) > index
-                                                                        ? "text-yellow-400"
-                                                                        : "text-gray-300"
-                                                                }`}
-                                                            >
-                                                                <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                            </svg>
-                                                        )
-                                                    )}
-                                                </div>
+
+                                                {kelas.user.bio && (
+                                                    <div className="prose prose-gray max-w-none">
+                                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                                                            Tentang Mentor
+                                                        </h3>
+                                                        <div
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: kelas
+                                                                    .user.bio,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
-                                            <img
-                                                src="/nodata.svg"
-                                                className="object-cover size-32"
-                                                alt=""
-                                            />
-                                            <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
-                                                Belum ada review...
-                                            </span>
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            <TabsContent value="ulasan">
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-2xl font-bold text-gray-900">
+                                                Ulasan Siswa
+                                            </h3>
+                                            <p className="text-gray-600 mt-1">
+                                                Apa kata siswa tentang kursus
+                                                ini
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="flex items-center justify-end gap-2 mb-1">
+                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                <span className="text-2xl font-bold text-gray-900">
+                                                    {averageRating}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-600">
+                                                {totalulasan} ulasan
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {testimoni.length > 0 ? (
+                                        <div className="grid gap-6 md:grid-cols-2">
+                                            {testimoni.map((review, index) => (
+                                                <Card
+                                                    key={index}
+                                                    className="shadow-lg hover:shadow-xl transition-shadow"
+                                                >
+                                                    <CardContent className="p-6">
+                                                        <div className="flex items-start space-x-4 mb-4">
+                                                            <Avatar className="h-12 w-12">
+                                                                <AvatarImage
+                                                                    src={
+                                                                        review
+                                                                            .user
+                                                                            .image
+                                                                            ? `/storage/${review.user.image}`
+                                                                            : undefined
+                                                                    }
+                                                                />
+                                                                <AvatarFallback className="bg-maroon text-white">
+                                                                    {review.user.name
+                                                                        .charAt(
+                                                                            0
+                                                                        )
+                                                                        .toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1">
+                                                                <h4 className="font-semibold text-gray-900">
+                                                                    {
+                                                                        review
+                                                                            .user
+                                                                            .name
+                                                                    }
+                                                                </h4>
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="mt-1"
+                                                                >
+                                                                    Siswa
+                                                                </Badge>
+                                                                <div className="flex items-center mt-2">
+                                                                    {Array.from(
+                                                                        {
+                                                                            length: 5,
+                                                                        },
+                                                                        (
+                                                                            _,
+                                                                            starIndex
+                                                                        ) => (
+                                                                            <Star
+                                                                                key={
+                                                                                    starIndex
+                                                                                }
+                                                                                className={`w-4 h-4 ${
+                                                                                    Number(
+                                                                                        review.rating
+                                                                                    ) >
+                                                                                    starIndex
+                                                                                        ? "text-yellow-400 fill-yellow-400"
+                                                                                        : "text-gray-300"
+                                                                                }`}
+                                                                            />
+                                                                        )
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-gray-700 leading-relaxed">
+                                                            {review.body}
+                                                        </p>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <Card className="shadow-lg">
+                                            <CardContent className="text-center py-16">
+                                                <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                                    Belum Ada Ulasan
+                                                </h3>
+                                                <p className="text-gray-600 mb-6">
+                                                    Jadilah yang pertama
+                                                    memberikan ulasan untuk
+                                                    kursus ini
+                                                </p>
+                                                <Dialog
+                                                    open={isDialogOpen}
+                                                    onOpenChange={
+                                                        setIsDialogOpen
+                                                    }
+                                                >
+                                                    <DialogTrigger asChild>
+                                                        <Button className="bg-gradient-to-r from-maroon to-red-600">
+                                                            <Star className="w-4 h-4 mr-2" />
+                                                            Tulis Ulasan
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                </Dialog>
+                                            </CardContent>
+                                        </Card>
                                     )}
                                 </div>
                             </TabsContent>
                         </Tabs>
                     </div>
                 </div>
-            </section>
+            </div>
         </>
     );
 }

@@ -49,7 +49,7 @@ class ListSertifikatResource extends Resource
             ->columns([
                 TextColumn::make("No")->rowIndex(),
                 TextColumn::make('user.name')->label('Nama')->searchable(),
-                TextColumn::make('kelas.title')->label('Kursus'),
+                TextColumn::make('kelas.title')->label('Kursus')->wrap(),
                 TextColumn::make('no_sertifikat')->label('Nomor Sertifikat')->formatStateUsing(function ($state) {
                     $tahun = date("Y");
                     return "AC-999862$state-$tahun";

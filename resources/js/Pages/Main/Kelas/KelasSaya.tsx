@@ -13,7 +13,12 @@ import { UserType } from "@/types/user";
 import { VideoType } from "@/types/video";
 import { VideoReaderType } from "@/types/video_reader";
 import { Link } from "@inertiajs/react";
-import { CheckCircleIcon } from "lucide-react";
+import {
+    CheckCircleIcon,
+    SearchIcon,
+    StarIcon,
+    TrendingUpIcon,
+} from "lucide-react";
 import React, { useState } from "react";
 
 interface Props {
@@ -22,6 +27,7 @@ interface Props {
     progress: number;
     videoread: VideoType[];
 }
+
 export default function KelasSaya({ auth, kelas, progress, videoread }: Props) {
     const [search, setSearch] = useState<string>("");
     const filteredKelas = kelas.filter((kel) => {
@@ -30,194 +36,205 @@ export default function KelasSaya({ auth, kelas, progress, videoread }: Props) {
             .includes(search.toLowerCase());
         return matchesSearch;
     });
+
     return (
         <MainLayout>
             <section className="container py-10 mt-16 lg:mt-22">
-                <div className="flex flex-col items-start justify-start gap-5 lg:flex-row">
+                <div className="flex flex-col items-start justify-start gap-8 lg:flex-row">
                     <SideBar />
                     <div className="w-full lg:w-[75%]">
-                        <Input
-                            type="text"
-                            placeholder="Cari Kelas"
-                            value={search}
-                            className="max-w-md mb-10 rounded-2xl"
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                        <div className="mb-8">
+                            <h1 className="mb-2 text-3xl font-bold text-gray-900">
+                                Kelas Saya
+                            </h1>
+                            <p className="text-gray-600">
+                                Lanjutkan pembelajaran dan capai tujuan Anda
+                            </p>
+                        </div>
+
+                        <div className="relative mb-8">
+                            <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <Input
+                                type="text"
+                                placeholder="Cari kelas yang sedang dipelajari..."
+                                value={search}
+                                className="pl-12 pr-4 py-3 max-w-md rounded-xl border-gray-200 focus:border-maroon focus:ring-maroon shadow-sm"
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+
                         {filteredKelas.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-5 min-h-min lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
                                 {filteredKelas.map((kel) => (
                                     <div
                                         key={kel.id}
-                                        className="flex flex-col overflow-hidden bg-white rounded-2xl"
+                                        className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden"
                                     >
                                         <Link
                                             href={route(
                                                 "dashboard.belajar",
                                                 kel.slug
                                             )}
-                                            className="relative"
+                                            className="block"
                                         >
-                                            <span className="absolute px-5 z-[9] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
-                                                {kel.category.name}
-                                            </span>
+                                            <div className="relative overflow-hidden">
+                                                <div className="absolute top-3 right-3 z-10">
+                                                    <Badge className="bg-maroon/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1">
+                                                        {kel.category.name}
+                                                    </Badge>
+                                                </div>
 
-                                            <img
-                                                alt=""
-                                                src={`/storage/${kel.image}`}
-                                                className="object-cover w-full transition-all duration-300 h-60 rounded-t-2xl hover:scale-110"
-                                            />
+                                                <img
+                                                    alt={kel.title}
+                                                    src={`/storage/${kel.image}`}
+                                                    className="object-cover w-full h-48 transition-transform duration-300 group-hover:scale-105"
+                                                />
 
-                                            <div className="p-4 space-y-3 sm:p-6">
-                                                <h3 className="mb-5 text-xl font-bold text-black line-clamp-2">
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                            </div>
+
+                                            <div className="p-5">
+                                                <h3 className="mb-3 text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-maroon transition-colors duration-200">
                                                     {kel.title}
                                                 </h3>
-                                                <div className="flex items-center mb-5">
+
+                                                <div className="flex items-center mb-4">
                                                     {kel.user.image ? (
                                                         <img
                                                             src={`/storage/${kel.user.image}`}
-                                                            alt=""
-                                                            className="w-12 h-12 rounded-full"
+                                                            alt={kel.user.name}
+                                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
                                                         />
                                                     ) : (
                                                         <img
                                                             src="/default-avatar.svg"
-                                                            alt=""
-                                                            className="w-12 h-12 rounded-full"
+                                                            alt={kel.user.name}
+                                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
                                                         />
                                                     )}
-                                                    <div className="flex flex-col ml-3">
-                                                        <span className="text-base font-medium">
+                                                    <div className="ml-3">
+                                                        <p className="text-sm font-medium text-gray-900">
                                                             {kel.user.name}
-                                                        </span>
-                                                        <span className="text-sm text-gray-400">
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 capitalize">
                                                             {kel.user.role}
-                                                        </span>
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="pt-5 mb-10">
-                                                    <span
-                                                        id="ProgressLabel"
-                                                        className="sr-only"
-                                                    >
-                                                        Loading
-                                                    </span>
-                                                    <span
-                                                        role="progressbar"
-                                                        aria-labelledby="ProgressLabel"
-                                                        aria-valuenow={
-                                                            kel.progress
-                                                        }
-                                                        aria-valuemax={100}
-                                                        className="relative block bg-gray-200 rounded-full"
-                                                    >
-                                                        <span className="absolute inset-0 flex items-center justify-center text-base">
-                                                            <span className="font-semibold text-white">
-                                                                {kel.progress}%
-                                                            </span>
+
+                                                <div className="mb-4">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                            Progress
                                                         </span>
-                                                        <span
-                                                            className="block h-5 text-center rounded-full bg-maroon"
+                                                        <span className="text-sm font-semibold text-maroon">
+                                                            {kel.progress}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                                        <div
+                                                            className="bg-gradient-to-r from-maroon to-red-600 h-2.5 rounded-full transition-all duration-500 ease-out"
                                                             style={{
                                                                 width: `${kel.progress}%`,
                                                             }}
                                                         />
-                                                    </span>
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between pt-3">
-                                                    <div className="flex items-center">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center space-x-1">
                                                         {Array.from(
-                                                            {
-                                                                length: 5,
-                                                            },
+                                                            { length: 5 },
                                                             (_, index) => (
-                                                                <svg
+                                                                <StarIcon
                                                                     key={index}
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    viewBox="0 0 576 512"
-                                                                    fill="currentColor"
-                                                                    className={`w-5 h-5 ${
+                                                                    className={`w-4 h-4 ${
                                                                         Number(
                                                                             kel.average_rating
                                                                         ) >
                                                                         index
-                                                                            ? "text-yellow-400"
+                                                                            ? "text-yellow-400 fill-current"
                                                                             : "text-gray-300"
                                                                     }`}
-                                                                >
-                                                                    <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                                </svg>
+                                                                />
                                                             )
                                                         )}
-                                                        <span className="ml-2 font-semibold text-black">
+                                                        <span className="ml-2 text-sm font-medium text-gray-700">
                                                             (
                                                             {Number(
                                                                 kel.average_rating
-                                                            )}
+                                                            ).toFixed(1)}
                                                             )
                                                         </span>
                                                     </div>
 
-                                                    <div>
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger>
-                                                                    <img
-                                                                        src={`/storage/${kel.level.image}`}
-                                                                        alt=""
-                                                                        className="object-cover w-8 h-8 rounded-full"
-                                                                    />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <p>
-                                                                        {
-                                                                            kel
-                                                                                .level
-                                                                                .name
-                                                                        }
-                                                                    </p>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </div>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                <img
+                                                                    src={`/storage/${kel.level.image}`}
+                                                                    alt={
+                                                                        kel
+                                                                            .level
+                                                                            .name
+                                                                    }
+                                                                    className="w-7 h-7 rounded-full object-cover ring-2 ring-gray-100"
+                                                                />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p className="text-xs">
+                                                                    {
+                                                                        kel
+                                                                            .level
+                                                                            .name
+                                                                    }
+                                                                </p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </div>
-                                                <div className="flex items-center gap-2 ">
+
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     {kel.total_transaksi >
                                                         0 && (
-                                                        <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
-                                                            {kel.total_transaksi >
-                                                            0
-                                                                ? "Terlaris"
-                                                                : ""}
+                                                        <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1 hover:scale-105 transition-transform duration-200">
+                                                            <TrendingUpIcon className="w-3 h-3 mr-1" />
+                                                            Terlaris
                                                         </Badge>
                                                     )}
-                                                    {kel.type.name ===
-                                                    "Premium" ? (
-                                                        <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
-                                                            {kel.type.name}
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
-                                                            {kel.type.name}
-                                                        </Badge>
-                                                    )}
+                                                    <Badge
+                                                        className={`text-xs px-2 py-1 hover:scale-105 transition-transform duration-200 ${
+                                                            kel.type.name ===
+                                                            "Premium"
+                                                                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
+                                                                : "bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                                                        }`}
+                                                    >
+                                                        {kel.type.name}
+                                                    </Badge>
                                                 </div>
                                             </div>
                                         </Link>
-                                        {/* Rating di bawah */}
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center w-full col-span-2 p-5 bg-white gap-y-10 h-min rounded-2xl">
-                                <img
-                                    src="/nodata.svg"
-                                    className="object-cover"
-                                    alt=""
-                                />
-                                <span className="text-base font-bold text-black transition-all duration-200 md:text-xl hover:text-biru">
+                            <div className="flex flex-col items-center justify-center w-full p-12 bg-white rounded-2xl shadow-sm border border-gray-100">
+                                <div className="mb-6">
+                                    <img
+                                        src="/nodata.svg"
+                                        className="w-32 h-32 object-cover opacity-60"
+                                        alt="No data"
+                                    />
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                                     Kelas Tidak Ditemukan
-                                </span>
+                                </h3>
+                                <p className="text-gray-500 text-center max-w-md">
+                                    Tidak ada kelas yang sesuai dengan pencarian
+                                    "{search}". Coba kata kunci lain atau hapus
+                                    filter pencarian.
+                                </p>
                             </div>
                         )}
                     </div>

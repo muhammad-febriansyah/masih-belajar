@@ -19,13 +19,14 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Check, CheckCircle, LockIcon, Star } from "lucide-react";
+import { Check, CheckCircle, Eye, LockIcon, Star } from "lucide-react";
 import PulsatingButton from "@/components/ui/pulsating-button";
 import { route } from "ziggy-js";
 import MainLayout from "@/Layouts/MainLayout";
 import { Badge } from "@/components/ui/badge";
 import { Inertia } from "@inertiajs/inertia";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Props {
     kelas: Datum;
@@ -366,7 +367,60 @@ export default function Detail({
                                                                                             }
                                                                                         </DialogTitle>
                                                                                         <DialogDescription>
-                                                                                            <iframe
+                                                                                            {filteredVideo?.type ===
+                                                                                                "youtube" &&
+                                                                                                filteredVideo
+                                                                                                    ?.url
+                                                                                                    ?.embed_url && (
+                                                                                                    <iframe
+                                                                                                        width="100%"
+                                                                                                        height="400px"
+                                                                                                        className="rounded-lg"
+                                                                                                        src={
+                                                                                                            filteredVideo
+                                                                                                                .url
+                                                                                                                .embed_url
+                                                                                                        }
+                                                                                                        title="YouTube video player"
+                                                                                                        frameBorder="0"
+                                                                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                                                                        referrerPolicy="strict-origin-when-cross-origin"
+                                                                                                        allowFullScreen
+                                                                                                    ></iframe>
+                                                                                                )}
+
+                                                                                            {filteredVideo?.type ===
+                                                                                                "google_drive" &&
+                                                                                                filteredVideo?.url_drive && (
+                                                                                                    <div className="text-center mt-4">
+                                                                                                        <a
+                                                                                                            href={
+                                                                                                                filteredVideo.url_drive
+                                                                                                            }
+                                                                                                            target="_blank"
+                                                                                                            rel="noopener noreferrer"
+                                                                                                        >
+                                                                                                            <Button className="bg-maroon text-white">
+                                                                                                                <Eye className="w-7 h-7 inline" />{" "}
+                                                                                                                Lihat
+                                                                                                                Link
+                                                                                                            </Button>
+                                                                                                        </a>
+                                                                                                    </div>
+                                                                                                )}
+
+                                                                                            {filteredVideo?.type ===
+                                                                                                "file" &&
+                                                                                                filteredVideo?.file && (
+                                                                                                    <iframe
+                                                                                                        width="100%"
+                                                                                                        height="700px"
+                                                                                                        className="rounded-lg"
+                                                                                                        src={`/storage/${filteredVideo.file}`}
+                                                                                                        title="PDF preview"
+                                                                                                    ></iframe>
+                                                                                                )}
+                                                                                            {/* <iframe
                                                                                                 width="100%"
                                                                                                 height="400px"
                                                                                                 className="rounded-lg"
@@ -380,7 +434,7 @@ export default function Detail({
                                                                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                                                                                 referrerPolicy="strict-origin-when-cross-origin"
                                                                                                 allowFullScreen
-                                                                                            ></iframe>
+                                                                                            ></iframe> */}
                                                                                         </DialogDescription>
                                                                                     </DialogHeader>
                                                                                 </DialogContent>

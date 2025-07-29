@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('invoice_number');
             $table->string('payment_method');
             $table->string('amount');
+            $table->integer('fee_trx')->default(0)->after('amount');
             $table->string('status');
             $table->string('image')->nullable();
             $table->timestamps();

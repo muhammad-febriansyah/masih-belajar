@@ -45,6 +45,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'expired_otp' => 'datetime',
     ];
 
     public function canAccessPanel(Panel $panel): bool
@@ -92,5 +93,15 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function BalasDiskusi()
     {
         return $this->hasMany(BalasDiskusi::class);
+    }
+
+    public function UserProgress()
+    {
+        return $this->hasMany(UserProgress::class);
+    }
+
+    public function event()
+    {
+        return $this->hasMany(Event::class);
     }
 }

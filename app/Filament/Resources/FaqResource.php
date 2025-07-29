@@ -43,7 +43,8 @@ class FaqResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('No')->rowIndex(),
-                TextColumn::make('question')->label('Pertanyaan')->searchable()->sortable(),
+                TextColumn::make('question')->label('Pertanyaan')->searchable()->sortable()->wrap(),
+                TextColumn::make('answer')->label('Jawaban')->searchable()->sortable()->wrap()->html(),
             ])
             ->filters([
                 //

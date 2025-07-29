@@ -44,7 +44,7 @@ class MentorPanelProvider extends PanelProvider
             ->brandLogoHeight('10rem')
             ->font('Poppins', provider: GoogleFontProvider::class)
             ->colors([
-                'primary' => '#207A36',
+                'primary' => '#013376',
             ])
             ->discoverResources(in: app_path('Filament/Mentor/Resources'), for: 'App\\Filament\\Mentor\\Resources')
             ->discoverPages(in: app_path('Filament/Mentor/Pages'), for: 'App\\Filament\\Mentor\\Pages')

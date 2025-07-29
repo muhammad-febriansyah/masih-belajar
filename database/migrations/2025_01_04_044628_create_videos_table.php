@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('title');
             $table->string('url');
             $table->string('duration');
+            $table->string('type')->nullable()->after('title');
+            $table->text('description')->nullable()->after('type');
+            $table->string('file')->nullable()->after('url');
             $table->timestamps();
         });
     }

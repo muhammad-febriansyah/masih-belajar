@@ -67,4 +67,9 @@ class Kelas extends Model
     {
         return $this->hasMany(UserAnswer::class);
     }
+
+    public function UserProgress()
+    {
+        return $this->hasMany(UserProgress::class);
+    }
 }

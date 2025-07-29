@@ -55,7 +55,7 @@ class DiskusiResource extends Resource
                 TextColumn::make('No')->rowIndex(),
                 ImageColumn::make('image')->width('120px')->height('120px')->label('Foto'),
                 TextColumn::make('user.name')->label('Nama')->searchable(),
-                TextColumn::make('title')->label('Judul')->searchable(),
+                TextColumn::make('title')->label('Judul')->searchable()->wrap(),
             ])
             ->filters([
                 //

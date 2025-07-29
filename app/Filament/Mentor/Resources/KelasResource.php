@@ -12,6 +12,7 @@ use App\Models\Type;
 use Awcodes\Matinee\Matinee;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
@@ -20,6 +21,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Support\RawJs;
@@ -33,6 +35,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class KelasResource extends Resource
 {
@@ -127,12 +130,82 @@ class KelasResource extends Resource
                                         ->schema([
                                             TextInput::make('title')->label('Judul')->placeholder('Judul Video')->required()->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1])->live(onBlur: true),
                                             TextInput::make('duration')->label('Durasi')->placeholder('Durasi Video')->required(),
-                                            Matinee::make('url')
+
+                                            // Pilihan kategori video
+                                            Select::make('type')
+                                                ->label('Tipe Konten')
+                                                ->options([
+                                                    'youtube' => 'Link YouTube',
+                                                    'file' => 'Upload File',
+                                                    'google_drive' => 'Upload Link',
+                                                ])
                                                 ->required()
-                                                ->label('Url Video')
-                                                ->showPreview()->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1]),
+                                                ->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1])
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, $set) {
+                                                    $set('url', null);
+                                                }),
+
+                                            // Conditional fields berdasarkan type
+                                            Group::make([
+                                                // Link YouTube
+                                                Matinee::make('url')
+                                                    ->required()
+                                                    ->label('Link YouTube')
+                                                    ->showPreview()
+                                                    ->visible(fn(Get $get): bool => $get('type') === 'youtube'),
+                                                FileUpload::make('file')
+                                                    ->disk('public')
+                                                    ->directory('course-materials')
+                                                    ->label('Upload File')
+                                                    ->acceptedFileTypes(['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'])
+                                                    ->maxSize(10240) // 10MB
+                                                    ->required()
+                                                    ->visible(fn(Get $get): bool => $get('type') === 'file')
+                                                    ->deleteUploadedFileUsing(function ($record, $file) {
+                                                        if (isset($record->file)) {
+                                                            if ($record->file == $file) {
+                                                                if (File::exists(public_path('storage\\' . $record->file))) {
+                                                                    File::delete(public_path('storage\\' . $record->file));
+                                                                }
+                                                            }
+                                                        }
+                                                    }),
+
+                                                TextInput::make('url_drive')
+                                                    ->label('Upload Link')
+                                                    ->placeholder('Masukkan link upload')
+                                                    ->url()
+                                                    ->required()
+                                                    ->visible(fn(Get $get): bool => in_array($get('type'), ['google_drive'])),
+                                            ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1]),
+
+                                            // Additional fields for PDF/PPT
+                                            Group::make([
+                                                Textarea::make('description')
+                                                    ->label('Deskripsi Materi')
+                                                    ->placeholder('Deskripsi singkat tentang materi...')
+                                                    ->rows(2)
+                                                    ->visible(fn(Get $get): bool => in_array($get('type'), ['file', 'google_drive'])),
+                                            ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1]),
+
                                         ])
-                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->itemLabel(fn(array $state): ?string => $state['title'] ?? null)
+                                        ->columns(['lg' => 3, 'md' => 3, 'sm' => 1])
+                                        ->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])
+                                        ->itemLabel(fn(array $state): ?string => $state['title'] ?? null)
+                                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                                            if ($data['type'] === 'pdf' && is_array($data['url'])) {
+                                                $data['url'] = $data['url'][0] ?? null;
+                                            }
+                                            return $data;
+                                        })
+                                        ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                                            // Jika type adalah PDF, simpan path file
+                                            if ($data['type'] === 'pdf' && is_array($data['url'])) {
+                                                $data['url'] = $data['url'][0] ?? null;
+                                            }
+                                            return $data;
+                                        })
                                 ])->columnSpan(['lg' => 3, 'md' => 1, 'sm' => 1])->columns(['lg' => 3, 'md' => 1, 'sm' => 1])->itemLabel(fn(array $state): ?string => $state['title'] ?? null)->collapsed(),
                         ]),
                     Wizard\Step::make('Quiz')
@@ -153,13 +226,12 @@ class KelasResource extends Resource
                 ])->skippable()
             ])->columns(1);
     }
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
                 TextColumn::make('No')->rowIndex(),
-                TextColumn::make('title')->label('Judul')->searchable()->sortable(),
+                TextColumn::make('title')->label('Judul')->searchable()->sortable()->wrap(),
                 TextColumn::make('user.name')->label('Mentor')->sortable(),
                 TextColumn::make('status')
                     ->label('Status')

@@ -13,6 +13,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\RawJs;
 use Illuminate\Support\Facades\File;
 
 class SettingWebsite extends Page implements HasForms
@@ -51,6 +52,9 @@ class SettingWebsite extends Page implements HasForms
                         TextInput::make('fb')->label('URL Facebook')->url(),
                         TextInput::make('yt')->label('URL Youtube')->url(),
                         TextInput::make('heading')->label('Heading')->columnSpan(['lg' => 2]),
+                        TextInput::make('fee')->required()->placeholder('Fee Kelas')->prefix('Rp')->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(',')
+                            ->numeric()->columnSpan(['lg' => 2]),
                         Textarea::make('description')->label('Deskripsi')->columnSpan(['lg' => 2]),
                         FileUpload::make('logo')->label('Logo Website')->disk('public')
                             ->directory('image-upload-server')
@@ -93,6 +97,20 @@ class SettingWebsite extends Page implements HasForms
                                     if ($record->thumbnail == $file) {
                                         if (File::exists(public_path('storage\\' . $record->thumbnail))) {
                                             File::delete(public_path('storage\\' . $record->thumbnail));
+                                        }
+                                    }
+                                }
+                            })->columnSpan(['lg' => 2]),
+                        FileUpload::make('background')->label('Background Website')->disk('public')
+                            ->directory('image-upload-server')
+                            ->maxSize(6072)
+                            ->image()
+                            ->deletable(true)
+                            ->deleteUploadedFileUsing(function ($record, $file) {
+                                if (isset($record->background)) {
+                                    if ($record->background == $file) {
+                                        if (File::exists(public_path('storage\\' . $record->background))) {
+                                            File::delete(public_path('storage\\' . $record->background));
                                         }
                                     }
                                 }
@@ -140,6 +158,13 @@ class SettingWebsite extends Page implements HasForms
             if (isset($data['thumbnail']) && $data['thumbnail'] && $data['thumbnail'] !== $q->thumbnail) {
                 // Delete old thumbnail if exists
                 $destination = public_path('storage\\' . $q->thumbnail);
+                if (File::exists($destination)) {
+                    File::delete($destination);
+                }
+            }
+            if (isset($data['background']) && $data['background'] && $data['background'] !== $q->background) {
+                // Delete old background if exists
+                $destination = public_path('storage\\' . $q->background);
                 if (File::exists($destination)) {
                     File::delete($destination);
                 }

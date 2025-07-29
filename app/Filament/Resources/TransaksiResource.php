@@ -84,9 +84,9 @@ class TransaksiResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('No')->rowIndex()->toggleable(),
-                TextColumn::make('invoice_number')->label('Order ID')->toggleable(),
+                TextColumn::make('invoice_number')->label('Order ID')->toggleable()->wrap(),
                 TextColumn::make('user.name')->label('Student')->searchable(),
-                TextColumn::make('kelas.title')->label('Kelas')->toggleable(),
+                TextColumn::make('kelas.title')->label('Kelas')->toggleable()->wrap(),
                 TextColumn::make('amount')->label('Total')->money('IDR')->toggleable()->summarize([
                     Tables\Columns\Summarizers\Sum::make()
                         ->money('IDR'),

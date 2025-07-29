@@ -60,7 +60,7 @@ class KelasTerjualResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('No')->rowIndex(),
-                TextColumn::make('kelas.title')->label('Kelas')->searchable()->sortable(),
+                TextColumn::make('kelas.title')->label('Kelas')->searchable()->sortable()->wrap(),
                 TextColumn::make('user.name')->label('Student')->sortable(),
                 TextColumn::make('amount')->label('Total')->money('IDR'),
                 TextColumn::make('status')->label('Status')->badge()->color(function (string $state): string {
