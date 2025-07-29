@@ -34,6 +34,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -143,15 +144,25 @@ class KelasResource extends Resource
                                                 ->columnSpan(['lg' => 2, 'md' => 1, 'sm' => 1])
                                                 ->live()
                                                 ->afterStateUpdated(function ($state, $set) {
-                                                    $set('url', null);
+                                                    // Reset field yang tidak diperlukan
+                                                    if ($state !== 'youtube') {
+                                                        $set('url', null);
+                                                    }
+                                                    if ($state !== 'file') {
+                                                        $set('file', null);
+                                                    }
+                                                    if ($state !== 'google_drive') {
+                                                        $set('url_drive', null);
+                                                    }
                                                 }),
-
                                             Group::make([
                                                 Matinee::make('url')
                                                     ->required()
                                                     ->label('Link YouTube')
                                                     ->showPreview()
+                                                    ->live()
                                                     ->visible(fn(Get $get): bool => $get('type') === 'youtube'),
+
                                                 FileUpload::make('file')
                                                     ->disk('public')
                                                     ->directory('course-materials')
