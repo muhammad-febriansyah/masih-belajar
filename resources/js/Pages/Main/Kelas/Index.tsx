@@ -43,7 +43,7 @@ export default function Index({
     setting,
 }: Props) {
     const [search, setSearch] = useState<string>("");
-    const [activeTab, setActiveTab] = useState("all"); // Tab default adalah "Semua"
+    const [activeTab, setActiveTab] = useState("all");
 
     const filteredKelas = kelas.data.filter((kel) => {
         const matchesSearch = kel.title
@@ -127,68 +127,75 @@ export default function Index({
                                     {filteredKelas.map((kel) => (
                                         <div
                                             key={kel.id}
-                                            className="overflow-hidden bg-white rounded-2xl flex flex-col min-h-[100px]"
+                                            className="group overflow-hidden bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col min-h-[100px] border border-gray-100"
                                         >
                                             <Link
                                                 href={route(
                                                     "dashboard.detailkelas",
                                                     kel.slug
                                                 )}
-                                                className="relative"
+                                                className="relative block"
                                             >
-                                                <span className="absolute px-5 z-[9] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
+                                                <span className="absolute px-4 z-[9] py-2 font-semibold text-xs tracking-wider text-white uppercase -right-px -top-px rounded-tr-3xl rounded-bl-2xl bg-gradient-to-r from-maroon to-red-600 shadow-lg">
                                                     {kel.category.name}
                                                 </span>
 
-                                                <img
-                                                    alt=""
-                                                    src={`/storage/${kel.image}`}
-                                                    className="object-cover w-full transition-all duration-300 h-60 rounded-t-2xl hover:scale-110"
-                                                />
+                                                <div className="relative overflow-hidden rounded-t-3xl">
+                                                    <img
+                                                        alt=""
+                                                        src={`/storage/${kel.image}`}
+                                                        className="object-cover w-full transition-all duration-500 h-48 group-hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                </div>
 
-                                                <div className="p-4 space-y-3 sm:p-6">
-                                                    <h3 className="mb-5 text-xl font-bold text-black line-clamp-2">
+                                                <div className="p-5 space-y-4">
+                                                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-maroon transition-colors duration-300">
                                                         {kel.title}
                                                     </h3>
-                                                    <div className="flex items-center">
-                                                        {kel.user.image ? (
-                                                            <img
-                                                                src={`/storage/${kel.user.image}`}
-                                                                alt=""
-                                                                className="w-12 h-12 rounded-full"
-                                                            />
-                                                        ) : (
-                                                            <img
-                                                                src="/default-avatar.svg"
-                                                                alt=""
-                                                                className="w-12 h-12 rounded-full"
-                                                            />
-                                                        )}
-                                                        <div className="flex flex-col ml-3">
-                                                            <span className="text-base font-medium">
+
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="relative">
+                                                            {kel.user.image ? (
+                                                                <img
+                                                                    src={`/storage/${kel.user.image}`}
+                                                                    alt=""
+                                                                    className="w-10 h-10 rounded-full border-2 border-gray-100"
+                                                                />
+                                                            ) : (
+                                                                <img
+                                                                    src="/default-avatar.svg"
+                                                                    alt=""
+                                                                    className="w-10 h-10 rounded-full border-2 border-gray-100"
+                                                                />
+                                                            )}
+                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-semibold text-gray-800">
                                                                 {kel.user.name}
                                                             </span>
-                                                            <span className="text-sm text-gray-400">
+                                                            <span className="text-xs text-gray-500">
                                                                 {kel.user.role}
                                                             </span>
                                                         </div>
                                                     </div>
+
                                                     {kel.type.name ===
-                                                    "Premium" ? (
-                                                        <div className="flex flex-row items-center pt-5 space-x-2">
+                                                        "Premium" && (
+                                                        <div className="flex items-center space-x-2 py-2">
                                                             {kel.discount >
                                                                 0 && (
-                                                                <span className="relative text-base font-medium text-red-600">
+                                                                <span className="text-sm font-medium text-gray-400 line-through">
                                                                     Rp.{" "}
                                                                     {Number(
                                                                         kel.price
                                                                     ).toLocaleString(
                                                                         "id-ID"
                                                                     )}
-                                                                    <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
                                                                 </span>
                                                             )}
-                                                            <span className="text-base font-medium text-black">
+                                                            <span className="text-xl font-bold text-maroon">
                                                                 Rp.{" "}
                                                                 {Number(
                                                                     kel.price -
@@ -197,95 +204,111 @@ export default function Index({
                                                                     "id-ID"
                                                                 )}
                                                             </span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex flex-row items-center pt-5 space-x-2">
-                                                            <span className="text-base font-medium text-black">
-                                                                Rp. 0
-                                                            </span>
+                                                            {kel.discount >
+                                                                0 && (
+                                                                <span className="px-2 py-1 text-xs font-semibold text-white bg-red-500 rounded-full">
+                                                                    -
+                                                                    {Math.round(
+                                                                        (kel.discount /
+                                                                            kel.price) *
+                                                                            100
+                                                                    )}
+                                                                    %
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     )}
-                                                    <div className="flex items-center justify-between pt-3">
-                                                        <div className="flex items-center">
-                                                            {Array.from(
-                                                                {
-                                                                    length: 5,
-                                                                },
-                                                                (_, index) => (
-                                                                    <svg
-                                                                        key={
-                                                                            index
-                                                                        }
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        viewBox="0 0 576 512"
-                                                                        fill="currentColor"
-                                                                        className={`w-5 h-5 ${
-                                                                            Number(
-                                                                                kel.average_rating
-                                                                            ) >
-                                                                            index
-                                                                                ? "text-yellow-400"
-                                                                                : "text-gray-300"
-                                                                        }`}
-                                                                    >
-                                                                        <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                                    </svg>
-                                                                )
-                                                            )}
-                                                            <span className="ml-2 font-semibold text-black">
+
+                                                    <div className="flex items-center justify-between py-2">
+                                                        <div className="flex items-center space-x-1">
+                                                            <div className="flex items-center">
+                                                                {Array.from(
+                                                                    {
+                                                                        length: 5,
+                                                                    },
+                                                                    (
+                                                                        _,
+                                                                        index
+                                                                    ) => (
+                                                                        <svg
+                                                                            key={
+                                                                                index
+                                                                            }
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            viewBox="0 0 20 20"
+                                                                            fill="currentColor"
+                                                                            className={`w-4 h-4 ${
+                                                                                Number(
+                                                                                    kel.average_rating
+                                                                                ) >
+                                                                                index
+                                                                                    ? "text-yellow-400"
+                                                                                    : "text-gray-200"
+                                                                            }`}
+                                                                        >
+                                                                            <path
+                                                                                fillRule="evenodd"
+                                                                                d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z"
+                                                                                clipRule="evenodd"
+                                                                            />
+                                                                        </svg>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                            <span className="text-sm font-medium text-gray-700">
                                                                 (
                                                                 {Number(
                                                                     kel.average_rating
-                                                                )}
+                                                                ).toFixed(1)}
                                                                 )
                                                             </span>
                                                         </div>
 
-                                                        <div>
-                                                            <TooltipProvider>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger>
+                                                                    <div className="relative">
                                                                         <img
                                                                             src={`/storage/${kel.level.image}`}
                                                                             alt=""
-                                                                            className="object-cover w-8 h-8 rounded-full"
+                                                                            className="object-cover w-8 h-8 rounded-full border-2 border-white shadow-sm"
                                                                         />
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>
-                                                                        <p>
-                                                                            {
-                                                                                kel
-                                                                                    .level
-                                                                                    .name
-                                                                            }
-                                                                        </p>
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            </TooltipProvider>
-                                                        </div>
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>
+                                                                        {
+                                                                            kel
+                                                                                .level
+                                                                                .name
+                                                                        }
+                                                                    </p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
                                                     </div>
-                                                    <div className="flex items-center gap-2 ">
+
+                                                    <div className="flex items-center gap-2 flex-wrap">
                                                         {kel.total_bergabung >
                                                         0 ? (
-                                                            <Badge className="transition-all duration-300 bg-green-600 hover:scale-110">
-                                                                <CheckCircleIcon className="w-4 h-4 mr-1" />{" "}
+                                                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200">
+                                                                <CheckCircleIcon className="w-3 h-3 mr-1" />
                                                                 Bergabung
                                                             </Badge>
                                                         ) : (
                                                             <>
                                                                 {kel.total_transaksi >
                                                                     0 && (
-                                                                    <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
-                                                                        {kel.total_transaksi >
-                                                                        0
-                                                                            ? "Terlaris"
-                                                                            : ""}
+                                                                    <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-rose-200">
+                                                                        🔥
+                                                                        Terlaris
                                                                     </Badge>
                                                                 )}
                                                                 {kel.type
                                                                     .name ===
                                                                 "Premium" ? (
-                                                                    <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
+                                                                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">
+                                                                        ⭐{" "}
                                                                         {
                                                                             kel
                                                                                 .type
@@ -293,7 +316,8 @@ export default function Index({
                                                                         }
                                                                     </Badge>
                                                                 ) : (
-                                                                    <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
+                                                                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200">
+                                                                        🆓{" "}
                                                                         {
                                                                             kel
                                                                                 .type
@@ -306,7 +330,6 @@ export default function Index({
                                                     </div>
                                                 </div>
                                             </Link>
-                                            {/* Rating di bawah */}
                                         </div>
                                     ))}
                                 </div>
@@ -324,7 +347,6 @@ export default function Index({
                             )}
                         </TabsContent>
 
-                        {/* Konten Tab: Untuk tab lainnya berdasarkan tipe */}
                         {tipekelas.map((tipe) => (
                             <TabsContent
                                 value={`type-${tipe.id}`}
@@ -335,51 +357,59 @@ export default function Index({
                                         {filteredKelas.map((kel) => (
                                             <div
                                                 key={kel.id}
-                                                className="overflow-hidden bg-white rounded-2xl flex flex-col min-h-[100px]"
+                                                className="group overflow-hidden bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col min-h-[100px] border border-gray-100"
                                             >
                                                 <Link
                                                     href={route(
                                                         "dashboard.detailkelas",
                                                         kel.slug
                                                     )}
-                                                    className="relative"
+                                                    className="relative block"
                                                 >
-                                                    <span className="absolute px-5 z-[9] py-2 font-medium tracking-widest text-white uppercase -right-px -top-px rounded-tr-2xl bg-maroon">
+                                                    <span className="absolute px-4 z-[9] py-2 font-semibold text-xs tracking-wider text-white uppercase -right-px -top-px rounded-tr-3xl rounded-bl-2xl bg-gradient-to-r from-maroon to-red-600 shadow-lg">
                                                         {kel.category.name}
                                                     </span>
 
-                                                    <img
-                                                        alt=""
-                                                        src={`/storage/${kel.image}`}
-                                                        className="object-cover w-full transition-all duration-300 h-60 rounded-t-2xl hover:scale-110"
-                                                    />
+                                                    <div className="relative overflow-hidden rounded-t-3xl">
+                                                        <img
+                                                            alt=""
+                                                            src={`/storage/${kel.image}`}
+                                                            className="object-cover w-full transition-all duration-500 h-48 group-hover:scale-105"
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                                    </div>
 
-                                                    <div className="p-4 space-y-3 sm:p-6">
-                                                        <h3 className="mb-5 text-xl font-bold text-black line-clamp-2">
+                                                    <div className="p-5 space-y-4">
+                                                        <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-maroon transition-colors duration-300">
                                                             {kel.title}
                                                         </h3>
-                                                        <div className="flex items-center">
-                                                            {kel.user.image ? (
-                                                                <img
-                                                                    src={`/storage/${kel.user.image}`}
-                                                                    alt=""
-                                                                    className="w-12 h-12 rounded-full"
-                                                                />
-                                                            ) : (
-                                                                <img
-                                                                    src="/default-avatar.svg"
-                                                                    alt=""
-                                                                    className="w-12 h-12 rounded-full"
-                                                                />
-                                                            )}
-                                                            <div className="flex flex-col ml-3">
-                                                                <span className="text-base font-medium">
+
+                                                        <div className="flex items-center space-x-3">
+                                                            <div className="relative">
+                                                                {kel.user
+                                                                    .image ? (
+                                                                    <img
+                                                                        src={`/storage/${kel.user.image}`}
+                                                                        alt=""
+                                                                        className="w-10 h-10 rounded-full border-2 border-gray-100"
+                                                                    />
+                                                                ) : (
+                                                                    <img
+                                                                        src="/default-avatar.svg"
+                                                                        alt=""
+                                                                        className="w-10 h-10 rounded-full border-2 border-gray-100"
+                                                                    />
+                                                                )}
+                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold text-gray-800">
                                                                     {
                                                                         kel.user
                                                                             .name
                                                                     }
                                                                 </span>
-                                                                <span className="text-sm text-gray-400">
+                                                                <span className="text-xs text-gray-500">
                                                                     {
                                                                         kel.user
                                                                             .role
@@ -387,22 +417,22 @@ export default function Index({
                                                                 </span>
                                                             </div>
                                                         </div>
+
                                                         {kel.type.name ===
-                                                        "Premium" ? (
-                                                            <div className="flex flex-row items-center pt-5 space-x-2">
+                                                            "Premium" && (
+                                                            <div className="flex items-center space-x-2 py-2">
                                                                 {kel.discount >
                                                                     0 && (
-                                                                    <span className="relative text-base font-medium text-red-600">
+                                                                    <span className="text-sm font-medium text-gray-400 line-through">
                                                                         Rp.{" "}
                                                                         {Number(
                                                                             kel.price
                                                                         ).toLocaleString(
                                                                             "id-ID"
                                                                         )}
-                                                                        <span className="absolute left-0 right-0 font-semibold border-b-2 border-red-700 bottom-2.5"></span>
                                                                     </span>
                                                                 )}
-                                                                <span className="text-base font-medium text-black">
+                                                                <span className="text-xl font-bold text-maroon">
                                                                     Rp.{" "}
                                                                     {Number(
                                                                         kel.price -
@@ -411,98 +441,113 @@ export default function Index({
                                                                         "id-ID"
                                                                     )}
                                                                 </span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex flex-row items-center pt-5 space-x-2">
-                                                                <span className="text-base font-medium text-black">
-                                                                    Rp. 0
-                                                                </span>
+                                                                {kel.discount >
+                                                                    0 && (
+                                                                    <span className="px-2 py-1 text-xs font-semibold text-white bg-red-500 rounded-full">
+                                                                        -
+                                                                        {Math.round(
+                                                                            (kel.discount /
+                                                                                kel.price) *
+                                                                                100
+                                                                        )}
+                                                                        %
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         )}
-                                                        <div className="flex items-center justify-between pt-3">
-                                                            <div className="flex items-center">
-                                                                {Array.from(
-                                                                    {
-                                                                        length: 5,
-                                                                    },
-                                                                    (
-                                                                        _,
-                                                                        index
-                                                                    ) => (
-                                                                        <svg
-                                                                            key={
-                                                                                index
-                                                                            }
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                            viewBox="0 0 576 512"
-                                                                            fill="currentColor"
-                                                                            className={`w-5 h-5 ${
-                                                                                Number(
-                                                                                    kel.average_rating
-                                                                                ) >
-                                                                                index
-                                                                                    ? "text-yellow-400"
-                                                                                    : "text-gray-300"
-                                                                            }`}
-                                                                        >
-                                                                            <path d="M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z" />
-                                                                        </svg>
-                                                                    )
-                                                                )}
-                                                                <span className="ml-2 font-semibold text-black">
+
+                                                        <div className="flex items-center justify-between py-2">
+                                                            <div className="flex items-center space-x-1">
+                                                                <div className="flex items-center">
+                                                                    {Array.from(
+                                                                        {
+                                                                            length: 5,
+                                                                        },
+                                                                        (
+                                                                            _,
+                                                                            index
+                                                                        ) => (
+                                                                            <svg
+                                                                                key={
+                                                                                    index
+                                                                                }
+                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                                viewBox="0 0 20 20"
+                                                                                fill="currentColor"
+                                                                                className={`w-4 h-4 ${
+                                                                                    Number(
+                                                                                        kel.average_rating
+                                                                                    ) >
+                                                                                    index
+                                                                                        ? "text-yellow-400"
+                                                                                        : "text-gray-200"
+                                                                                }`}
+                                                                            >
+                                                                                <path
+                                                                                    fillRule="evenodd"
+                                                                                    d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z"
+                                                                                    clipRule="evenodd"
+                                                                                />
+                                                                            </svg>
+                                                                        )
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-sm font-medium text-gray-700">
                                                                     (
                                                                     {Number(
                                                                         kel.average_rating
+                                                                    ).toFixed(
+                                                                        1
                                                                     )}
                                                                     )
                                                                 </span>
                                                             </div>
 
-                                                            <div>
-                                                                <TooltipProvider>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger>
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger>
+                                                                        <div className="relative">
                                                                             <img
                                                                                 src={`/storage/${kel.level.image}`}
                                                                                 alt=""
-                                                                                className="object-cover w-8 h-8 rounded-full"
+                                                                                className="object-cover w-8 h-8 rounded-full border-2 border-white shadow-sm"
                                                                             />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>
-                                                                            <p>
-                                                                                {
-                                                                                    kel
-                                                                                        .level
-                                                                                        .name
-                                                                                }
-                                                                            </p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            </div>
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        <p>
+                                                                            {
+                                                                                kel
+                                                                                    .level
+                                                                                    .name
+                                                                            }
+                                                                        </p>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
+
+                                                        <div className="flex items-center gap-2 flex-wrap">
                                                             {kel.total_bergabung >
                                                             0 ? (
-                                                                <Badge className="transition-all duration-300 bg-green-600 hover:scale-110">
-                                                                    <CheckCircleIcon className="w-4 h-4 mr-1" />{" "}
+                                                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200">
+                                                                    <CheckCircleIcon className="w-3 h-3 mr-1" />
                                                                     Bergabung
                                                                 </Badge>
                                                             ) : (
                                                                 <>
                                                                     {kel.total_transaksi >
                                                                         0 && (
-                                                                        <Badge className="transition-all duration-300 bg-maroon hover:scale-110">
-                                                                            {kel.total_transaksi >
-                                                                            0
-                                                                                ? "Terlaris"
-                                                                                : ""}
+                                                                        <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-rose-200">
+                                                                            🔥
+                                                                            Terlaris
                                                                         </Badge>
                                                                     )}
                                                                     {kel.type
                                                                         .name ===
                                                                     "Premium" ? (
-                                                                        <Badge className="transition-all duration-300 bg-blue-600 hover:scale-110">
+                                                                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">
+                                                                            ⭐{" "}
                                                                             {
                                                                                 kel
                                                                                     .type
@@ -510,7 +555,8 @@ export default function Index({
                                                                             }
                                                                         </Badge>
                                                                     ) : (
-                                                                        <Badge className="transition-all duration-300 bg-orange-600 hover:scale-110">
+                                                                        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200">
+                                                                            🆓{" "}
                                                                             {
                                                                                 kel
                                                                                     .type
@@ -523,7 +569,6 @@ export default function Index({
                                                         </div>
                                                     </div>
                                                 </Link>
-                                                {/* Rating di bawah */}
                                             </div>
                                         ))}
                                     </div>

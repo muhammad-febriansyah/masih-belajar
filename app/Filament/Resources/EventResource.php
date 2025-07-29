@@ -22,7 +22,7 @@ class EventResource extends Resource
     protected static ?string $model = Event::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationGroup = 'Menu Utama';
+    protected static ?string $navigationGroup = 'Main Menu';
     protected static ?string $navigationLabel = 'Acara/Agenda';
     protected static ?int $navigationSort = 3;
 

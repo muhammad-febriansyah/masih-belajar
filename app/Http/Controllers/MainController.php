@@ -28,6 +28,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -267,6 +269,211 @@ class MainController extends Controller
     }
 
     public function checkPromoCode(Request $request)
+    {
+        Log::info('Checking promo code', [
+            'user_id' => Auth::id(),
+            'kode' => $request->input('kode'),
+            'request_data' => $request->all()
+        ]);
+
+        try {
+            // Validasi input
+            $request->validate([
+                'kode' => 'required|string|max:50',
+                'kelas_id' => 'sometimes|exists:kelas,id' // Opsional jika ingin validasi per kelas
+            ]);
+
+            $kodePromo = trim($request->input('kode'));
+            $kelasId = $request->input('kelas_id');
+
+            if (empty($kodePromo)) {
+                return response()->json([
+                    'status' => 'error',
+                    'code' => 400,
+                    'message' => 'Kode promo tidak boleh kosong',
+                    'discount' => 0
+                ]);
+            }
+
+            // Cari promo code dengan validasi lengkap
+            $query = PromoCode::where('code', $kodePromo)
+                ->where('status', 'active');
+
+            // Tambahkan validasi tanggal jika ada kolom start_date dan end_date
+            if (Schema::hasColumn('promo_codes', 'start_date')) {
+                $query->where(function ($q) {
+                    $q->whereNull('start_date')
+                        ->orWhere('start_date', '<=', now());
+                });
+            }
+
+            if (Schema::hasColumn('promo_codes', 'end_date')) {
+                $query->where(function ($q) {
+                    $q->whereNull('end_date')
+                        ->orWhere('end_date', '>=', now());
+                });
+            }
+
+            // Validasi usage limit jika ada
+            if (Schema::hasColumn('promo_codes', 'usage_limit')) {
+                $query->where(function ($q) {
+                    $q->whereNull('usage_limit')
+                        ->orWhere('usage_limit', '>', 0);
+                });
+            }
+
+            $promo = $query->first();
+
+            Log::info('Promo code query result', [
+                'found' => !is_null($promo),
+                'kode' => $kodePromo,
+                'promo_data' => $promo ? $promo->toArray() : null
+            ]);
+
+            if (!$promo) {
+                return response()->json([
+                    'status' => 'error',
+                    'code' => 404,
+                    'message' => 'Kode promo tidak ditemukan, tidak aktif, atau sudah expired',
+                    'discount' => 0
+                ]);
+            }
+
+            // Validasi apakah user sudah pernah menggunakan promo ini (jika ada tabel usage)
+            if (Schema::hasTable('promo_code_usages')) {
+                $hasUsed = DB::table('promo_code_usages')
+                    ->where('promo_code_id', $promo->id)
+                    ->where('user_id', Auth::id())
+                    ->exists();
+
+                if ($hasUsed) {
+                    return response()->json([
+                        'status' => 'error',
+                        'code' => 409,
+                        'message' => 'Anda sudah pernah menggunakan kode promo ini',
+                        'discount' => 0
+                    ]);
+                }
+            }
+
+            // Validasi per user limit jika ada
+            if (Schema::hasColumn('promo_codes', 'per_user_limit') && $promo->per_user_limit > 0) {
+                $userUsageCount = DB::table('promo_code_usages')
+                    ->where('promo_code_id', $promo->id)
+                    ->where('user_id', Auth::id())
+                    ->count();
+
+                if ($userUsageCount >= $promo->per_user_limit) {
+                    return response()->json([
+                        'status' => 'error',
+                        'code' => 409,
+                        'message' => 'Anda telah mencapai batas penggunaan kode promo ini',
+                        'discount' => 0
+                    ]);
+                }
+            }
+
+            // Validasi minimum purchase jika ada
+            if (Schema::hasColumn('promo_codes', 'minimum_purchase') && $promo->minimum_purchase > 0) {
+                $kelasPrice = 0;
+                if ($kelasId) {
+                    $kelas = Kelas::find($kelasId);
+                    $kelasPrice = $kelas ? $kelas->price : 0;
+                }
+
+                if ($kelasPrice > 0 && $kelasPrice < $promo->minimum_purchase) {
+                    return response()->json([
+                        'status' => 'error',
+                        'code' => 400,
+                        'message' => 'Pembelian minimum untuk kode promo ini adalah Rp ' . number_format($promo->minimum_purchase, 0, ',', '.'),
+                        'discount' => 0
+                    ]);
+                }
+            }
+
+            // Validasi kategori kelas jika ada
+            if (Schema::hasColumn('promo_codes', 'applicable_categories') && !empty($promo->applicable_categories)) {
+                if ($kelasId) {
+                    $kelas = Kelas::with('category')->find($kelasId);
+                    if ($kelas && $kelas->category) {
+                        $applicableCategories = json_decode($promo->applicable_categories, true);
+                        if (is_array($applicableCategories) && !in_array($kelas->category->id, $applicableCategories)) {
+                            return response()->json([
+                                'status' => 'error',
+                                'code' => 400,
+                                'message' => 'Kode promo ini tidak berlaku untuk kategori kelas yang dipilih',
+                                'discount' => 0
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Hitung diskon
+            $discount = 0;
+            if (Schema::hasColumn('promo_codes', 'discount_type')) {
+                if ($promo->discount_type === 'percentage') {
+                    // Untuk percentage, return percentage value, bukan calculated amount
+                    $discount = $promo->discount; // Frontend yang akan calculate
+                } else {
+                    // Fixed amount discount
+                    $discount = $promo->discount;
+                }
+            } else {
+                // Fallback ke kolom discount biasa
+                $discount = $promo->discount;
+            }
+
+            Log::info('Promo code validated successfully', [
+                'promo_id' => $promo->id,
+                'discount' => $discount,
+                'user_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'discount' => $discount,
+                'discount_type' => $promo->discount_type ?? 'fixed',
+                'message' => 'Kode promo berhasil diterima',
+                'code' => 200,
+                'promo_details' => [
+                    'id' => $promo->id,
+                    'code' => $promo->code,
+                    'description' => $promo->description ?? null,
+                    'max_discount' => $promo->max_discount ?? null, // Untuk percentage discount
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Promo code validation failed', [
+                'errors' => $e->errors(),
+                'user_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'code' => 422,
+                'message' => 'Data tidak valid',
+                'errors' => $e->errors(),
+                'discount' => 0
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error checking promo code', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'kode' => $request->input('kode'),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'code' => 500,
+                'message' => 'Terjadi kesalahan sistem. Silakan coba lagi.',
+                'discount' => 0
+            ]);
+        }
+    }
+
+    public function checkPromoCodeold(Request $request)
     {
         try {
             $kodePromo = $request->input('kode');

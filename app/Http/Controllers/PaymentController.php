@@ -289,6 +289,231 @@ class PaymentController extends Controller
         }
     }
 
+    public function createTransaction(Request $request)
+    {
+        Log::info('=== START CREATE TRANSACTION ===', [
+            'user_id' => Auth::id(),
+            'request_data' => $request->all()
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            if (empty(config('services.midtrans.server_key'))) {
+                throw new \Exception('Midtrans server key is not configured');
+            }
+
+            if (empty(config('services.midtrans.client_key'))) {
+                throw new \Exception('Midtrans client key is not configured');
+            }
+
+            $request->validate([
+                'kelas_id' => 'required|exists:kelas,id',
+                'amount' => 'required|numeric|min:0.01',
+            ]);
+
+            Log::info('Request validation passed');
+
+            $setting = Setting::first();
+            if (!$setting) {
+                Log::warning('No setting found, using default fee of 0');
+                $setting = (object) ['fee' => 0];
+            }
+
+            Log::info('Setting retrieved', ['fee' => $setting->fee ?? 0]);
+
+            $kelas = Kelas::find($request->kelas_id);
+            if (!$kelas) {
+                throw new \Exception('Kelas not found');
+            }
+
+            try {
+                $kelas->load('category');
+            } catch (\Exception $e) {
+                Log::warning('Failed to load category relation', ['error' => $e->getMessage()]);
+            }
+
+            Log::info('Kelas retrieved', [
+                'kelas_id' => $kelas->id,
+                'kelas_title' => $kelas->title,
+                'has_category' => !is_null($kelas->category ?? null)
+            ]);
+
+            $invoiceNumber = $this->generateInvoiceNumber($kelas);
+            Log::info('Invoice number generated', ['invoice_number' => $invoiceNumber]);
+
+            $transactionData = [
+                'kelas_id' => $request->kelas_id,
+                'user_id' => Auth::id(),
+                'invoice_number' => $invoiceNumber,
+                'amount' => number_format((float)$request->amount, 2, '.', ''),
+                'fee_trx' => (int)($setting->fee ?? 0),
+                'payment_method' => 'midtrans',
+                'status' => 'pending'
+            ];
+
+            Log::info('Creating transaction with data', $transactionData);
+
+            $trx = Transaction::create($transactionData);
+
+            Log::info('Transaction created', [
+                'transaction_id' => $trx->id,
+                'invoice_number' => $trx->invoice_number,
+                'amount' => $trx->amount
+            ]);
+
+            $grossAmount = (int) $trx->amount;
+            $coursePrice = (int) ($request->amount - ($setting->fee ?? 0));
+            $serviceFee = (int) ($setting->fee ?? 0);
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $invoiceNumber,
+                    'gross_amount' => $grossAmount,
+                ],
+                'item_details' => [],
+                'customer_details' => [
+                    'first_name' => Auth::user()->name ?? 'User',
+                    'email' => Auth::user()->email ?? 'user@example.com',
+                    'phone' => Auth::user()->phone ?? '08123456789',
+                    'address' => Auth::user()->address ?? 'Indonesia',
+                ],
+                'enabled_payments' => [
+                    'credit_card',
+                    'bca_va',
+                    'bni_va',
+                    'bri_va',
+                    'mandiri_va',
+                    'permata_va',
+                    'gopay',
+                    'qris',
+                    'shopeepay',
+                    'dana'
+                ],
+                'expiry' => [
+                    'start_time' => date('Y-m-d H:i:s O'),
+                    'unit' => 'hour',
+                    'duration' => 24
+                ]
+            ];
+
+            if ($coursePrice > 0) {
+                $params['item_details'][] = [
+                    'id' => $kelas->id,
+                    'price' => $coursePrice,
+                    'quantity' => 1,
+                    'name' => $kelas->title,
+                    'category' => $kelas->category->name ?? 'Course',
+                ];
+            }
+
+            if ($serviceFee > 0) {
+                $params['item_details'][] = [
+                    'id' => 'service_fee',
+                    'price' => $serviceFee,
+                    'quantity' => 1,
+                    'name' => 'Service Fee',
+                    'category' => 'Fee',
+                ];
+            }
+
+            if (empty($params['item_details'])) {
+                $params['item_details'][] = [
+                    'id' => $kelas->id,
+                    'price' => $grossAmount,
+                    'quantity' => 1,
+                    'name' => $kelas->title,
+                    'category' => $kelas->category->name ?? 'Course',
+                ];
+            }
+
+            Log::info('Midtrans parameters prepared', [
+                'order_id' => $params['transaction_details']['order_id'],
+                'gross_amount' => $params['transaction_details']['gross_amount'],
+                'item_count' => count($params['item_details']),
+                'customer_email' => $params['customer_details']['email']
+            ]);
+
+            try {
+                $snapResponse = Snap::createTransaction($params);
+                Log::info('Snap transaction created successfully', [
+                    'redirect_url' => $snapResponse->redirect_url
+                ]);
+            } catch (\Exception $midtransError) {
+                Log::error('Midtrans Snap::createTransaction failed', [
+                    'error' => $midtransError->getMessage(),
+                    'params' => $params
+                ]);
+                throw new \Exception('Failed to create Midtrans transaction: ' . $midtransError->getMessage());
+            }
+
+            DB::commit();
+
+            Log::info('=== TRANSACTION CREATED SUCCESSFULLY ===', [
+                'invoice_number' => $invoiceNumber,
+                'transaction_id' => $trx->id,
+                'redirect_url' => $snapResponse->redirect_url
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaction created successfully',
+                'data' => [
+                    'invoice_number' => $invoiceNumber,
+                    'redirect_url' => $snapResponse->redirect_url,
+                    'transaction_id' => $trx->id,
+                    'amount' => (float)$trx->amount,
+                    'payment_method' => 'midtrans_snap',
+                    'expires_at' => now()->addHours(24)->toISOString(),
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Validation failed', [
+                'errors' => $e->errors(),
+                'user_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('=== TRANSACTION CREATION FAILED ===', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $errorMessage = 'Failed to create transaction';
+            $statusCode = 500;
+
+            if (strpos($e->getMessage(), 'Midtrans') !== false) {
+                $errorMessage = 'Payment gateway error. Please try again later.';
+            } elseif (strpos($e->getMessage(), 'not configured') !== false) {
+                $errorMessage = 'Payment system configuration error';
+                $statusCode = 503;
+            } elseif (strpos($e->getMessage(), 'not found') !== false) {
+                $errorMessage = 'Requested resource not found';
+                $statusCode = 404;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage,
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                'debug_info' => config('app.debug') ? [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => array_slice($e->getTrace(), 0, 3)
+                ] : null
+            ], $statusCode);
+        }
+    }
+
     public function createFreeTransaction(Request $request)
     {
         Log::info('=== START CREATE FREE TRANSACTION ===', [
