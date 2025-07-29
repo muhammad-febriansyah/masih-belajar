@@ -32,6 +32,9 @@ Route::get('/term-condition', [HomeController::class, 'termcondition'])->name('t
 Route::get('/cek-sertifikat', [HomeController::class, 'ceksertifikat'])->name('ceksertifikat');
 Route::post('/checklogin', [HomeController::class, 'checklogin'])->name('checklogin');
 Route::post('/saveregister', [HomeController::class, 'saveregister'])->name('saveregister');
+Route::get('/verify-otp', [HomeController::class, 'showVerifyOtp'])->name('verify-otp');
+Route::post('/verify-otp', [HomeController::class, 'verifyOtp'])->name('verify-otp.post');
+Route::post('/resend-otp', [HomeController::class, 'resendOtp'])->name('resend-otp');
 Route::get('/send-email', [EmailSending::class, 'sendEmail'])->name('sendEmail');
 Route::post('/ceksertifikat/search', [HomeController::class, 'searchSertifikat'])->name('ceksertifikat.search');
 Route::get('/generateSertifikat/{id}', [HomeController::class, 'generateSertifikat'])->name('generateSertifikat');
@@ -68,6 +71,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/logout', [MainController::class, 'logout'])->name('logout');
+
+    Route::get('/dashboard/event', [MainController::class, 'event'])->name('dashboard.event');
+    Route::get('/dashboard/detailevent/{slug}', [MainController::class, 'detailevent'])->name('dashboard.detailevent');
 });
 
 require __DIR__ . '/auth.php';

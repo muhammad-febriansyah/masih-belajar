@@ -146,9 +146,7 @@ class KelasResource extends Resource
                                                     $set('url', null);
                                                 }),
 
-                                            // Conditional fields berdasarkan type
                                             Group::make([
-                                                // Link YouTube
                                                 Matinee::make('url')
                                                     ->required()
                                                     ->label('Link YouTube')

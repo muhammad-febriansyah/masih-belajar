@@ -6,11 +6,12 @@ import {
     MapPin,
     PhoneCall,
     Youtube,
+    ExternalLink,
 } from "lucide-react";
 import { route } from "ziggy-js";
 import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaWhatsapp, FaFacebookF, FaInstagram } from "react-icons/fa";
 
 interface SettingProps {
     setting: SettingType;
@@ -19,223 +20,350 @@ interface SettingProps {
 export default function Footer() {
     const { setting } = usePage().props as unknown as SettingProps;
     const [isVisible, setIsVisible] = useState<boolean>(true);
+    const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
+
     useEffect(() => {
         const currentURL = window.location.href;
         if (currentURL.includes("/detailkelas")) {
             setIsVisible(false);
         }
+
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 300);
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     return (
-        <footer className="bg-white relative">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="absolute z-0"
-                viewBox="0 0 1440 320"
-            >
-                <path
-                    fill="#e2eaf7"
-                    fillOpacity={1}
-                    d="M0,128L48,133.3C96,139,192,149,288,165.3C384,181,480,203,576,186.7C672,171,768,117,864,106.7C960,96,1056,128,1152,154.7C1248,181,1344,203,1392,213.3L1440,224L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-                />
-            </svg>
-            {isVisible && (
-                <div className="fixed bottom-4 z-[88] left-4">
-                    <a href="#home">
-                        <Button className="bg-maroon rounded-full w-[40px] h-[40px] animate-bounce p-0">
-                            <ArrowBigUpDashIcon
-                                size={15}
-                                className="size-10 text-white"
+        <footer className="bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden">
+            {/* Enhanced Wave Background */}
+            <div className="absolute inset-0 overflow-hidden">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="absolute z-0 w-full h-full"
+                    viewBox="0 0 1440 320"
+                    preserveAspectRatio="none"
+                >
+                    <defs>
+                        <linearGradient
+                            id="waveGradient"
+                            x1="0%"
+                            y1="0%"
+                            x2="100%"
+                            y2="0%"
+                        >
+                            <stop
+                                offset="0%"
+                                stopColor="#e2eaf7"
+                                stopOpacity="0.8"
                             />
-                        </Button>
-                    </a>
-                </div>
-            )}
-            {isVisible && (
-                <div className="fixed bottom-4  z-[88] right-4">
-                    <a href={`https://wa.me/` + setting.phone} target="_blank">
-                        <Button className="bg-green-500 rounded-full">
-                            <img src="/wa.svg" alt="" />
-                            <span className="ml-1">Konsultasi Kelas</span>
-                        </Button>
-                    </a>
-                </div>
-            )}
-            <div className="container relative z-10 px-4 py-16 mx-auto space-y-8 sm:px-6 lg:space-y-16 lg:px-2">
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-                    <div>
-                        <img
-                            src={`/storage/${setting.long_logo}`}
-                            className="w-40 transition-all duration-300 hover:scale-110"
-                            alt=""
+                            <stop
+                                offset="50%"
+                                stopColor="#dbeafe"
+                                stopOpacity="0.6"
+                            />
+                            <stop
+                                offset="100%"
+                                stopColor="#f1f5f9"
+                                stopOpacity="0.4"
+                            />
+                        </linearGradient>
+                    </defs>
+                    <path
+                        fill="url(#waveGradient)"
+                        d="M0,128L48,133.3C96,139,192,149,288,165.3C384,181,480,203,576,186.7C672,171,768,117,864,106.7C960,96,1056,128,1152,154.7C1248,181,1344,203,1392,213.3L1440,224L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+                        className="animate-pulse"
+                    />
+                </svg>
+
+                {/* Floating particles */}
+                <div className="absolute inset-0 opacity-20">
+                    {[...Array(6)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute w-2 h-2 bg-maroon rounded-full animate-float"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: `${Math.random() * 100}%`,
+                                animationDelay: `${i * 0.5}s`,
+                                animationDuration: `${3 + Math.random() * 2}s`,
+                            }}
                         />
-                        <div className="p-4">
-                            <p className="max-w-sm w-full text-gray-500 text-sm">
+                    ))}
+                </div>
+            </div>
+
+            {/* Enhanced Scroll to Top Button */}
+            {isVisible && showScrollTop && (
+                <div className="fixed bottom-20 z-[88] left-4 group">
+                    <Button
+                        onClick={scrollToTop}
+                        className="bg-gradient-to-r from-maroon to-red-600 hover:from-red-600 hover:to-maroon rounded-full w-12 h-12 p-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-1"
+                    >
+                        <ArrowBigUpDashIcon
+                            size={20}
+                            className="text-white transition-transform duration-300 group-hover:animate-bounce"
+                        />
+                    </Button>
+                    <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        Kembali ke atas
+                    </div>
+                </div>
+            )}
+
+            {/* Enhanced WhatsApp Button */}
+            {isVisible && (
+                <div className="fixed bottom-4 z-[88] right-4 group">
+                    <a
+                        href={`https://wa.me/${setting.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <Button className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-full px-4 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 flex items-center gap-2">
+                            <FaWhatsapp className="text-xl animate-pulse" />
+                            <span className="font-medium">
+                                Konsultasi Kelas
+                            </span>
+                        </Button>
+                    </a>
+                    <div className="absolute -top-12 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        Chat sekarang!
+                    </div>
+                </div>
+            )}
+
+            {/* Main Footer Content */}
+            <div className="container relative z-10 px-4 py-16 mx-auto space-y-12 sm:px-6 lg:space-y-16 lg:px-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                    {/* Company Info Section */}
+                    <div className="space-y-6">
+                        <div className="group">
+                            <img
+                                src={`/storage/${setting.long_logo}`}
+                                className="w-44 transition-all duration-500 hover:scale-110 filter hover:brightness-110"
+                                alt={setting.site_name}
+                            />
+                        </div>
+                        <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-white/20">
+                            <p className="text-gray-600 text-sm leading-relaxed">
                                 {setting.description}
                             </p>
                         </div>
+
+                        {/* Trust indicators */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span>Terpercaya</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span>Profesional</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="col-span-1 lg:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-3">
-                        <div>
-                            <p className="font-semibold text-maroon">Office</p>
-                            <ul className="mt-6 space-y-4 text-sm">
-                                <li className="flex shrink-0 items-center gap-4 text-gray-700">
-                                    <div className="p-2 bg-maroon/70 rounded-2xl">
-                                        <MapPin className="size-4 text-white" />
-                                    </div>
-                                    <p className="max-w-xl font-medium mt-4 text-sm  border-b-2 border-transparent hover:border-maroon transition-all duration-300">
-                                        {setting.address}
-                                    </p>
-                                </li>
-
-                                <li className="flex items-center gap-4 text-gray-700">
-                                    <div className="p-2 bg-maroon/70 rounded-2xl">
-                                        <Mail className="size-4 text-white" />
-                                    </div>
-                                    <span className="font-medium border-b-2 border-transparent hover:border-maroon transition-all duration-300">
-                                        {setting.email}
-                                    </span>
-                                </li>
-
-                                <li className="flex items-center gap-4 text-gray-700">
-                                    <div className="p-2 bg-maroon/70 rounded-2xl">
-                                        <FaWhatsapp className="size-4 text-white" />
-                                    </div>
-                                    <span className="font-medium border-b-2 border-transparent hover:border-maroon transition-all duration-300">
-                                        {setting.phone}
-                                    </span>
-                                </li>
+                    {/* Links and Contact Section */}
+                    <div className="col-span-1 lg:col-span-2 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                        {/* Office Contact */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-maroon relative">
+                                Kontak Kami
+                                <div className="absolute -bottom-1 left-0 w-8 h-0.5 bg-maroon rounded-full"></div>
+                            </h3>
+                            <ul className="space-y-4">
+                                {[
+                                    {
+                                        icon: MapPin,
+                                        text: setting.address,
+                                        type: "address",
+                                    },
+                                    {
+                                        icon: Mail,
+                                        text: setting.email,
+                                        type: "email",
+                                    },
+                                    {
+                                        icon: FaWhatsapp,
+                                        text: setting.phone,
+                                        type: "phone",
+                                    },
+                                ].map((item, index) => (
+                                    <li key={index} className="group">
+                                        <div className="flex items-start gap-4 p-3 rounded-lg bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-all duration-300 hover:shadow-sm">
+                                            <div className="p-2 bg-gradient-to-r from-maroon to-red-600 rounded-xl shadow-sm group-hover:shadow-md transition-all duration-300">
+                                                {item.type === "phone" ? (
+                                                    <FaWhatsapp className="w-4 h-4 text-white" />
+                                                ) : (
+                                                    <item.icon className="w-4 h-4 text-white" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-700 group-hover:text-maroon transition-colors duration-300 break-words">
+                                                    {item.text}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
-                        <div>
-                            <p className="font-semibold text-maroon">
-                                Useful Link
-                            </p>
 
-                            <ul className="mt-6 space-y-4 text-sm">
+                        {/* Useful Links */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-maroon relative">
+                                Menu Utama
+                                <div className="absolute -bottom-1 left-0 w-8 h-0.5 bg-maroon rounded-full"></div>
+                            </h3>
+                            <ul className="space-y-3">
                                 {[
                                     {
                                         href: route("ceksertifikat"),
                                         label: "Cek Sertifikat",
                                     },
+                                    { href: route("masuk"), label: "Masuk" },
+                                    { href: route("daftar"), label: "Daftar" },
                                     {
-                                        href: route("masuk"),
-                                        label: "Masuk",
-                                    },
-                                    {
-                                        href: route("daftar"),
-                                        label: "Daftar",
-                                    },
-                                    {
-                                        href: route("termcondition"),
-                                        label: "Term & Condition",
+                                        href: route("event"),
+                                        label: "Event/Acara",
                                     },
                                 ].map((item, i) => (
                                     <li key={i}>
                                         <Link
                                             href={item.href}
-                                            className="group relative inline-block text-gray-700 transition-all duration-200 hover:text-maroon font-semibold"
+                                            className="group flex items-center gap-2 p-2 rounded-lg bg-white/30 hover:bg-white/50 transition-all duration-300 hover:shadow-sm"
                                         >
-                                            <span className="relative pl-4 group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">
-                                                <span className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-x-1">
-                                                    →
-                                                </span>
+                                            <span className="w-1.5 h-1.5 bg-maroon rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:animate-pulse"></span>
+                                            <span className="text-sm font-medium text-gray-700 group-hover:text-maroon transition-colors duration-300">
                                                 {item.label}
                                             </span>
+                                            <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-all duration-300 ml-auto" />
                                         </Link>
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        <div>
-                            <p className="font-semibold text-maroon">
-                                Follow Us
+
+                        {/* Social Media */}
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-maroon relative">
+                                Ikuti Kami
+                                <div className="absolute -bottom-1 left-0 w-8 h-0.5 bg-maroon rounded-full"></div>
+                            </h3>
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                Tetap terhubung untuk mendapatkan pembaruan dan
+                                pengumuman menarik.
                             </p>
 
-                            <p className="mt-6 text-sm text-gray-500">
-                                Tetap terhubung dengan kami di media sosial
-                                untuk mendapatkan pembaruan dan pengumuman
-                                menarik.
-                            </p>
-                            <ul className="flex gap-4 mt-8">
-                                <li className="bg-white border border-maroon flex items-center justify-center p-2 transition-all duration-200 rounded-2xl hover:text-maroon hover:-translate-y-2 group hover:bg-maroon hover:shadow-lg hover:shadow-maroon">
+                            <div className="grid grid-cols-3 gap-3">
+                                {[
+                                    {
+                                        href: setting.fb,
+                                        icon: FaFacebookF,
+                                        name: "Facebook",
+                                        color: "hover:bg-blue-600",
+                                    },
+                                    {
+                                        href: setting.ig,
+                                        icon: FaInstagram,
+                                        name: "Instagram",
+                                        color: "hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500",
+                                    },
+                                    {
+                                        href: setting.yt,
+                                        icon: Youtube,
+                                        name: "YouTube",
+                                        color: "hover:bg-red-600",
+                                    },
+                                ].map((social, index) => (
                                     <a
-                                        href={setting.fb}
-                                        rel="noreferrer"
+                                        key={index}
+                                        href={social.href}
+                                        rel="noopener noreferrer"
                                         target="_blank"
-                                        className="flex items-center justify-center w-full h-full"
+                                        className={`group relative flex items-center justify-center p-3 bg-white border-2 border-maroon/20 rounded-xl transition-all duration-300 hover:border-transparent hover:shadow-lg hover:-translate-y-1 ${social.color}`}
                                     >
+                                        <social.icon className="w-5 h-5 text-maroon group-hover:text-white transition-colors duration-300" />
                                         <span className="sr-only">
-                                            Facebook
-                                        </span>
-                                        <svg
-                                            className=" w-5 h-5 text-maroon group-hover:text-white"
-                                            fill="currentColor"
-                                            viewBox="0 0 24 24"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </a>
-                                </li>
-
-                                <li className="bg-white border border-maroon flex items-center justify-center p-2 transition-all duration-200 rounded-2xl hover:text-maroon hover:-translate-y-2 group hover:bg-maroon hover:shadow-lg hover:shadow-maroon">
-                                    <a
-                                        href={setting.ig}
-                                        rel="noreferrer"
-                                        target="_blank"
-                                        className="flex items-center justify-center w-full h-full"
-                                    >
-                                        <span className="sr-only">
-                                            Instagram
+                                            {social.name}
                                         </span>
 
-                                        <svg
-                                            className=" w-5 h-5 text-maroon group-hover:text-white"
-                                            fill="currentColor"
-                                            viewBox="0 0 24 24"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        {/* Tooltip */}
+                                        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                                            {social.name}
+                                        </div>
                                     </a>
-                                </li>
-
-                                <li className="bg-white border border-maroon flex items-center justify-center p-2 transition-all duration-200 rounded-2xl hover:text-maroon hover:-translate-y-2 group hover:bg-maroon hover:shadow-lg hover:shadow-maroon">
-                                    <a
-                                        href={setting.yt}
-                                        rel="noreferrer"
-                                        target="_blank"
-                                        className="flex items-center justify-center w-full h-full"
-                                    >
-                                        <span className="sr-only">Youtube</span>
-
-                                        <Youtube
-                                            className=" w-5 h-5 text-maroon group-hover:text-white"
-                                            aria-hidden="true"
-                                        />
-                                    </a>
-                                </li>
-                            </ul>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
-                <hr />
-                <div className="flex items-center justify-center w-full">
-                    <p className="text-sm font-semibold text-gray-500">
-                        &copy; {new Date().getFullYear()}. {setting.site_name}.
-                        All rights reserved.
-                    </p>
+
+                {/* Enhanced Divider */}
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gradient-to-r from-transparent via-maroon/20 to-transparent"></div>
+                    </div>
+                    <div className="relative flex justify-center">
+                        <div className="bg-white px-4 py-1 rounded-full border border-maroon/10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-maroon rounded-full animate-pulse"></div>
+                                <div
+                                    className="w-1 h-1 bg-maroon/60 rounded-full animate-pulse"
+                                    style={{ animationDelay: "0.5s" }}
+                                ></div>
+                                <div
+                                    className="w-2 h-2 bg-maroon rounded-full animate-pulse"
+                                    style={{ animationDelay: "1s" }}
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Enhanced Copyright */}
+                <div className="text-center">
+                    <div className="bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                        <p className="text-sm font-medium text-gray-600">
+                            &copy; {new Date().getFullYear()}{" "}
+                            {setting.site_name}.
+                            <span className="text-maroon font-semibold">
+                                {" "}
+                                Seluruh hak cipta dilindungi
+                            </span>
+                        </p>
+                        <div className="mt-2 flex items-center justify-center gap-4 text-xs text-gray-500">
+                            <span>Dibuat dengan ❤️ di Indonesia</span>
+                            <span>•</span>
+                            <span>Versi 2.0</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <style>{`
+                @keyframes float {
+                    0%,
+                    100% {
+                        transform: translateY(0px) rotate(0deg);
+                    }
+                    33% {
+                        transform: translateY(-10px) rotate(1deg);
+                    }
+                    66% {
+                        transform: translateY(5px) rotate(-1deg);
+                    }
+                }
+                .animate-float {
+                    animation: float 3s ease-in-out infinite;
+                }
+            `}</style>
         </footer>
     );
 }

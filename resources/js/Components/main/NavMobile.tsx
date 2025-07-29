@@ -73,6 +73,14 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
+                            href={route("dashboard.event")}
+                        >
+                            Event/Acara
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
+                            className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
                             href={route("dashboard.myprofile")}
                         >
                             Akun

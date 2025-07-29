@@ -638,6 +638,7 @@ class ApiController extends Controller
 
         return json_decode($response, true);
     }
+
     private function sendOtpWhatsApp($phoneNumber, $otp, $userName)
     {
         try {

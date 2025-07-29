@@ -6,6 +6,7 @@ use App\Models\About;
 use App\Models\BalasDiskusi;
 use App\Models\Category;
 use App\Models\Diskusi;
+use App\Models\Event;
 use App\Models\Faq;
 use App\Models\Kelas;
 use App\Models\Level;
@@ -111,6 +112,28 @@ class MainController extends Controller
             });
         })->where('status', 'disetujui')->get();
         return response()->json($kelas);
+    }
+
+    public function event()
+    {
+        $setting = Setting::first();
+        $data = Event::latest()->get();
+        return Inertia::render('Main/Agenda/Index', [
+            'setting' => $setting,
+            'data' => $data,
+        ]);
+    }
+
+    public function detailevent($slug)
+    {
+        $setting = Setting::first();
+        $data = Event::where('slug', $slug)->first();
+        $data->views = $data->views + 1;
+        $data->save();
+        return Inertia::render('Main/Agenda/Detail', [
+            'setting' => $setting,
+            'data' => $data,
+        ]);
     }
 
     public function detailkelas($slug)
