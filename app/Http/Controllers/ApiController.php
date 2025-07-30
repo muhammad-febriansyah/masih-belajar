@@ -15,6 +15,7 @@ use App\Models\QuizAnswer;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\TemplateSertifikat;
+use App\Models\TentangKami;
 use App\Models\TermCondition;
 use App\Models\Testimoni;
 use App\Models\Transaction;
@@ -103,6 +104,18 @@ class ApiController extends Controller
         $data = Setting::first();
         if (!$data) {
             return response()->json(['error' => 'Setting not found'], 404);
+        }
+        $response = [
+            'data' => $data,
+            'status' => 1,
+        ];
+        return response()->json($response);
+    }
+    public function tentangkami()
+    {
+        $data = TentangKami::first();
+        if (!$data) {
+            return response()->json(['error' => 'data not found'], 404);
         }
         $response = [
             'data' => $data,
@@ -1560,6 +1573,66 @@ class ApiController extends Controller
 
         $template = TemplateSertifikat::where('status', 1)->first();
 
+        $backgroundPdf = Storage::disk('public')->path($template->file);
+
+        $fileName = "sertifikat-{$data->user->name}.pdf";
+        $sertifikatPath = "sertifikat/{$fileName}";
+
+        if (!Storage::disk('public')->exists($template->file)) {
+            return response()->json(['error' => 'Template sertifikat tidak ditemukan'], 404);
+        }
+
+        $pdf = new Fpdi();
+        $pdf->setSourceFile($backgroundPdf);
+        $tplId = $pdf->importPage(1);
+        $size = $pdf->getTemplateSize($tplId);
+
+        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $pdf->useTemplate($tplId, 0, 0, $size['width'], $size['height']);
+
+        $pdf->SetFont('Arial', 'B', 18);
+
+        $pdf->SetXY(15, 15);
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Cell(0, 10, $data->no_sertifikat, 0, 1, 'L');
+
+        $pdf->SetTextColor(0, 0, 110);
+
+        $pdf->SetXY(7, 115);
+        $pdf->SetFont('Arial', 'B', 28);
+        $pdf->Cell(0, 10, $data->user->name, 0, 1, 'C');
+
+        $pdf->SetXY(7, 130);
+        $pdf->SetFont('Arial', '', 15);
+        $pdf->Cell(0, 10, "atas keberhasilan dalam", 0, 1, 'C');
+
+        $judulKelas = $data->kelas->title ?? '-';
+        $pengajar = $data->kelas->user->name ?? '-';
+        $teks = "menyelesaikan kursus \"$judulKelas\" bersama $pengajar";
+        $pdf->SetFont('Arial', '', 15);
+        $pdf->SetXY(45, 140);
+        $pdf->MultiCell(206, 8, $teks, 0, 'C');
+
+        $content = $pdf->Output('', 'S');
+
+        Storage::disk('public')->put($sertifikatPath, $content);
+
+        return Storage::disk('public')->download($sertifikatPath, $fileName);
+    }
+
+    public function generateSertifikatold($id)
+    {
+        $data = UserAnswer::where('id', $id)
+            ->groupBy('kelas_id')
+            ->selectRaw('*, sum(point) as total_point')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $template = TemplateSertifikat::where('status', 1)->first();
+
         if (!$template) {
             return response()->json(['error' => 'Template sertifikat tidak ditemukan'], 404);
         }
@@ -2049,6 +2122,116 @@ class ApiController extends Controller
     }
 
     public function apiDetailKelas($slug)
+    {
+        $user_id = Auth::id();
+        $kelas = Kelas::where('slug', $slug)->firstOrFail();
+        $kelas->increment('views');
+        $setting = Setting::first();
+        $sections = Section::where('kelas_id', $kelas->id)->get();
+        $videos = Video::whereIn('section_id', $sections->pluck('id'))->get();
+
+        $kelasDetail = Kelas::select(
+            'kelas.*',
+            DB::raw('COUNT(DISTINCT transactions.id) as total_transaksi'),
+            DB::raw('ROUND(AVG(testimonis.rating), 1) as average_rating'),
+            DB::raw('COUNT(testimonis.id) as total_ulasan'),
+            DB::raw('SUM(testimonis.rating) as total_star'),
+            // Tambahkan logic untuk cek user sudah bergabung
+            DB::raw('COUNT(CASE WHEN transactions.status IN ("paid", "free") AND transactions.user_id = ? THEN 1 END) > 0 as sudah_bergabung')
+        )
+            ->leftJoin('transactions', function ($join) {
+                $join->on('kelas.id', '=', 'transactions.kelas_id')
+                    ->whereIn('transactions.status', ['paid', 'free']);
+            })
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.id', $kelas->id)
+            ->groupBy('kelas.id')
+            ->addBinding([$user_id], 'select')
+            ->first();
+
+        $totalvideo = Video::whereHas('section', function ($query) use ($kelas) {
+            $query->where('kelas_id', $kelas->id);
+        })->count();
+
+        $testimoni = Testimoni::where('kelas_id', $kelas->id)
+            ->with('user')
+            ->latest()
+            ->get();
+
+        $mentorStats = Kelas::select(
+            DB::raw('COUNT(DISTINCT kelas.id) as total_kelas_mentor'),
+            DB::raw('ROUND(AVG(testimonis.rating), 1) as mentor_average_rating'),
+            DB::raw('COUNT(testimonis.id) as mentor_total_ulasan'),
+            DB::raw('COUNT(DISTINCT transactions.id) as mentor_total_siswa')
+        )
+            ->leftJoin('transactions', function ($join) {
+                $join->on('kelas.id', '=', 'transactions.kelas_id')
+                    ->whereIn('transactions.status', ['paid', 'free']);
+            })
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.user_id', $kelas->user_id)
+            ->where('kelas.status', 'disetujui')
+            ->first();
+
+        $allclass = Kelas::select(
+            'kelas.*',
+            DB::raw('COUNT(DISTINCT transactions.id) as total_transaksi'),
+            DB::raw('ROUND(AVG(testimonis.rating), 1) as average_rating'),
+            DB::raw('COUNT(testimonis.id) as total_reviews'),
+            DB::raw('COUNT(DISTINCT transactions.id) as total_students'),
+            DB::raw('COUNT(CASE WHEN transactions.status IN ("paid", "free") AND transactions.user_id = ? THEN 1 END) > 0 as sudah_bergabung')
+        )
+            ->leftJoin('transactions', function ($join) use ($user_id) {
+                $join->on('kelas.id', '=', 'transactions.kelas_id')
+                    ->where(function ($query) use ($user_id) {
+                        $query->where(function ($subQuery) {
+                            $subQuery->where('transactions.status', '=', 'paid');
+                        })
+                            ->orWhere(function ($subQuery) use ($user_id) {
+                                $subQuery->where('transactions.status', '=', 'free')
+                                    ->where('transactions.user_id', '=', $user_id);
+                            });
+                    });
+            })
+            ->leftJoin('testimonis', 'kelas.id', '=', 'testimonis.kelas_id')
+            ->where('kelas.status', 'disetujui')
+            ->where('kelas.id', '!=', $kelas->id)
+            ->where('kelas.user_id', $kelas->user_id)
+            ->groupBy('kelas.id')
+            ->addBinding([$user_id], 'select')
+            ->with(['type', 'category', 'level'])
+            ->latest('kelas.created_at')
+            ->limit(4)
+            ->get();
+
+        // Hapus query terpisah untuk sudahBergabung karena sudah ada di kelasDetail
+        // $sudahBergabung = Transaction::where('kelas_id', $kelas->id)...
+
+        $allclass = $allclass->map(function ($kelasItem) {
+            $kelasArray = $kelasItem->toArray();
+            $kelasArray['sudah_bergabung'] = (bool) $kelasItem->sudah_bergabung;
+            return $kelasArray;
+        });
+
+        return response()->json([
+            'setting' => $setting,
+            'kelas' => $kelas->load(['level', 'type', 'category', 'user']),
+            'sections' => $sections,
+            'videos' => $videos,
+            'testimoni' => $testimoni,
+            'allclass' => $allclass,
+            'studentjoin' => $kelasDetail->total_transaksi ?? 0,
+            'totalvideo' => $totalvideo,
+            'totalstar' => $kelasDetail->total_star ?? 0,
+            'averageRating' => $kelasDetail->average_rating ?? 0,
+            'totalkelasmentor' => $mentorStats->total_kelas_mentor ?? 0,
+            'totalsiswa' => $mentorStats->mentor_total_siswa ?? 0,
+            'totalulasan' => $kelasDetail->total_ulasan ?? 0,
+            'sudah_bergabung' => (bool) ($kelasDetail->sudah_bergabung ?? false), // Cast ke boolean
+        ]);
+    }
+
+    public function apiDetailKelasold($slug)
     {
         $user_id = Auth::id();
         $kelas = Kelas::where('slug', $slug)->firstOrFail();

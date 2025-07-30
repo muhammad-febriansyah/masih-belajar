@@ -12,6 +12,7 @@ use App\Models\PromoCode;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\TemplateSertifikat;
+use App\Models\TentangKami;
 use App\Models\TermCondition;
 use App\Models\Testimoni;
 use App\Models\Transaction;
@@ -76,6 +77,18 @@ class HomeController extends Controller
         return Inertia::render('Home/Agenda/Index', [
             'setting' => $setting,
             'data' => $data,
+        ]);
+    }
+
+    public function tentangkami()
+    {
+        $setting = Setting::first();
+        $data = TentangKami::first();
+        $about = About::all();
+        return Inertia::render('Home/TentangKami/Index', [
+            'setting' => $setting,
+            'data' => $data,
+            'about' => $about
         ]);
     }
 

@@ -28,6 +28,7 @@ Route::get('/event', [HomeController::class, 'event'])->name('event');
 Route::get('/detailevent/{slug}', [HomeController::class, 'detailevent'])->name('detailevent');
 Route::get('/masuk', [HomeController::class, 'login'])->name('masuk');
 Route::get('/daftar', [HomeController::class, 'register'])->name('daftar');
+Route::get('/tentangkami', [HomeController::class, 'tentangkami'])->name('tentangkami');
 Route::get('/term-condition', [HomeController::class, 'termcondition'])->name('termcondition');
 Route::get('/cek-sertifikat', [HomeController::class, 'ceksertifikat'])->name('ceksertifikat');
 Route::post('/checklogin', [HomeController::class, 'checklogin'])->name('checklogin');
@@ -45,6 +46,7 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard/home', [MainController::class, 'index'])->name('dashboard.home');
+    Route::get('/dashboard/tentangkami', [MainController::class, 'tentangkami'])->name('dashboard.tentangkami');
     Route::get('/dashboard/kelas', [MainController::class, 'kelas'])->name('dashboard.kelas');
     Route::get('/dashboard/searchKelas', [MainController::class, 'searchKelas'])->name('dashboard.searchKelas');
     Route::get('/dashboard/detailkelas/{slug}', [MainController::class, 'detailkelas'])->name('dashboard.detailkelas');

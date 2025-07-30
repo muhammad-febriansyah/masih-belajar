@@ -54,6 +54,14 @@ export default function NavMobile() {
                     <li>
                         <Link
                             className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
+                            href={route("tentangkami")}
+                        >
+                            Tentang Kami
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
+                            className="text-lg font-medium text-black transition-all duration-300 hover:text-maroon hover:font-bold"
                             href={route("kelas")}
                         >
                             Kelas

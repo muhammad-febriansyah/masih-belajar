@@ -14,7 +14,12 @@ import {
 import { route } from "ziggy-js";
 import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
-import { FaWhatsapp, FaFacebookF, FaInstagram } from "react-icons/fa";
+import {
+    FaWhatsapp,
+    FaFacebookF,
+    FaInstagram,
+    FaInfoCircle,
+} from "react-icons/fa";
 
 interface SettingProps {
     setting: SettingType;
@@ -153,13 +158,6 @@ export default function Footer() {
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                     {/* Company Info Section */}
                     <div className="space-y-6">
-                        <div className="group">
-                            <img
-                                src={`/storage/${setting.long_logo}`}
-                                className="w-44 transition-all duration-500 hover:scale-110 filter hover:brightness-110"
-                                alt={setting.site_name}
-                            />
-                        </div>
                         <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-white/20">
                             <p className="text-gray-600 text-sm leading-relaxed">
                                 {setting.description}
@@ -207,7 +205,7 @@ export default function Footer() {
                                     },
                                 ].map((item, index) => (
                                     <li key={index} className="group">
-                                        <div className="flex items-start gap-4 p-3 rounded-lg bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-all duration-300 hover:shadow-sm">
+                                        <div className="flex items-start gap-4 p-2 rounded-lg bg-white/40 backdrop-blur-sm hover:bg-white/60 transition-all duration-300 hover:shadow-sm">
                                             <div className="p-2 bg-gradient-to-r from-maroon to-red-600 rounded-xl shadow-sm group-hover:shadow-md transition-all duration-300">
                                                 {item.type === "phone" ? (
                                                     <FaWhatsapp className="w-4 h-4 text-white" />
@@ -216,7 +214,7 @@ export default function Footer() {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-700 group-hover:text-maroon transition-colors duration-300 break-words">
+                                                <p className="text-xs font-medium text-gray-700 group-hover:text-maroon transition-colors duration-300 break-words">
                                                     {item.text}
                                                 </p>
                                             </div>
@@ -236,16 +234,10 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 {[
                                     {
-                                        href: route("dashboard.kelas"),
-                                        label: "Kelas",
-                                        icon: BookOpen,
-                                        description: "Jelajahi semua kelas",
-                                    },
-                                    {
-                                        href: route("dashboard.myprofile"),
-                                        label: "Profile",
-                                        icon: User,
-                                        description: "Kelola profil Anda",
+                                        href: route("dashboard.tentangkami"),
+                                        label: "Tentang Kami",
+                                        icon: FaInfoCircle,
+                                        description: "Pelajari lebih lanjut",
                                     },
                                     {
                                         href: "/dashboard/kelas-saya",

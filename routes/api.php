@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/midtrans-callback', [PaymentController::class, 'midtransCallback'])->name('midtrans-callback');
 Route::get('/setting', [ApiController::class, 'setting'])->name('setting');
+Route::get('/tentangkami', [ApiController::class, 'tentangkami'])->name('tentangkami');
 Route::post('/register', [ApiController::class, 'register'])->name('api.register');
 Route::post('/verify-otp', [ApiController::class, 'verifyRegistrationOtp']);
 Route::post('/resend-otp', [ApiController::class, 'resendRegistrationOtp']);

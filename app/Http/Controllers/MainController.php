@@ -16,6 +16,7 @@ use App\Models\QuizAnswer;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\TemplateSertifikat;
+use App\Models\TentangKami;
 use App\Models\Testimoni;
 use App\Models\Transaction;
 use App\Models\Type;
@@ -69,6 +70,18 @@ class MainController extends Controller
             'kelaspopuler' => $kelaspopuler,
             'auth' => $auth,
             'testimoni' => $testimoni
+        ]);
+    }
+
+    public function tentangkami()
+    {
+        $setting = Setting::first();
+        $data = TentangKami::first();
+        $about = About::all();
+        return Inertia::render('Main/TentangKami/Index', [
+            'setting' => $setting,
+            'data' => $data,
+            'about' => $about
         ]);
     }
 

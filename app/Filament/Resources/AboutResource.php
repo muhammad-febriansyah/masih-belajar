@@ -26,7 +26,7 @@ class AboutResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-flag';
     protected static ?string $navigationGroup = 'Main Menu';
-    protected static ?string $navigationLabel = 'Tentang Kami';
+    protected static ?string $navigationLabel = 'Layanan Kami';
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
