@@ -91,28 +91,17 @@ export default function Index({
     totalsiswa,
     videoRead,
 }: Props) {
-    const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(
-        null
-    );
     const [selectedVideo, setSelectedVideo] = useState<VideoType | null>(null);
     const [selectedVideoId, setSelectedVideoId] = useState<{
         sectionId: number;
         videoId: number;
     } | null>(null);
-    const [selectedVideoTitle, setSelectedVideoTitle] = useState<string | null>(
-        null
-    );
     const [activeSection, setActiveSection] = useState<string | null>(null);
-    const [sectionTitle, setSectionTitle] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
     const [rating, setRating] = useState<number>(0);
-    const [testimonial, setTestimonial] = useState<string>("");
     const [isLastVideo, setIsLastVideo] = useState<boolean>(false);
-    const [readVideos, setReadVideos] = useState<
-        { section_id: number; video_id: number }[]
-    >([]);
+    const [watchedVideos, setWatchedVideos] = useState<Set<number>>(new Set());
     const [progress, setProgress] = useState<number>(0);
-    const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(0);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [subject, setSubject] = useState<string | null>(null);
     const [image, setImage] = useState<File | null>(null);
@@ -126,14 +115,6 @@ export default function Index({
     const [loading, setLoading] = useState<boolean>(false);
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const kelasId = kelas.id;
-    const [selectedItem, setSelectedItem] = useState<Number | null>(null);
-    const [watchedVideos, setWatchedVideos] = useState<number[]>([]);
-    const [videoStatus, setVideoStatus] = useState<number[]>([]);
-
-    const processingRef = useRef<Set<string>>(new Set());
-    const lastClickRef = useRef<{ videoId: number; timestamp: number } | null>(
-        null
-    );
 
     const { data, setData, post, processing, errors, reset } = useForm({
         rating: rating,
@@ -151,178 +132,139 @@ export default function Index({
         setExpandedSections(newExpanded);
     };
 
-    const calculateProgress = () => {
+    const calculateProgress = useCallback(() => {
         if (video.length === 0) return 0;
-        return Math.round((readVideos.length / video.length) * 100);
-    };
+        return Math.round((watchedVideos.size / video.length) * 100);
+    }, [video.length, watchedVideos.size]);
 
-    const isVideoRead = useCallback(
-        (videoId: number): boolean => {
-            return readVideos.some((read) => read.video_id === videoId);
-        },
-        [readVideos]
-    );
+    const markVideoAsWatched = async (videoId: number, sectionId: number) => {
+        if (watchedVideos.has(videoId)) {
+            return { success: true, alreadyWatched: true };
+        }
 
-    const updateVideoProgress = useCallback(
-        async (clickedVideo: VideoType) => {
-            const videoKey = `${clickedVideo.section_id}-${clickedVideo.id}`;
+        setIsProcessing(true);
+        try {
+            const response = await axios.post(route("dashboard.videoRead"), {
+                section_id: sectionId,
+                video_id: videoId,
+            });
 
-            if (isVideoRead(clickedVideo.id)) {
-                return { success: true, alreadyWatched: true };
-            }
+            if (response.data.success) {
+                setWatchedVideos((prev) => {
+                    const newWatched = new Set(prev);
+                    newWatched.add(videoId);
+                    return newWatched;
+                });
 
-            if (processingRef.current.has(videoKey)) {
-                return { success: false, message: "Video sedang diproses" };
-            }
-
-            processingRef.current.add(videoKey);
-            setIsProcessing(true);
-
-            try {
-                const response = await axios.post(
-                    route("dashboard.videoRead"),
-                    {
-                        section_id: clickedVideo.section_id,
-                        video_id: clickedVideo.id,
-                    }
+                const newProgress = Math.round(
+                    ((watchedVideos.size + 1) / video.length) * 100
                 );
+                setProgress(newProgress);
 
-                if (response.data.success) {
-                    if (!response.data.already_watched) {
-                        setReadVideos((prev) => {
-                            const exists = prev.some(
-                                (read) => read.video_id === clickedVideo.id
-                            );
-                            if (!exists) {
-                                return [
-                                    ...prev,
-                                    {
-                                        section_id: clickedVideo.section_id,
-                                        video_id: clickedVideo.id,
-                                    },
-                                ];
-                            }
-                            return prev;
-                        });
-
-                        toast.success(
-                            `Video "${clickedVideo.title}" ditandai selesai!`,
-                            {
-                                position: "top-right",
-                                duration: 2000,
-                            }
-                        );
-                    }
-                    return {
-                        success: true,
-                        alreadyWatched: response.data.already_watched,
-                    };
+                if (!response.data.already_watched) {
+                    toast.success("Video ditandai selesai!", {
+                        position: "top-right",
+                        duration: 2000,
+                    });
                 }
 
-                return { success: false, message: response.data.message };
-            } catch (error) {
-                console.error("Error updating video progress:", error);
-                toast.error("Gagal menyimpan progress video", {
-                    position: "top-right",
-                });
-                return { success: false, message: "Network error" };
-            } finally {
-                processingRef.current.delete(videoKey);
-                setIsProcessing(false);
+                return {
+                    success: true,
+                    alreadyWatched: response.data.already_watched,
+                };
             }
-        },
-        [isVideoRead]
-    );
-
-    const handleVideoClick = useCallback(
-        async (clickedVideo: VideoType) => {
-            const currentTime = Date.now();
-            const DEBOUNCE_DELAY = 500;
-
-            if (
-                lastClickRef.current &&
-                lastClickRef.current.videoId === clickedVideo.id &&
-                currentTime - lastClickRef.current.timestamp < DEBOUNCE_DELAY
-            ) {
-                return;
-            }
-
-            lastClickRef.current = {
-                videoId: clickedVideo.id,
-                timestamp: currentTime,
-            };
-
-            setSelectedVideo(clickedVideo);
-            setSelectedVideoId({
-                sectionId: clickedVideo.section_id,
-                videoId: clickedVideo.id,
-            });
-
-            const lastVideoInList = video[video.length - 1];
-            setIsLastVideo(clickedVideo.id === lastVideoInList?.id);
-
-            await updateVideoProgress(clickedVideo);
-        },
-        [updateVideoProgress, video]
-    );
-
-    useEffect(() => {
-        const initialReadVideos = videoRead.map((read) => ({
-            section_id: Number(read.section_id),
-            video_id: Number(read.video_id),
-        }));
-
-        const uniqueReadVideos = initialReadVideos.filter(
-            (video, index, self) =>
-                index ===
-                self.findIndex(
-                    (v) =>
-                        v.section_id === video.section_id &&
-                        v.video_id === video.video_id
-                )
-        );
-
-        setReadVideos(uniqueReadVideos);
-
-        if (video.length > 0 && !selectedVideo) {
-            setSelectedVideo(video[0]);
-            setSelectedVideoId({
-                sectionId: video[0].section_id,
-                videoId: video[0].id,
-            });
+            return { success: false, message: response.data.message };
+        } catch (error) {
+            console.error("Error marking video as watched:", error);
+            return { success: false, message: "Network error" };
+        } finally {
+            setIsProcessing(false);
         }
+    };
 
-        if (sectionData.length > 0) {
-            setExpandedSections(new Set([sectionData[0].id]));
-        }
-    }, [video, videoRead, selectedVideo, sectionData]);
+    const handleVideoClick = async (clickedVideo: VideoType) => {
+        setSelectedVideo(clickedVideo);
+        setSelectedVideoId({
+            sectionId: clickedVideo.section_id,
+            videoId: clickedVideo.id,
+        });
 
-    useEffect(() => {
-        setProgress(calculateProgress());
-    }, [readVideos, video]);
+        setExpandedSections((prev) => {
+            const newExpanded = new Set(prev);
+            newExpanded.add(clickedVideo.section_id);
+            return newExpanded;
+        });
 
-    const handleNextVideo = useCallback(() => {
+        const lastVideoInList = video[video.length - 1];
+        setIsLastVideo(clickedVideo.id === lastVideoInList?.id);
+
+        await markVideoAsWatched(clickedVideo.id, clickedVideo.section_id);
+    };
+
+    const handleNextVideo = async () => {
         if (!selectedVideo) return;
+
         const currentIndex = video.findIndex((v) => v.id === selectedVideo.id);
         if (currentIndex < video.length - 1) {
-            handleVideoClick(video[currentIndex + 1]);
+            const nextVideo = video[currentIndex + 1];
+            await handleVideoClick(nextVideo);
         }
-    }, [selectedVideo, video, handleVideoClick]);
+    };
 
-    const handlePreviousVideo = useCallback(() => {
+    const handlePreviousVideo = async () => {
         if (!selectedVideo) return;
+
         const currentIndex = video.findIndex((v) => v.id === selectedVideo.id);
         if (currentIndex > 0) {
-            handleVideoClick(video[currentIndex - 1]);
+            const prevVideo = video[currentIndex - 1];
+            await handleVideoClick(prevVideo);
         }
-    }, [selectedVideo, video, handleVideoClick]);
+    };
 
     const allVideosWatched = useMemo(() => {
         return (
             video.length > 0 &&
-            video.every((videoItem) => isVideoRead(videoItem.id))
+            video.every((videoItem) => watchedVideos.has(videoItem.id))
         );
-    }, [video, isVideoRead]);
+    }, [video, watchedVideos]);
+
+    useEffect(() => {
+        const initialWatchedVideos = new Set(
+            videoRead.map((read) => Number(read.video_id))
+        );
+        setWatchedVideos(initialWatchedVideos);
+
+        const initialProgress =
+            video.length > 0
+                ? Math.round((initialWatchedVideos.size / video.length) * 100)
+                : 0;
+        setProgress(initialProgress);
+
+        if (video.length > 0 && !selectedVideo) {
+            const firstVideo = video[0];
+            setSelectedVideo(firstVideo);
+            setSelectedVideoId({
+                sectionId: firstVideo.section_id,
+                videoId: firstVideo.id,
+            });
+
+            if (!initialWatchedVideos.has(firstVideo.id)) {
+                markVideoAsWatched(firstVideo.id, firstVideo.section_id);
+            }
+        }
+
+        if (sectionData.length > 0) {
+            const sectionsToExpand = new Set<number>();
+            if (video.length > 0) {
+                const firstVideo = video[0];
+                sectionsToExpand.add(firstVideo.section_id);
+            }
+            sectionData.forEach((section) => {
+                sectionsToExpand.add(section.id);
+            });
+            setExpandedSections(sectionsToExpand);
+        }
+    }, [video, videoRead, sectionData]);
 
     const handleRatingClick = (value: number) => {
         setRating(value);
@@ -389,7 +331,6 @@ export default function Index({
                 },
             });
         } catch (error) {
-            console.error("Error sending diskusi:", error);
             setLoading(false);
         }
     };
@@ -415,7 +356,6 @@ export default function Index({
                 },
             });
         } catch (error) {
-            console.error("Error sending response:", error);
             setLoading(false);
         }
     };
@@ -468,7 +408,7 @@ export default function Index({
                                 className="h-2 bg-white/20"
                             />
                             <p className="text-sm mt-2 text-white/90">
-                                {readVideos.length} dari {video.length} video
+                                {watchedVideos.size} dari {video.length} video
                                 selesai
                             </p>
                             {isProcessing && (
@@ -532,8 +472,8 @@ export default function Index({
                                                             filteredVideo,
                                                             videoIndex
                                                         ) => {
-                                                            const videoIsRead =
-                                                                isVideoRead(
+                                                            const isWatched =
+                                                                watchedVideos.has(
                                                                     filteredVideo.id
                                                                 );
                                                             const isActive =
@@ -569,7 +509,6 @@ export default function Index({
                                                                             >
                                                                                 {videoIndex +
                                                                                     1}
-
                                                                                 .{" "}
                                                                                 {
                                                                                     filteredVideo.title
@@ -588,7 +527,7 @@ export default function Index({
                                                                                 }
                                                                             </div>
                                                                         </div>
-                                                                        {videoIsRead && (
+                                                                        {isWatched && (
                                                                             <div
                                                                                 className={`ml-2 p-1 rounded-full ${
                                                                                     isActive
@@ -596,8 +535,8 @@ export default function Index({
                                                                                         : "bg-green-100"
                                                                                 }`}
                                                                             >
-                                                                                <Check
-                                                                                    className={`w-3 h-3 ${
+                                                                                <CheckCheck
+                                                                                    className={`w-4 h-4 ${
                                                                                         isActive
                                                                                             ? "text-white"
                                                                                             : "text-green-600"
@@ -859,6 +798,19 @@ export default function Index({
                                                         </span>
                                                         <BookOpen className="w-4 h-4 mr-1" />
                                                         {kelas.title}
+                                                        {watchedVideos.has(
+                                                            selectedVideo.id
+                                                        ) && (
+                                                            <>
+                                                                <span className="mx-2">
+                                                                    •
+                                                                </span>
+                                                                <CheckCheck className="w-4 h-4 mr-1 text-green-600" />
+                                                                <span className="text-green-600 font-medium">
+                                                                    Selesai
+                                                                </span>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
 

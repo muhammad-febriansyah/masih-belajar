@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
+use Filament\Notifications\Notification;
 
 class StudentResource extends Resource
 {
@@ -46,6 +48,7 @@ class StudentResource extends Resource
                 //
             ]);
     }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -81,11 +84,48 @@ class StudentResource extends Resource
             ])
             ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make()->label('Edit')->icon('heroicon-s-pencil')->button()->color('success'),
-                Tables\Actions\DeleteAction::make()->after(function ($record) {
-                    File::delete(public_path('storage\\' . $record->image));
-                })->icon('heroicon-o-trash')->color('danger')->button()->label('Hapus'),
-                Tables\Actions\ViewAction::make()->label('Lihat')->icon('heroicon-s-eye')->button()->color('info'),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-s-pencil')
+                    ->button()
+                    ->color('success'),
+
+                Tables\Actions\Action::make('reset_password')
+                    ->label('Reset Password')
+                    ->icon('heroicon-o-key')
+                    ->button()
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Password')
+                    ->modalDescription('Apakah Anda yakin ingin mereset password ke default (123)?')
+                    ->modalSubmitActionLabel('Ya, Reset')
+                    ->modalCancelActionLabel('Batal')
+                    ->action(function (User $record) {
+                        $record->update([
+                            'password' => Hash::make('123')
+                        ]);
+
+                        Notification::make()
+                            ->title('Password berhasil direset!')
+                            ->body('Password untuk ' . $record->name . ' telah direset ke default.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Tables\Actions\DeleteAction::make()
+                    ->after(function ($record) {
+                        File::delete(public_path('storage\\' . $record->image));
+                    })
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->button()
+                    ->label('Hapus'),
+
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat')
+                    ->icon('heroicon-s-eye')
+                    ->button()
+                    ->color('info'),
             ])
             ->bulkActions([
                 DeleteBulkAction::make()
@@ -93,6 +133,30 @@ class StudentResource extends Resource
                         foreach ($records as $record) {
                             File::delete(public_path('storage\\' . $record->image));
                         }
+                    }),
+
+                Tables\Actions\BulkAction::make('bulk_reset_password')
+                    ->label('Reset Password Terpilih')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Password Massal')
+                    ->modalDescription('Apakah Anda yakin ingin mereset password semua data terpilih ke default (123)?')
+                    ->modalSubmitActionLabel('Ya, Reset Semua')
+                    ->modalCancelActionLabel('Batal')
+                    ->action(function ($records) {
+                        foreach ($records as $record) {
+                            $record->update([
+                                'password' => Hash::make('123')
+                            ]);
+                        }
+
+                        $count = count($records);
+                        Notification::make()
+                            ->title('Password berhasil direset!')
+                            ->body($count . ' password telah direset ke default.')
+                            ->success()
+                            ->send();
                     }),
             ]);
     }

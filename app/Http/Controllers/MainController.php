@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\FacadesLog;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -716,8 +717,8 @@ class MainController extends Controller
                 })
                     ->where('user_id', $user_id)
                     ->where('status', 1)
-                    ->select('section_id', 'video_id', 'status') // Hanya ambil kolom yang diperlukan
-                    ->distinct() // Pastikan tidak ada duplicate
+                    ->select('section_id', 'video_id', 'status')
+                    ->distinct()
                     ->get();
             } else {
                 $readVideos = VideoReader::where('user_id', $user_id)
@@ -727,7 +728,6 @@ class MainController extends Controller
                     ->get();
             }
 
-            // Format data untuk frontend
             $formattedData = $readVideos->map(function ($item) {
                 return [
                     'section_id' => (int) $item->section_id,
@@ -741,7 +741,7 @@ class MainController extends Controller
                 'data' => $formattedData
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error getting read videos: ' . $e->getMessage());
+            Log::error('Error getting read videos: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data video yang sudah dibaca'
@@ -753,22 +753,42 @@ class MainController extends Controller
     {
         $user_id = Auth::id();
 
+        if (!$user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
         $request->validate([
             'section_id' => 'required|integer',
             'video_id' => 'required|integer',
         ]);
 
+        // Add detailed logging
+        Log::info('VideoRead attempt', [
+            'user_id' => $user_id,
+            'section_id' => $request->section_id,
+            'video_id' => $request->video_id,
+            'timestamp' => now()
+        ]);
+
         try {
-            // Cek apakah sudah ada record untuk kombinasi user + section + video
+            // Check if record already exists
             $existingRecord = VideoReader::where('user_id', $user_id)
                 ->where('section_id', $request->section_id)
                 ->where('video_id', $request->video_id)
                 ->first();
 
+            Log::info('Existing record check', [
+                'exists' => $existingRecord ? true : false,
+                'status' => $existingRecord ? $existingRecord->status : null
+            ]);
+
             if ($existingRecord) {
-                // Jika sudah ada, update status jadi 1 (jika belum)
                 if ($existingRecord->status != 1) {
                     $existingRecord->update(['status' => 1]);
+                    Log::info('Updated existing record status to 1');
                     return response()->json([
                         'success' => true,
                         'message' => 'Progress video berhasil diupdate',
@@ -780,6 +800,7 @@ class MainController extends Controller
                     ]);
                 }
 
+                Log::info('Video already watched');
                 return response()->json([
                     'success' => true,
                     'message' => 'Video sudah pernah ditonton',
@@ -792,25 +813,44 @@ class MainController extends Controller
                 ]);
             }
 
-            // Validasi video exists dan aktif
+            // Check if video exists and get its details
             $video = Video::where('id', $request->video_id)
                 ->where('section_id', $request->section_id)
-                ->where('status', 1)
                 ->first();
 
+            Log::info('Video check', [
+                'video_found' => $video ? true : false,
+                'video_status' => $video ? $video->status : null,
+                'video_title' => $video ? $video->title : null
+            ]);
+
             if (!$video) {
+                Log::warning('Video not found', [
+                    'video_id' => $request->video_id,
+                    'section_id' => $request->section_id
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Video tidak ditemukan atau tidak aktif'
+                    'message' => 'Video tidak ditemukan'
                 ], 404);
             }
 
-            // Buat record baru
+
+            // Attempt to create new record
+            Log::info('Creating new VideoReader record');
             $videoReader = VideoReader::create([
                 'user_id' => $user_id,
                 'section_id' => $request->section_id,
                 'video_id' => $request->video_id,
                 'status' => 1
+            ]);
+
+            Log::info('VideoReader created successfully', [
+                'id' => $videoReader->id,
+                'user_id' => $videoReader->user_id,
+                'section_id' => $videoReader->section_id,
+                'video_id' => $videoReader->video_id
             ]);
 
             return response()->json([
@@ -822,9 +862,21 @@ class MainController extends Controller
                     'status' => (int) $videoReader->status
                 ]
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error', ['errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Illuminate\Database\QueryException $e) {
-            // Handle duplicate entry error (jika ada unique constraint)
-            if ($e->errorInfo[1] == 1062) { // Duplicate entry error code
+            Log::error('Database error in videoRead', [
+                'error_code' => $e->errorInfo[1] ?? null,
+                'message' => $e->getMessage(),
+                'sql' => $e->getSql() ?? null
+            ]);
+
+            if ($e->errorInfo[1] == 1062) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Video sudah pernah ditonton',
@@ -832,25 +884,32 @@ class MainController extends Controller
                 ]);
             }
 
-            \Log::error('Database error in videoRead: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan progress video'
+                'message' => 'Gagal menyimpan progress video - Database error',
+                'debug_info' => [
+                    'error_code' => $e->errorInfo[1] ?? null
+                ]
             ], 500);
         } catch (\Exception $e) {
-            \Log::error('Error in videoRead: ' . $e->getMessage());
+            Log::error('General error in videoRead', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan progress video'
+                'message' => 'Gagal menyimpan progress video - General error',
+                'debug_info' => [
+                    'error_message' => $e->getMessage()
+                ]
             ], 500);
         }
     }
 
-    // Fungsi tambahan untuk cleanup duplicate data (jika ada)
     public function cleanupDuplicateVideoReaders()
     {
         try {
-            // Ambil semua duplicate records
             $duplicates = VideoReader::select('user_id', 'section_id', 'video_id')
                 ->groupBy('user_id', 'section_id', 'video_id')
                 ->havingRaw('COUNT(*) > 1')
@@ -859,14 +918,12 @@ class MainController extends Controller
             $cleanedCount = 0;
 
             foreach ($duplicates as $duplicate) {
-                // Ambil semua records untuk kombinasi ini
                 $records = VideoReader::where('user_id', $duplicate->user_id)
                     ->where('section_id', $duplicate->section_id)
                     ->where('video_id', $duplicate->video_id)
                     ->orderBy('created_at', 'desc')
                     ->get();
 
-                // Hapus semua kecuali yang pertama (terbaru)
                 $records->skip(1)->each(function ($record) use (&$cleanedCount) {
                     $record->delete();
                     $cleanedCount++;
@@ -878,7 +935,7 @@ class MainController extends Controller
                 'message' => "Berhasil membersihkan {$cleanedCount} duplicate records"
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error cleaning duplicates: ' . $e->getMessage());
+            Log::error('Error cleaning duplicates: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal membersihkan duplicate data'
